@@ -509,6 +509,18 @@ def _market_bucket_from_row(row: pd.Series) -> str:
     return "neutral"
 
 
+def neutral_market_regime() -> MarketRegime:
+    """市場情緒資料抓不到/不足時的中性退路，避免整個掃描中斷。"""
+    return MarketRegime(
+        vix_close=0.0, vix_regime="中性", fear_greed_score=50, fear_greed_label="中性",
+        fear_greed_source="資料不足，採中性", spy_drawdown_pct=0.0, spy_distance_ma200_pct=0.0,
+        regime_score=50, action="中性偏分批", risk_budget="中性部位",
+        summary="市場情緒資料暫時無法取得，採用中性環境，不額外放大或縮小訊號。",
+        backtest_win_rate_5d=50.0, backtest_avg_return_5d=0.0,
+        backtest_win_rate_20d=50.0, backtest_avg_return_20d=0.0,
+    )
+
+
 def compute_market_regime(market_hint: str = "us") -> MarketRegime:
     ticker_index = "^TWII" if market_hint == "tw" else "SPY"
     market = yf.download([ticker_index, "^VIX"], period="3y", interval="1d", auto_adjust=False, progress=False, threads=True)
@@ -527,6 +539,9 @@ def compute_market_regime(market_hint: str = "us") -> MarketRegime:
     frame["SPY_DRAWDOWN"] = frame["SPY"] / frame["SPY_252MAX"] - 1
     frame["SPY_DISTANCE_MA200"] = frame["SPY"] / frame["SPY_MA200"] - 1
     frame = frame.dropna().copy()
+    if frame.empty:
+        # 資料不足（如 Yahoo 多檔下載回傳過短/不完整）→ 中性，避免 iloc 越界。
+        return neutral_market_regime()
     latest = frame.iloc[-1]
 
     vix_close = float(latest["VIX"])
@@ -1314,7 +1329,11 @@ def get_sp500_daily_top_picks(
     else:
         constituents = fetch_sp500_constituents()
         
-    regime = compute_market_regime(market_hint=market)
+    try:
+        regime = compute_market_regime(market_hint=market)
+    except Exception as e:
+        print(f"[sp500_daily] 市場情緒計算失敗，改用中性：{e}")
+        regime = neutral_market_regime()
     constituent_map = {item.yf_symbol: item for item in constituents}
     price_map = download_sp500_price_map([item.yf_symbol for item in constituents], period)
 
