@@ -4,7 +4,8 @@ name: Daily Report (每日最該買 · 免 Key)
 # GitHub Pages（main 分支 /docs 資料夾）會自動更新，開網頁即看。
 on:
   schedule:
-    - cron: "30 22 * * *"   # 22:30 UTC = 隔日 06:30 台北（盤前）
+    - cron: "30 22 * * *"   # 22:30 UTC = 隔日 06:30 台北（盤前；含前一日美股收盤資料）
+    - cron: "0 9 * * *"     # 09:00 UTC = 17:00 台北（台股收盤後，刷新台股持股）
   workflow_dispatch: {}      # 也可在 Actions 頁面手動觸發
 
 # 讓 workflow 能把報告 commit 回 repo

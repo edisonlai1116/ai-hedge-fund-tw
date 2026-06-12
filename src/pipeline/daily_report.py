@@ -27,6 +27,7 @@ DATA_DIR = os.path.join(REPO_ROOT, "docs", "data")
 OPINIONS_JSON = os.path.join(DATA_DIR, "gooaye_opinions.json")
 REPORT_JSON = os.path.join(DATA_DIR, "daily_report.json")
 HISTORY_DIR = os.path.join(DATA_DIR, "history")
+HISTORY_INDEX = os.path.join(HISTORY_DIR, "index.json")
 HOLDINGS_TXT = os.path.join(REPO_ROOT, "股票成本.txt")
 GOOAYE_FEED = "https://feeds.soundon.fm/podcasts/954689a5-3096-43a4-a80b-7810b219cef3.xml"
 
@@ -278,6 +279,29 @@ def build_report(holdings: List[str], opinions_store: Dict, macro: Dict, gooaye_
     }
 
 
+def update_history_index(report: Dict) -> List[Dict]:
+    """維護 history/index.json：每日一筆精簡摘要（給歷史走勢頁畫趨勢與選日期）。"""
+    idx = _read_json(HISTORY_INDEX, [])
+    if not isinstance(idx, list):
+        idx = []
+    picks = report.get("top_picks", [])
+    top = picks[0] if picks else {}
+    summary = {
+        "date": report["generated_date"],
+        "generated_at": report["generated_at"],
+        "macro_score": report.get("macro", {}).get("score", 50),
+        "top_ticker": top.get("ticker"),
+        "top_score": top.get("buy_score"),
+        "strong_buy": sum(1 for p in picks if p.get("recommendation") == "強力買進"),
+        "pick_count": len(picks),
+    }
+    idx = [e for e in idx if e.get("date") != summary["date"]]  # 同日覆蓋
+    idx.append(summary)
+    idx.sort(key=lambda e: e.get("date", ""))
+    _write_json(idx, HISTORY_INDEX)
+    return idx
+
+
 def main():
     print(f"[daily_report] start  data_dir={DATA_DIR}")
     os.makedirs(HISTORY_DIR, exist_ok=True)
@@ -293,7 +317,8 @@ def main():
     report = build_report(holdings, opinions_store, macro, gooaye_status)
     _write_json(report, REPORT_JSON)
     _write_json(report, os.path.join(HISTORY_DIR, f"{report['generated_date']}.json"))
-    print(f"[daily_report] wrote {REPORT_JSON} with {len(report['top_picks'])} picks")
+    idx = update_history_index(report)
+    print(f"[daily_report] wrote {REPORT_JSON} with {len(report['top_picks'])} picks; history days={len(idx)}")
 
 
 if __name__ == "__main__":

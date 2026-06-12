@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>歷史走勢 · 每日最該買</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2a3340;
+    --text:#e6edf3; --muted:#8b97a5; --accent:#58a6ff;
+    --bull:#2ea043; --bear:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    line-height:1.5;padding:16px;max-width:960px;margin:0 auto}
+  h1{font-size:1.3rem;margin:.2em 0}
+  a{color:var(--accent);text-decoration:none}
+  .muted{color:var(--muted);font-size:.85rem}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:12px 0}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .spacer{flex:1}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600;border:1px solid var(--border)}
+  .pill-bull{color:var(--bull);background:#10311a;border-color:#1d5}
+  .pill-bear{color:var(--bear);background:#3a1414;border-color:#a33}
+  .pill-neutral{color:#e3b341;background:#2e2410;border-color:#7a5}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:.78rem}
+  tr.day{cursor:pointer}
+  tr.day:hover{background:var(--panel2)}
+  .legend span{margin-right:14px;font-size:.8rem}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:4px}
+  svg{width:100%;height:180px;display:block}
+  .det td{font-size:.85rem;color:#cdd6e0}
+</style>
+</head>
+<body>
+  <div class="row">
+    <h1>📊 歷史走勢</h1>
+    <span class="spacer"></span>
+    <a href="index.html">← 回每日最該買</a>
+  </div>
+  <div class="muted" id="status">載入中…</div>
+
+  <div class="panel">
+    <div class="row"><strong>趨勢</strong>
+      <span class="spacer"></span>
+      <span class="legend">
+        <span><i class="dot" style="background:#58a6ff"></i>市場輿情</span>
+        <span><i class="dot" style="background:#2ea043"></i>當日最高買進分數</span>
+      </span>
+    </div>
+    <svg id="chart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+    <div class="muted" id="xaxis"></div>
+  </div>
+
+  <div class="panel">
+    <strong>每日摘要</strong><span class="muted">（點一列看當天完整排序）</span>
+    <table>
+      <thead><tr><th>日期</th><th>當日首選</th><th>分數</th><th>強力買進</th><th>市場輿情</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="5" class="muted">載入中…</td></tr></tbody>
+    </table>
+  </div>
+
+<script>
+const esc = t => (t==null?"":String(t)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const sc = s => s>=65?"pill-bull":(s<45?"pill-bear":"pill-neutral");
+
+fetch("data/history/index.json?_=" + Date.now())
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(render)
+  .catch(e => document.getElementById("status").textContent = "尚無歷史資料（每日排程跑過後會逐步累積）。");
+
+function line(points, color){
+  if(points.length<2) return points.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${color}"/>`).join("");
+  const d = points.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const dots = points.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="${color}"/>`).join("");
+  return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${dots}`;
+}
+
+function render(idx){
+  idx = (idx||[]).slice(-30); // 最近 30 天
+  document.getElementById("status").textContent = `共 ${idx.length} 天資料`;
+  // chart: 0..100 mapped to y (180..10)
+  const W=600,H=180,padX=10,padTop=10,padBot=20;
+  const n=idx.length;
+  const x = i => n<=1 ? W/2 : padX + i*(W-2*padX)/(n-1);
+  const y = v => (H-padBot) - (Math.max(0,Math.min(100,v))/100)*(H-padTop-padBot);
+  const macroPts = idx.map((e,i)=>[x(i), y(e.macro_score ?? 50)]);
+  const topPts = idx.map((e,i)=>[x(i), y(e.top_score ?? 50)]);
+  const grid = [0,25,50,75,100].map(v=>`<line x1="${padX}" y1="${y(v)}" x2="${W-padX}" y2="${y(v)}" stroke="#2a3340" stroke-width="1"/><text x="0" y="${y(v)-2}" fill="#8b97a5" font-size="9">${v}</text>`).join("");
+  document.getElementById("chart").innerHTML = grid + line(macroPts,"#58a6ff") + line(topPts,"#2ea043");
+  document.getElementById("xaxis").textContent =
+    n ? (idx[0].date + "  →  " + idx[n-1].date) : "";
+
+  // table (newest first)
+  const body = document.getElementById("rows");
+  body.innerHTML = "";
+  idx.slice().reverse().forEach(e=>{
+    const tr=document.createElement("tr"); tr.className="day";
+    tr.innerHTML =
+      `<td>${esc(e.date)}</td>`+
+      `<td><strong>${esc(e.top_ticker||"—")}</strong></td>`+
+      `<td>${e.top_score ?? "—"}</td>`+
+      `<td>${e.strong_buy ?? 0}</td>`+
+      `<td><span class="badge ${sc(e.macro_score??50)}">${e.macro_score ?? "—"}</span></td>`;
+    const det=document.createElement("tr"); det.className="det"; det.style.display="none";
+    det.innerHTML=`<td colspan="5" class="muted">載入中…</td>`;
+    let loaded=false;
+    tr.addEventListener("click",()=>{
+      det.style.display = det.style.display==="none" ? "table-row":"none";
+      if(!loaded){ loaded=true; loadDay(e.date, det); }
+    });
+    body.appendChild(tr); body.appendChild(det);
+  });
+}
+
+function loadDay(date, det){
+  fetch(`data/history/${date}.json?_=`+Date.now())
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(d=>{
+      const picks=(d.top_picks||[]).slice(0,8);
+      det.innerHTML = `<td colspan="5">`+
+        picks.map((p,i)=>`${i+1}. <strong>${esc(p.ticker)}</strong> ${p.buy_score} <span class="badge ${sc(p.buy_score)}">${esc(p.recommendation)}</span> ｜ 股癌 ${p.gooaye?.score ?? "—"}`).join("<br>")+
+        `</td>`;
+    })
+    .catch(()=>{ det.innerHTML=`<td colspan="5" class="muted">當日資料讀取失敗。</td>`; });
+}
+</script>
+</body>
+</html>
