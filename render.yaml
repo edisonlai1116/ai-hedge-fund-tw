@@ -11,3 +11,6 @@ services:
     envVars:
       - key: PYTHONUTF8
         value: "1"
+      # 免費機記憶體/時間有限：每日掃描只掃前 80 檔（挑 Top 50），避免逾時/記憶體不足。
+      - key: SP500_SCAN_LIMIT
+        value: "80"

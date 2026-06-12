@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
@@ -1328,7 +1329,16 @@ def get_sp500_daily_top_picks(
         constituents = fetch_taiwan_constituents()
     else:
         constituents = fetch_sp500_constituents()
-        
+
+    # 掃描標的數量上限（給記憶體/時間有限的免費雲端用）。設環境變數 SP500_SCAN_LIMIT 即生效；
+    # 不設或<=0 則掃全部（本機）。constituents 已依市值/重要性排序，取前 N 仍具代表性。
+    try:
+        _scan_limit = int(os.environ.get("SP500_SCAN_LIMIT", "0"))
+    except ValueError:
+        _scan_limit = 0
+    if _scan_limit > 0:
+        constituents = constituents[:_scan_limit]
+
     try:
         regime = compute_market_regime(market_hint=market)
     except Exception as e:

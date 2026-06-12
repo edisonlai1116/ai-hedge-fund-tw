@@ -15,7 +15,8 @@ RUN npm run build
 FROM python:3.11-slim AS app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONUTF8=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    SP500_SCAN_LIMIT=80
 WORKDIR /app
 
 # 只裝免-Key 服務需要的套件（不含 langchain，映像小、啟動快）
