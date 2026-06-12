@@ -1339,6 +1339,16 @@ def get_sp500_daily_top_picks(
     if _scan_limit > 0:
         constituents = constituents[:_scan_limit]
 
+    # 免費雲端減重：可用環境變數縮短抓取期間（少下載 = 省記憶體/時間）。本機不設則用原 period。
+    _scan_period = os.environ.get("SP500_SCAN_PERIOD", "").strip()
+    if _scan_period:
+        period = _scan_period
+    try:
+        _scan_workers = int(os.environ.get("SP500_SCAN_WORKERS", "12"))
+    except ValueError:
+        _scan_workers = 12
+    _scan_workers = max(2, _scan_workers)
+
     try:
         regime = compute_market_regime(market_hint=market)
     except Exception as e:
@@ -1361,7 +1371,7 @@ def get_sp500_daily_top_picks(
         return (constituent, frame, report)
 
     candidates: list[tuple[SP500Constituent, pd.DataFrame, SignalReport]] = []
-    with ThreadPoolExecutor(max_workers=12) as prefilter_executor:
+    with ThreadPoolExecutor(max_workers=_scan_workers) as prefilter_executor:
         prefilter_futures = [
             prefilter_executor.submit(_prefilter_one, yf_symbol, frame)
             for yf_symbol, frame in price_map.items()
@@ -1537,7 +1547,7 @@ def get_sp500_daily_top_picks(
     ai_enrich_limit = min(external_enrich_limit, FAST_AI_ENRICH_LIMIT if use_ai_committee else 0)
 
     picks: list[SP500DailyPick] = []
-    with ThreadPoolExecutor(max_workers=8 if use_ai_committee else 12) as executor:
+    with ThreadPoolExecutor(max_workers=min(_scan_workers, 8 if use_ai_committee else 12)) as executor:
         futures = {
             executor.submit(
                 enrich_candidate,
