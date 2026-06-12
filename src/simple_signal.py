@@ -1121,20 +1121,22 @@ def build_price_forecast(
         score -= 1
 
     if score >= 3:
-        verdict = "現在可買進"
-        verdict_reason = "趨勢、預測與評分多數同向偏多，適合現價附近分批建倉。"
+        verdict = "中長線偏多·可分批布局"
+        verdict_reason = "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。"
     elif score >= 1:
-        verdict = "逢回分批布局"
+        verdict = "中長線偏多·逢回分批"
         verdict_reason = "中長期偏多但非全數確認，建議靠近買點區分批承接、不追高。"
     elif score == 0:
-        verdict = "觀望"
+        verdict = "中長線中性·觀望"
         verdict_reason = "多空訊號互見，等趨勢或預測更明確再動作。"
     elif score >= -2:
-        verdict = "偏弱暫不買進"
+        verdict = "中長線偏弱·暫不進場"
         verdict_reason = "預測或趨勢偏弱，新倉宜保守，持股者注意保護停損。"
     else:
-        verdict = "建議減碼/賣出"
+        verdict = "中長線偏空·建議減碼"
         verdict_reason = "趨勢與中長期預測同向偏空，宜降低部位或避開。"
+    # 明確區分時間框架，避免與上方「今日操作結論」(短線進場時機) 看似矛盾。
+    verdict_reason += "（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）"
 
     return {
         "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
