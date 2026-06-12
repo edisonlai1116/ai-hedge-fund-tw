@@ -1,0 +1,6 @@
+# 範例持股檔：每行「代號 平均成本 股數」（# 開頭為註解，空行忽略）
+# 實跑你自己的持股請改用： python workflow/run.py --flow workflow/stock_review.json --input ../股票成本.txt
+AAPL 180 50
+NVDA 120 30
+2330 980 5
+00403A 10 5000

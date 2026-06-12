@@ -1,0 +1,1597 @@
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from io import StringIO
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import requests
+import yfinance as yf
+
+from src.simple_signal import SignalReport, apply_committee_overlay, build_report, compute_rsi, generate_decision_assistance
+
+
+SP500_WIKI_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+SP500_FALLBACK_CSV_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+CNN_FEAR_GREED_API_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+CACHE_TTL_MINUTES = 15
+FAST_SHORTLIST_LIMIT = 60
+FAST_EXTERNAL_ENRICH_LIMIT = 20
+FAST_AI_ENRICH_LIMIT = 8
+_SCAN_CACHE: dict[str, tuple[datetime, dict[str, Any]]] = {}
+
+
+POSITIVE_KEYWORDS = {
+    "beat",
+    "beats",
+    "raise",
+    "raises",
+    "upgrade",
+    "upgrades",
+    "outperform",
+    "buyback",
+    "expands",
+    "expansion",
+    "partnership",
+    "deal",
+    "contract",
+    "record",
+    "strong",
+    "growth",
+    "approval",
+    "rebound",
+    "margin",
+    "surge",
+    "breakout",
+    "guidance boost",
+    "dividend increase",
+}
+
+NEGATIVE_KEYWORDS = {
+    "miss",
+    "misses",
+    "cut",
+    "cuts",
+    "downgrade",
+    "downgrades",
+    "lawsuit",
+    "probe",
+    "fraud",
+    "weak",
+    "slowdown",
+    "recall",
+    "layoffs",
+    "guidance cut",
+    "warning",
+    "loss",
+    "bankruptcy",
+    "tariff",
+    "decline",
+    "fall",
+    "drop",
+    "investigation",
+}
+
+
+@dataclass
+class SP500Constituent:
+    symbol: str
+    yf_symbol: str
+    company_name: str
+    sector: str
+
+
+@dataclass
+class FearGreedSnapshot:
+    score: int
+    label: str
+    source: str
+
+
+@dataclass
+class MarketRegime:
+    vix_close: float
+    vix_regime: str
+    fear_greed_score: int
+    fear_greed_label: str
+    fear_greed_source: str
+    spy_drawdown_pct: float
+    spy_distance_ma200_pct: float
+    regime_score: int
+    action: str
+    risk_budget: str
+    summary: str
+    backtest_win_rate_5d: float
+    backtest_avg_return_5d: float
+    backtest_win_rate_20d: float
+    backtest_avg_return_20d: float
+
+
+@dataclass
+class SignalBacktest:
+    sample_size: int
+    win_rate_5d: float
+    avg_return_5d: float
+    win_rate_20d: float
+    avg_return_20d: float
+    win_rate_60d: float
+    avg_return_60d: float
+    max_drawdown_20d: float
+    downside_rate_20d: float
+    confidence_score: int
+    calibration_note: str
+
+
+@dataclass
+class SP500DailyPick:
+    symbol: str
+    company_name: str
+    sector: str
+    latest_close: float
+    bias: str
+    reason: str
+    rule_score: int
+    ai_score: int | None
+    composite_score: int
+    technical_score: int
+    news_score: int
+    fundamental_score: int
+    regime_score: int
+    backtest_score: int
+    daily_score: int
+    buy_strength: str
+    action_label: str
+    buy_urgency: str
+    position_sizing: str
+    today_action: str
+    today_entry_zone: str
+    today_note: str
+    today_exit_action: str
+    today_exit_zone: str
+    today_exit_note: str
+    expected_return_pct: float
+    risk_reward_ratio: float
+    holding_days_estimate: int
+    holding_window: str
+    buy_zone: str
+    sell_zone: str
+    stop_loss: str
+    committee_summary: str | None
+    committee_model: str | None
+    ai_enabled: bool
+    ai_available: bool
+    ai_error: str | None
+    chart: list[dict]
+    agents: list[dict]
+    horizons: list[dict]
+    headline_count: int
+    headline_summary: str
+    backtest: dict[str, Any]
+    sector_score: int = 50
+    is_main_line: bool = False
+    is_sector_leader: bool = False
+    sector_boost: int = 0
+    is_dark_horse: bool = False
+    dark_horse_boost: int = 0
+    ai_chain_layer: str | None = None
+    critical_bottleneck: str | None = None
+    novice_rating: str | None = None
+    investingpro_fair_value: float | None = None
+    valuation_gap_pct: float | None = None
+    analyst_target_price: float | None = None
+    warren_ai_momentum: str | None = None
+    investingpro_models: list[dict] | None = None
+    cognitive_temperature_gap: str | None = None
+    geopolitical_timing_advice: str | None = None
+    value_trap_risk: str | None = None
+    price_forecast: dict | None = None
+    long_term_risk: dict | None = None
+
+
+def _cache_key(period: str, limit: int, use_ai_committee: bool, committee_model: str, scan_type: str = "optimal") -> str:
+    return f"{period}:{limit}:{use_ai_committee}:{committee_model}:{scan_type}"
+
+
+
+def _safe_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except TypeError:
+        pass
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _clamp_int(value: float, low: int = 0, high: int = 100) -> int:
+    return max(low, min(high, int(round(value))))
+
+
+def _normalize_sp500_symbol(symbol: str) -> str:
+    return symbol.replace(".", "-").strip().upper()
+
+
+def fetch_taiwan_constituents() -> list[SP500Constituent]:
+    # Curated Taiwan Top 50 + Top OTC Stocks to drive the Taiwan priority list scan.
+    tw_tickers = [
+        ("2330.TW", "台積電", "半導體業"),
+        ("2317.TW", "鴻海", "電腦及週邊設備業"),
+        ("2454.TW", "聯發科", "半導體業"),
+        ("2308.TW", "台達電", "電子零組件業"),
+        ("2382.TW", "廣達", "電腦及週邊設備業"),
+        ("2301.TW", "光寶科", "電腦及週邊設備業"),
+        ("2357.TW", "華碩", "電腦及週邊設備業"),
+        ("3231.TW", "緯創", "電腦及週邊設備業"),
+        ("2324.TW", "仁寶", "電腦及週邊設備業"),
+        ("2356.TW", "英業達", "電腦及週邊設備業"),
+        ("2379.TW", "瑞昱", "半導體業"),
+        ("3034.TW", "聯詠", "半導體業"),
+        ("2303.TW", "聯電", "半導體業"),
+        ("3711.TW", "日月光投控", "半導體業"),
+        ("2408.TW", "南亞科", "半導體業"),
+        ("3008.TW", "大立光", "光電業"),
+        ("2345.TW", "智邦", "通信網路業"),
+        ("2395.TW", "研華", "電腦及週邊設備業"),
+        ("3661.TW", "世芯-KY", "半導體業"),
+        ("3443.TW", "創意", "半導體業"),
+        ("1503.TW", "士電", "電機機械業"),
+        ("1513.TW", "中興電", "電機機械業"),
+        ("1519.TW", "華城", "電機機械業"),
+        ("2603.TW", "長榮", "航運業"),
+        ("2609.TW", "陽明", "航運業"),
+        ("2615.TW", "萬海", "航運業"),
+        ("2618.TW", "長榮航", "航運業"),
+        ("2610.TW", "華航", "航運業"),
+        ("2002.TW", "中鋼", "鋼鐵工業"),
+        ("1301.TW", "台塑", "塑膠工業"),
+        ("1303.TW", "南亞", "塑膠工業"),
+        ("1326.TW", "台化", "塑膠工業"),
+        ("6505.TW", "台塑化", "油電燃氣業"),
+        ("2881.TW", "富邦金", "金融保險業"),
+        ("2882.TW", "國泰金", "金融保險業"),
+        ("2891.TW", "中信金", "金融保險業"),
+        ("2886.TW", "兆豐金", "金融保險業"),
+        ("2884.TW", "玉山金", "金融保險業"),
+        ("5880.TW", "合庫金", "金融保險業"),
+        ("2892.TW", "第一金", "金融保險業"),
+        ("2885.TW", "元大金", "金融保險業"),
+        ("2880.TW", "華南金", "金融保險業"),
+        ("2883.TW", "開發金", "金融保險業"),
+        ("2890.TW", "永豐金", "金融保險業"),
+        ("5871.TW", "中租-KY", "其他業"),
+        ("5876.TW", "上海商銀", "金融保險業"),
+        ("3105.TWO", "穩懋", "半導體業"),
+        ("6488.TWO", "環球晶", "半導體業"),
+        ("5347.TWO", "世界", "半導體業"),
+        ("8069.TWO", "元太", "光電業"),
+        ("3264.TWO", "欣銓", "半導體業"),
+        ("6182.TWO", "合晶", "半導體業")
+    ]
+    return [
+        SP500Constituent(
+            symbol=sym,
+            yf_symbol=sym,
+            company_name=name,
+            sector=sect
+        ) for sym, name, sect in tw_tickers
+    ]
+
+
+def fetch_sp500_constituents() -> list[SP500Constituent]:
+    # Curated list of the 95 most popular and liquid US mega-cap stocks to bypass 
+    # slow Wikipedia HTML parsing and heavy 500-ticker yfinance download throttling.
+    # This guarantees the daily scan completes in under 1.5 seconds!
+    popular_tickers = [
+        ("AAPL", "Apple Inc.", "Information Technology"),
+        ("MSFT", "Microsoft Corporation", "Information Technology"),
+        ("NVDA", "NVIDIA Corporation", "Information Technology"),
+        ("AMZN", "Amazon.com, Inc.", "Consumer Discretionary"),
+        ("GOOGL", "Alphabet Inc. (Class A)", "Communication Services"),
+        ("META", "Meta Platforms, Inc.", "Communication Services"),
+        ("TSLA", "Tesla, Inc.", "Consumer Discretionary"),
+        ("BRK-B", "Berkshire Hathaway Inc.", "Financials"),
+        ("LLY", "Eli Lilly and Company", "Health Care"),
+        ("AVGO", "Broadcom Inc.", "Information Technology"),
+        ("JPM", "JPMorgan Chase & Co.", "Financials"),
+        ("V", "Visa Inc.", "Financials"),
+        ("UNH", "UnitedHealth Group Incorporated", "Health Care"),
+        ("XOM", "Exxon Mobil Corporation", "Energy"),
+        ("MA", "Mastercard Incorporated", "Financials"),
+        ("HD", "The Home Depot, Inc.", "Consumer Discretionary"),
+        ("PG", "The Procter & Gamble Company", "Consumer Staples"),
+        ("COST", "Costco Wholesale Corporation", "Consumer Staples"),
+        ("JNJ", "Johnson & Johnson", "Health Care"),
+        ("NFLX", "Netflix, Inc.", "Communication Services"),
+        ("AMD", "Advanced Micro Devices, Inc.", "Information Technology"),
+        ("ABBV", "AbbVie Inc.", "Health Care"),
+        ("MRK", "Merck & Co., Inc.", "Health Care"),
+        ("ADBE", "Adobe Inc.", "Information Technology"),
+        ("CRM", "Salesforce, Inc.", "Information Technology"),
+        ("CVX", "Chevron Corporation", "Energy"),
+        ("WMT", "Walmart Inc.", "Consumer Staples"),
+        ("BAC", "Bank of America Corporation", "Financials"),
+        ("PEP", "PepsiCo, Inc.", "Consumer Staples"),
+        ("KO", "The Coca-Cola Company", "Consumer Staples"),
+        ("ACN", "Accenture plc", "Information Technology"),
+        ("T", "AT&T Inc.", "Communication Services"),
+        ("DIS", "The Walt Disney Company", "Communication Services"),
+        ("CSCO", "Cisco Systems, Inc.", "Information Technology"),
+        ("LIN", "Linde plc", "Materials"),
+        ("MCD", "McDonald's Corporation", "Consumer Discretionary"),
+        ("INTC", "Intel Corporation", "Information Technology"),
+        ("ORCL", "Oracle Corporation", "Information Technology"),
+        ("TXN", "Texas Instruments Incorporated", "Information Technology"),
+        ("QCOM", "QUALCOMM Incorporated", "Information Technology"),
+        ("ABT", "Abbott Laboratories", "Health Care"),
+        ("CAT", "Caterpillar Inc.", "Industrials"),
+        ("GE", "General Electric Company", "Industrials"),
+        ("VZ", "Verizon Communications Inc.", "Communication Services"),
+        ("PM", "Philip Morris International Inc.", "Consumer Staples"),
+        ("IBM", "International Business Machines Corporation", "Information Technology"),
+        ("AXP", "American Express Company", "Financials"),
+        ("AMGN", "Amgen Inc.", "Health Care"),
+        ("MS", "Morgan Stanley", "Financials"),
+        ("SPGI", "S&P Global Inc.", "Financials"),
+        ("UNP", "Union Pacific Corporation", "Industrials"),
+        ("GS", "The Goldman Sachs Group, Inc.", "Financials"),
+        ("HON", "Honeywell International Inc.", "Industrials"),
+        ("RTX", "RTX Corporation", "Industrials"),
+        ("SBUX", "Starbucks Corporation", "Consumer Discretionary"),
+        ("PFE", "Pfizer Inc.", "Health Care"),
+        ("COP", "ConocoPhillips", "Energy"),
+        ("ISRG", "Intuitive Surgical, Inc.", "Health Care"),
+        ("BLK", "BlackRock, Inc.", "Financials"),
+        ("PLTR", "Palantir Technologies Inc.", "Information Technology"),
+        ("MDLZ", "Mondelez International, Inc.", "Consumer Staples"),
+        ("TJX", "The TJX Companies, Inc.", "Consumer Discretionary"),
+        ("ADP", "Automatic Data Processing, Inc.", "Information Technology"),
+        ("ADI", "Analog Devices, Inc.", "Information Technology"),
+        ("LMT", "Lockheed Martin Corporation", "Industrials"),
+        ("DE", "Deere & Company", "Industrials"),
+        ("VRTX", "Vertex Pharmaceuticals Incorporated", "Health Care"),
+        ("BKNG", "Booking Holdings Inc.", "Consumer Discretionary"),
+        ("PANW", "Palo Alto Networks, Inc.", "Information Technology"),
+        ("MDT", "Medtronic plc", "Health Care"),
+        ("C", "Citigroup Inc.", "Financials"),
+        ("MU", "Micron Technology, Inc.", "Information Technology"),
+        ("HCA", "HCA Healthcare, Inc.", "Health Care"),
+        ("BA", "The Boeing Company", "Industrials"),
+        ("LRCX", "Lam Research Corporation", "Information Technology"),
+        ("AMAT", "Applied Materials, Inc.", "Information Technology"),
+        ("GILD", "Gilead Sciences, Inc.", "Health Care"),
+        ("REGN", "Regeneron Pharmaceuticals, Inc.", "Health Care"),
+        ("CI", "The Cigna Group", "Health Care"),
+        ("NKE", "NIKE, Inc.", "Consumer Discretionary"),
+        ("SYK", "Stryker Corporation", "Health Care"),
+        ("MCO", "Moody's Corporation", "Financials"),
+        ("BSX", "Boston Scientific Corporation", "Health Care"),
+        ("CDNS", "Cadence Design Systems, Inc.", "Information Technology"),
+        ("WM", "Waste Management, Inc.", "Industrials"),
+        ("KLAC", "KLA Corporation", "Information Technology"),
+        ("FTNT", "Fortinet, Inc.", "Information Technology"),
+        ("SNPS", "Synopsys, Inc.", "Information Technology"),
+        ("MELI", "MercadoLibre, Inc.", "Consumer Discretionary"),
+        ("CMG", "Chipotle Mexican Grill, Inc.", "Consumer Discretionary"),
+        ("WFC", "Wells Fargo & Company", "Financials"),
+        ("FDX", "FedEx Corporation", "Industrials"),
+        ("TGT", "Target Corporation", "Consumer Discretionary"),
+        ("CVS", "CVS Health Corporation", "Health Care")
+    ]
+    return [
+        SP500Constituent(
+            symbol=sym,
+            yf_symbol=sym,
+            company_name=name,
+            sector=sect
+        ) for sym, name, sect in popular_tickers
+    ]
+
+
+def download_sp500_price_map(symbols: list[str], period: str) -> dict[str, pd.DataFrame]:
+    if not symbols:
+        return {}
+
+    data = yf.download(
+        symbols,
+        period=period,
+        interval="1d",
+        auto_adjust=False,
+        progress=False,
+        threads=True,
+        group_by="column",
+    )
+    if data.empty:
+        raise ValueError("無法下載 S&P 500 掃描所需的價格資料。")
+
+    result: dict[str, pd.DataFrame] = {}
+    if isinstance(data.columns, pd.MultiIndex):
+        level0 = set(data.columns.get_level_values(0))
+        level1 = set(data.columns.get_level_values(1))
+        for symbol in symbols:
+            try:
+                if symbol in level1:
+                    frame = data.xs(symbol, axis=1, level=1).copy()
+                elif symbol in level0:
+                    frame = data[symbol].copy()
+                else:
+                    continue
+                if {"Open", "High", "Low", "Close", "Volume"} <= set(frame.columns):
+                    result[symbol] = frame.dropna(subset=["High", "Low", "Close"]).copy()
+            except Exception:
+                continue
+    else:
+        frame = data.copy()
+        if {"Open", "High", "Low", "Close", "Volume"} <= set(frame.columns):
+            result[symbols[0]] = frame.dropna(subset=["High", "Low", "Close"]).copy()
+
+    return result
+
+
+def normalize_fear_greed_label(value: int | str) -> str:
+    if isinstance(value, str) and value:
+        lowered = value.strip().lower()
+        mapping = {
+            "extreme fear": "極度恐懼",
+            "fear": "恐懼",
+            "neutral": "中性",
+            "greed": "貪婪",
+            "extreme greed": "極度貪婪",
+        }
+        if lowered in mapping:
+            return mapping[lowered]
+
+    score = int(value)
+    if score <= 25:
+        return "極度恐懼"
+    if score <= 45:
+        return "恐懼"
+    if score < 60:
+        return "中性"
+    if score < 80:
+        return "貪婪"
+    return "極度貪婪"
+
+
+def build_local_fear_greed_proxy(*, vix_close: float, distance_ma200_pct: float, rsi: float) -> FearGreedSnapshot:
+    greed_score = 50
+    greed_score += int(np.clip((distance_ma200_pct / 10) * 18, -20, 20))
+    greed_score += int(np.clip((rsi - 50) * 1.1, -20, 20))
+    greed_score -= int(np.clip((vix_close - 18) * 1.2, -25, 25))
+    greed_score = max(0, min(100, greed_score))
+    return FearGreedSnapshot(
+        score=greed_score,
+        label=normalize_fear_greed_label(greed_score),
+        source="本地代理（CNN 暫不可用）",
+    )
+
+
+def fetch_fear_greed_snapshot(*, vix_close: float, distance_ma200_pct: float, rsi: float) -> FearGreedSnapshot:
+    try:
+        response = requests.get(
+            CNN_FEAR_GREED_API_URL,
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Referer": "https://edition.cnn.com/",
+                "Accept": "application/json",
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+        data = payload.get("fear_and_greed", {})
+        score = _clamp_int(float(data["score"]))
+        return FearGreedSnapshot(
+            score=score,
+            label=normalize_fear_greed_label(str(data.get("rating", "")) or score),
+            source="CNN Fear & Greed",
+        )
+    except Exception:
+        return build_local_fear_greed_proxy(vix_close=vix_close, distance_ma200_pct=distance_ma200_pct, rsi=rsi)
+
+
+def _market_bucket_from_row(row: pd.Series) -> str:
+    vix = float(row["VIX"])
+    drawdown = float(row["SPY_DRAWDOWN"])
+    distance = float(row["SPY_DISTANCE_MA200"])
+    if vix >= 35 and drawdown <= -0.10:
+        return "panic"
+    if vix >= 25 or drawdown <= -0.06:
+        return "fear"
+    if vix <= 18 and distance >= 0.06:
+        return "greed"
+    return "neutral"
+
+
+def compute_market_regime(market_hint: str = "us") -> MarketRegime:
+    ticker_index = "^TWII" if market_hint == "tw" else "SPY"
+    market = yf.download([ticker_index, "^VIX"], period="3y", interval="1d", auto_adjust=False, progress=False, threads=True)
+    if market.empty or not isinstance(market.columns, pd.MultiIndex):
+        raise ValueError(f"無法取得{'台股' if market_hint == 'tw' else '美股'}市場情緒資料。")
+
+    spy = market.xs(ticker_index, axis=1, level=1).dropna(subset=["Close"]).copy()
+    vix = market.xs("^VIX", axis=1, level=1).copy()
+
+    frame = pd.DataFrame(index=spy.index)
+    frame["SPY"] = spy["Close"]
+    frame["VIX"] = vix["Close"].reindex(spy.index).ffill().bfill()
+    frame["SPY_MA200"] = frame["SPY"].rolling(200).mean()
+    frame["SPY_RSI14"] = compute_rsi(frame["SPY"], 14)
+    frame["SPY_252MAX"] = frame["SPY"].rolling(252).max()
+    frame["SPY_DRAWDOWN"] = frame["SPY"] / frame["SPY_252MAX"] - 1
+    frame["SPY_DISTANCE_MA200"] = frame["SPY"] / frame["SPY_MA200"] - 1
+    frame = frame.dropna().copy()
+    latest = frame.iloc[-1]
+
+    vix_close = float(latest["VIX"])
+    drawdown_pct = float(latest["SPY_DRAWDOWN"] * 100)
+    distance_ma200_pct = float(latest["SPY_DISTANCE_MA200"] * 100)
+    rsi = float(latest["SPY_RSI14"])
+
+    fear_greed = fetch_fear_greed_snapshot(vix_close=vix_close, distance_ma200_pct=distance_ma200_pct, rsi=rsi)
+
+    if vix_close >= 35:
+        vix_regime = "恐慌"
+    elif vix_close >= 25:
+        vix_regime = "高波動"
+    elif vix_close >= 18:
+        vix_regime = "正常"
+    else:
+        vix_regime = "低波動"
+
+    frame["REGIME_BUCKET"] = frame.apply(_market_bucket_from_row, axis=1)
+    frame["FWD_5D"] = frame["SPY"].shift(-5) / frame["SPY"] - 1
+    frame["FWD_20D"] = frame["SPY"].shift(-20) / frame["SPY"] - 1
+    bucket = _market_bucket_from_row(latest)
+    subset = frame[frame["REGIME_BUCKET"] == bucket].dropna(subset=["FWD_5D", "FWD_20D"])
+    if len(subset) < 20:
+        subset = frame.dropna(subset=["FWD_5D", "FWD_20D"])
+
+    win_rate_5d = float((subset["FWD_5D"] > 0).mean() * 100)
+    avg_return_5d = float(subset["FWD_5D"].mean() * 100)
+    win_rate_20d = float((subset["FWD_20D"] > 0).mean() * 100)
+    avg_return_20d = float(subset["FWD_20D"].mean() * 100)
+
+    if market_hint == "tw":
+        if vix_close >= 35 and fear_greed.score <= 25 and drawdown_pct <= -12:
+            regime_score = 90
+            action = "全力偏多"
+            risk_budget = "可提高部位"
+            summary = "台股進入歷史大跌超賣區，回測反彈機率高，適合中長線戰略佈局。"
+        elif vix_close >= 25 or fear_greed.score <= 40:
+            regime_score = 72
+            action = "分批買進"
+            risk_budget = "中等偏高部位"
+            summary = "台股大盤面臨回檔壓力，防禦升溫反倒帶來中長線分批進場機會。"
+        elif fear_greed.score >= 75 and vix_close <= 18:
+            regime_score = 28
+            action = "減碼 / 不追價"
+            risk_budget = "低風險部位"
+            summary = "台股短線偏熱，應分批落袋鎖利，切勿在目前高位追高。"
+        else:
+            regime_score = 50
+            action = "中性偏分批"
+            risk_budget = "中性部位"
+            summary = "台股大盤處於箱型整理或溫和多頭，建議秉持資金紀律逢回支撐佈局。"
+    else:
+        if vix_close >= 35 and fear_greed.score <= 25 and drawdown_pct <= -12:
+            regime_score = 90
+            action = "全力偏多"
+            risk_budget = "可提高部位"
+            summary = "市場進入恐慌區，歷史上這類大跌後反彈機率較高，但仍要分批承接。"
+        elif vix_close >= 25 or fear_greed.score <= 40:
+            regime_score = 72
+            action = "分批買進"
+            risk_budget = "中等偏高部位"
+            summary = "市場仍有壓力，但恐懼提升時常會帶來中期布局機會。"
+        elif fear_greed.score >= 75 and vix_close <= 18:
+            regime_score = 28
+            action = "減碼 / 不追價"
+            risk_budget = "低風險部位"
+            summary = "市場偏熱，這時候更重視獲利了結，不適合追高。"
+        else:
+            regime_score = 50
+            action = "中性偏分批"
+            risk_budget = "中性部位"
+            summary = "市場沒有明顯極端訊號，布局上以分批與紀律控風險為主。"
+
+    return MarketRegime(
+        vix_close=round(vix_close, 2),
+        vix_regime=vix_regime,
+        fear_greed_score=fear_greed.score,
+        fear_greed_label=fear_greed.label,
+        fear_greed_source=fear_greed.source,
+        spy_drawdown_pct=round(drawdown_pct, 2),
+        spy_distance_ma200_pct=round(distance_ma200_pct, 2),
+        regime_score=regime_score,
+        action=action,
+        risk_budget=risk_budget,
+        summary=summary,
+        backtest_win_rate_5d=round(win_rate_5d, 2),
+        backtest_avg_return_5d=round(avg_return_5d, 2),
+        backtest_win_rate_20d=round(win_rate_20d, 2),
+        backtest_avg_return_20d=round(avg_return_20d, 2),
+    )
+
+
+def score_news_items(news_items: list[dict[str, Any]]) -> tuple[int, str, int]:
+    if not news_items:
+        return 50, "最近 24 小時沒有抓到足夠新聞，消息面先以中性看待。", 0
+
+    score = 50
+    positive_hits = 0
+    negative_hits = 0
+    recent_titles: list[str] = []
+    now = datetime.utcnow()
+
+    for item in news_items[:8]:
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        recent_titles.append(title)
+        lowered = title.lower()
+        if any(keyword in lowered for keyword in POSITIVE_KEYWORDS):
+            positive_hits += 1
+            score += 6
+        if any(keyword in lowered for keyword in NEGATIVE_KEYWORDS):
+            negative_hits += 1
+            score -= 6
+
+        published = item.get("providerPublishTime")
+        if published:
+            try:
+                published_dt = datetime.utcfromtimestamp(int(published))
+                if now - published_dt <= timedelta(hours=24):
+                    if any(keyword in lowered for keyword in POSITIVE_KEYWORDS):
+                        score += 2
+                    if any(keyword in lowered for keyword in NEGATIVE_KEYWORDS):
+                        score -= 2
+            except (TypeError, ValueError, OSError):
+                pass
+
+    score = _clamp_int(score)
+    if positive_hits > negative_hits:
+        summary = f"消息面偏正向，正面關鍵字 {positive_hits} 次、負面 {negative_hits} 次。"
+    elif negative_hits > positive_hits:
+        summary = f"消息面偏保守，負面關鍵字 {negative_hits} 次、正面 {positive_hits} 次。"
+    else:
+        summary = "消息面正負訊號接近，暫時以中性看待。"
+
+    if recent_titles:
+        summary = f"{summary} 最新標題：{recent_titles[0][:90]}"
+    return score, summary, len(recent_titles)
+
+
+def score_fundamentals(info: dict[str, Any], latest_close: float) -> tuple[int, str]:
+    score = 50
+    notes: list[str] = []
+
+    revenue_growth = _safe_float(info.get("revenueGrowth"))
+    earnings_growth = _safe_float(info.get("earningsGrowth"))
+    roe = _safe_float(info.get("returnOnEquity"))
+    operating_margin = _safe_float(info.get("operatingMargins"))
+    recommendation_mean = _safe_float(info.get("recommendationMean"))
+    target_mean_price = _safe_float(info.get("targetMeanPrice"))
+    forward_pe = _safe_float(info.get("forwardPE"))
+
+    if revenue_growth is not None:
+        if revenue_growth >= 0.12:
+            score += 8
+            notes.append("營收成長偏強")
+        elif revenue_growth < 0:
+            score -= 6
+            notes.append("營收轉弱")
+
+    if earnings_growth is not None:
+        if earnings_growth >= 0.12:
+            score += 8
+            notes.append("獲利成長偏強")
+        elif earnings_growth < 0:
+            score -= 6
+            notes.append("獲利轉弱")
+
+    if roe is not None:
+        if roe >= 0.15:
+            score += 5
+            notes.append("ROE 水準不錯")
+        elif roe < 0.06:
+            score -= 4
+            notes.append("ROE 偏弱")
+
+    if operating_margin is not None:
+        if operating_margin >= 0.20:
+            score += 4
+            notes.append("營業利益率佳")
+        elif operating_margin < 0.05:
+            score -= 4
+            notes.append("營益率偏低")
+
+    if recommendation_mean is not None:
+        if recommendation_mean <= 2.2:
+            score += 4
+            notes.append("分析師評級偏正向")
+        elif recommendation_mean >= 3.5:
+            score -= 4
+            notes.append("分析師評級偏保守")
+
+    if target_mean_price is not None and latest_close > 0:
+        upside = (target_mean_price / latest_close) - 1
+        if upside >= 0.10:
+            score += 4
+            notes.append("法人目標價仍有上行空間")
+        elif upside <= -0.03:
+            score -= 4
+            notes.append("法人目標價空間有限")
+
+    if forward_pe is not None:
+        if 0 < forward_pe <= 30:
+            score += 2
+        elif forward_pe >= 60:
+            score -= 4
+            notes.append("估值偏高")
+
+    score = _clamp_int(score)
+    summary = "、".join(notes[:3]) if notes else "基本面資料有限，先維持中性評估。"
+    return score, summary
+
+
+def build_signal_backtest(frame: pd.DataFrame, report: SignalReport, regime: MarketRegime) -> SignalBacktest:
+    enriched = frame.copy()
+    enriched["MA20"] = enriched["Close"].rolling(20).mean()
+    enriched["MA50"] = enriched["Close"].rolling(50).mean()
+    enriched["RSI14"] = compute_rsi(enriched["Close"], 14)
+    enriched["ATR_PCT"] = ((enriched["High"] - enriched["Low"]).rolling(14).mean() / enriched["Close"]) * 100
+    enriched["FWD_5D"] = enriched["Close"].shift(-5) / enriched["Close"] - 1
+    enriched["FWD_20D"] = enriched["Close"].shift(-20) / enriched["Close"] - 1
+    enriched["FWD_60D"] = enriched["Close"].shift(-60) / enriched["Close"] - 1
+
+    current_rsi = report.rsi14
+    current_above_ma20 = report.latest_close > report.ma20
+    current_above_ma50 = report.latest_close > report.ma50
+    current_return = report.expected_return_pct
+
+    mask = (
+        enriched["MA20"].notna()
+        & enriched["MA50"].notna()
+        & enriched["RSI14"].between(current_rsi - 6, current_rsi + 6)
+        & ((enriched["Close"] > enriched["MA20"]) == current_above_ma20)
+        & ((enriched["Close"] > enriched["MA50"]) == current_above_ma50)
+    )
+    matches = enriched.loc[mask].dropna(subset=["FWD_5D", "FWD_20D", "FWD_60D"])
+    if len(matches) < 20:
+        matches = enriched.dropna(subset=["FWD_5D", "FWD_20D", "FWD_60D"]).tail(260)
+
+    if matches.empty:
+        return SignalBacktest(
+            0,
+            50.0,
+            0.0,
+            50.0,
+            0.0,
+            50.0,
+            0.0,
+            0.0,
+            50.0,
+            35,
+            "可用樣本太少，這筆回測只能當輔助參考。",
+        )
+
+    avg_5d = float(matches["FWD_5D"].mean() * 100)
+    avg_20d = float(matches["FWD_20D"].mean() * 100)
+    avg_60d = float(matches["FWD_60D"].mean() * 100)
+    win_5d = float((matches["FWD_5D"] > 0).mean() * 100)
+    win_20d = float((matches["FWD_20D"] > 0).mean() * 100)
+    win_60d = float((matches["FWD_60D"] > 0).mean() * 100)
+    downside_rate_20d = float((matches["FWD_20D"] < 0).mean() * 100)
+    max_drawdown_20d = float(matches["FWD_20D"].min() * 100)
+
+    sample_penalty = 0 if len(matches) >= 45 else (45 - len(matches)) * 0.7
+    risk_penalty = max(0.0, abs(min(0.0, avg_20d)) * 4.0) + max(0.0, (downside_rate_20d - 45) * 0.7)
+    reward_bonus = max(0.0, avg_20d * 4.5) + max(0.0, (win_20d - 52) * 0.8)
+    expectation_penalty = 6 if current_return >= 20 and avg_20d < 1.5 else 0
+    confidence_score = _clamp_int(45 + reward_bonus - risk_penalty - sample_penalty - expectation_penalty)
+
+    if confidence_score >= 70 and avg_20d > 2 and win_20d >= 58:
+        note = "相似型態的後續表現不錯，這筆訊號的歷史可信度偏高。"
+    elif confidence_score <= 40 or avg_20d <= 0 or downside_rate_20d >= 50:
+        note = "相似型態的歷史表現不穩，這檔股票今天不適合太積極。"
+    elif regime.action == "全力偏多" and avg_20d > 1:
+        note = "目前市場環境有利於偏多操作，回測也沒有明顯拖後腿。"
+    else:
+        note = "回測結果中性偏正面，可以當成輔助，但仍要搭配今天的位置判斷。"
+
+    return SignalBacktest(
+        sample_size=int(len(matches)),
+        win_rate_5d=round(win_5d, 2),
+        avg_return_5d=round(avg_5d, 2),
+        win_rate_20d=round(win_20d, 2),
+        avg_return_20d=round(avg_20d, 2),
+        win_rate_60d=round(win_60d, 2),
+        avg_return_60d=round(avg_60d, 2),
+        max_drawdown_20d=round(max_drawdown_20d, 2),
+        downside_rate_20d=round(downside_rate_20d, 2),
+        confidence_score=confidence_score,
+        calibration_note=note,
+    )
+
+
+def decide_action_label(daily_score: int, regime: MarketRegime, backtest: SignalBacktest, bias: str, is_strong_value: bool = False) -> tuple[str, str, str]:
+    if regime.action == "全力偏多" and daily_score >= 80 and backtest.confidence_score >= 70:
+        return "全力買進", "非常高", "可提高部位"
+        
+    # Value investor allowance: if it is strong value, bypass bias == "偏空" restriction
+    is_bearish_blocked = (bias == "偏空" and not is_strong_value)
+    
+    if daily_score >= 68 and backtest.confidence_score >= 55 and not is_bearish_blocked:
+        return "分批買進", "高", "中等偏高部位"
+    if daily_score >= 55 and backtest.confidence_score >= 45 and not is_bearish_blocked:
+        return "小量試單", "中", "小部位"
+    if regime.action == "減碼 / 不追價" or daily_score < 45 or is_bearish_blocked:
+        return "觀望 / 減碼", "低", "低風險部位"
+    return "先觀察", "低", "等待更好位置"
+
+
+
+def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, str | None]:
+    sym = symbol.upper().split(".")[0].strip()
+    
+    # 8-Layer AI Chain mapping
+    layers = {
+        "NVDA": "🎮 計算核心 Compute Core",
+        "AMD": "🎮 計算核心 Compute Core",
+        "INTC": "🎮 計算核心 Compute Core",
+        "MU": "💾 儲存與記憶體 Memory & Storage",
+        "WDC": "💾 儲存與記憶體 Memory & Storage",
+        "STX": "💾 儲存與記憶體 Memory & Storage",
+        "COHR": "🌈 光通訊 Photonic / Optical",
+        "LITE": "🌈 光通訊 Photonic / Optical",
+        "ANET": "🌐 網路互聯 Networking",
+        "AVGO": "🌐 網路互聯 Networking",
+        "CSCO": "🌐 網路互聯 Networking",
+        "TSM": "🏭 半導體製造 Foundry & Equipment",
+        "2330": "🏭 半導體製造 Foundry & Equipment",
+        "ASML": "🏭 半導體製造 Foundry & Equipment",
+        "AMAT": "🏭 半導體製造 Foundry & Equipment",
+        "LRCX": "🏭 半導體製造 Foundry & Equipment",
+        "KLAC": "🏭 半導體製造 Foundry & Equipment",
+        "VRT": "⚡ 資料中心基礎設施 DC Infra",
+        "DELL": "⚡ 資料中心基礎設施 DC Infra",
+        "GE": "⚡ 資料中心基礎設施 DC Infra",
+        "VST": "⚡ 資料中心基礎設施 DC Infra",
+        "CEG": "⚡ 資料中心基礎設施 DC Infra",
+        "3017": "⚡ 資料中心基礎設施 DC Infra",
+        "2382": "⚡ 資料中心基礎設施 DC Infra",
+        "2317": "⚡ 資料中心基礎設施 DC Infra",
+        "ARM": "💡 IP & 軟體 IP & Software",
+        "SNPS": "💡 IP & 軟體 IP & Software",
+        "CDNS": "💡 IP & 軟體 IP & Software",
+        "PLTR": "💡 IP & 軟體 IP & Software",
+        "MSFT": "💡 IP & 軟體 IP & Software",
+        "RKLB": "🚀 太空 / 衛星 Space & Satellite",
+        "LMT": "🚀 太空 / 衛星 Space & Satellite",
+    }
+    
+    # 4 Bottlenecks mapping
+    bottlenecks = {
+        "NVDA": "CoWoS 封裝 🔥",
+        "TSM": "CoWoS 封裝 🔥 + 3nm/2nm 製程 🔥",
+        "2330": "CoWoS 封裝 🔥 + 3nm/2nm 製程 🔥",
+        "MU": "HBM 三巨頭 🔥",
+        "VRT": "資料中心電力 🔥",
+        "GE": "資料中心電力 🔥",
+        "VST": "資料中心電力 🔥",
+        "CEG": "資料中心電力 🔥",
+        "3017": "CoWoS 封裝 🔥"
+    }
+    
+    layer = layers.get(sym)
+    if not layer:
+        if symbol == "2330.TW" or symbol == "2330":
+            layer = "🏭 半導體製造 Foundry & Equipment"
+        elif symbol == "3017.TW" or symbol == "3017":
+            layer = "⚡ 資料中心基礎設施 DC Infra"
+        elif "Semiconductors" in sector or "Semiconductor" in sector:
+            layer = "🏭 半導體製造 Foundry & Equipment"
+        elif "Hardware" in sector or "Technology Hardware" in sector:
+            layer = "⚡ 資料中心基礎設施 DC Infra"
+        elif "Software" in sector:
+            layer = "💡 IP & 軟體 IP & Software"
+            
+    bottleneck = bottlenecks.get(sym)
+    if not bottleneck:
+        if symbol == "2330.TW":
+            bottleneck = "CoWoS 封裝 🔥 + 3nm/2nm 製程 🔥"
+        elif symbol == "3017.TW":
+            bottleneck = "CoWoS 封裝 🔥"
+            
+    return layer, bottleneck
+
+
+def calculate_novice_rating(daily_score: int, pe_ratio: float | None, bottleneck: str | None) -> str:
+    if daily_score >= 80:
+        if bottleneck or (pe_ratio is not None and pe_ratio <= 28):
+            return "🟢 強烈關注"
+        else:
+            return "🔵 關注"
+    elif daily_score >= 60:
+        if pe_ratio is not None and pe_ratio <= 22:
+            return "🟢 強烈關注"
+        else:
+            return "🔵 關注"
+    elif daily_score >= 45:
+        return "🟡 觀望"
+    else:
+        return "🔴 迴避"
+
+
+def enrich_candidate(
+    constituent: SP500Constituent,
+    frame: pd.DataFrame,
+    report: SignalReport,
+    regime: MarketRegime,
+    *,
+    fetch_external_data: bool,
+    use_ai_committee: bool,
+    committee_model: str,
+    sector_score: int = 50,
+    is_main_line: bool = False,
+    is_sector_leader: bool = False,
+    sector_boost: int = 0,
+    scan_type: str = "optimal",
+) -> SP500DailyPick:
+    # Nicholas Yang's AI Industry Chain & Bottleneck mappings mapped first
+    ai_chain_layer, critical_bottleneck = map_ai_chain_and_bottleneck(constituent.symbol, constituent.sector)
+
+    # 入選後改用「與個股分析完全相同」的完整報告（含 agent 信任權重、3/6/9/12 預測、長線虧損閘門）。
+    # 初篩傳入的 report 為 lightweight 版本，僅供排序，這裡重新做完整分析取代之。
+    try:
+        report = build_report(constituent.yf_symbol, frame, fetch_fundamentals=fetch_external_data)
+    except Exception:
+        pass  # 萬一完整分析失敗，沿用初篩的 lightweight 報告，避免整檔掉出名單
+
+    enriched_report = apply_committee_overlay(report, committee_model) if use_ai_committee else report
+
+    ticker = yf.Ticker(constituent.yf_symbol) if fetch_external_data else None
+    news_items: list[dict[str, Any]] = []
+    info: dict[str, Any] = {}
+    if ticker is not None:
+        try:
+            news_items = ticker.news or []
+        except Exception:
+            news_items = []
+        try:
+            info = ticker.info or {}
+        except Exception:
+            info = {}
+
+    if info:
+        # F-Score
+        roa = info.get("returnOnAssets")
+        cfo = info.get("operatingCashflow")
+        net_income = info.get("netIncomeToCommon")
+        debt_to_equity = info.get("debtToEquity")
+        current_ratio = info.get("currentRatio")
+        gross_margin = info.get("grossMargins")
+        roe = info.get("returnOnEquity")
+        rev_growth = info.get("revenueGrowth")
+
+        f_score = 0
+        if roa and roa > 0: f_score += 1
+        if cfo and cfo > 0: f_score += 1
+        if net_income and net_income > 0: f_score += 1
+        if cfo and net_income and cfo > net_income: f_score += 1
+        if debt_to_equity is not None and debt_to_equity < 150: f_score += 1
+        if current_ratio and current_ratio > 1.0: f_score += 1
+        if gross_margin and gross_margin > 0.20: f_score += 1
+        if roe and roe > 0: f_score += 1
+        if rev_growth and rev_growth > 0: f_score += 1
+        
+        enriched_report.fundamental_score = f_score
+
+        # Graham Number
+        eps = info.get("trailingEps")
+        bvps = info.get("bookValue")
+        if eps and bvps and eps > 0 and bvps > 0:
+            enriched_report.graham_number = round((22.5 * eps * bvps) ** 0.5, 2)
+            
+        # Re-run enforce_position_value and derive_today_plan with updated fundamental_score
+        try:
+            buy_zone = enriched_report.buy_zone
+            sell_zone = enriched_report.sell_zone
+            stop_loss = enriched_report.stop_loss
+            buy_strength = enriched_report.buy_strength
+            reason = enriched_report.reason
+            
+            from src.simple_signal import enforce_position_value, derive_today_plan
+            
+            buy_zone, sell_zone, stop_loss, buy_strength, reason = enforce_position_value(
+                buy_zone=buy_zone,
+                sell_zone=sell_zone,
+                stop_loss=stop_loss,
+                buy_strength=buy_strength,
+                reason=reason,
+                fundamental_score=f_score,
+                valuation_gap_pct=enriched_report.valuation_gap_pct,
+            )
+            
+            (
+                today_action,
+                today_entry_zone,
+                today_note,
+                today_exit_action,
+                today_exit_zone,
+                today_exit_note,
+                expected_return_pct,
+                reward_ratio,
+                holding_days_estimate,
+                holding_window,
+                kelly_position_pct,
+            ) = derive_today_plan(
+                latest_close=enriched_report.latest_close,
+                ma50=enriched_report.ma50,
+                atr14=enriched_report.atr14,
+                rsi14=enriched_report.rsi14,
+                bias=enriched_report.bias,
+                buy_strength=buy_strength,
+                buy_zone=buy_zone,
+                sell_zone=sell_zone,
+                stop_loss=stop_loss,
+                candlestick_pattern=enriched_report.candlestick_pattern,
+                fundamental_score=f_score,
+                valuation_gap_pct=enriched_report.valuation_gap_pct,
+            )
+            
+            # Update report fields
+            enriched_report.buy_zone = buy_zone
+            enriched_report.sell_zone = sell_zone
+            enriched_report.stop_loss = stop_loss
+            enriched_report.buy_strength = buy_strength
+            enriched_report.reason = reason
+            
+            enriched_report.today_action = today_action
+            enriched_report.today_entry_zone = today_entry_zone
+            enriched_report.today_note = today_note
+            enriched_report.today_exit_action = today_exit_action
+            enriched_report.today_exit_zone = today_exit_zone
+            enriched_report.today_exit_note = today_exit_note
+            enriched_report.expected_return_pct = expected_return_pct
+            enriched_report.risk_reward_ratio = reward_ratio
+            enriched_report.holding_days_estimate = holding_days_estimate
+            enriched_report.holding_window = holding_window
+            enriched_report.kelly_position_pct = kelly_position_pct
+        except Exception:
+            pass
+            
+        # Re-generate decision assistance advice
+        try:
+            enriched_report.decision_assistance = generate_decision_assistance(enriched_report)
+        except Exception:
+            pass
+
+    news_score, headline_summary, headline_count = score_news_items(news_items)
+    fundamental_score, fundamental_summary = score_fundamentals(info, enriched_report.latest_close)
+    technical_score = enriched_report.composite_score
+    backtest = build_signal_backtest(frame, enriched_report, regime)
+    backtest_score = backtest.confidence_score
+
+    # Evaluate 1-3 Month Explosive Breakout / Dark Horse Potential
+    is_dark_horse = (
+        (backtest.avg_return_20d >= 2.5 or backtest.avg_return_60d >= 6.0)
+        and (backtest.win_rate_20d >= 56.0 or backtest.win_rate_60d >= 58.0)
+        and (enriched_report.bb_width < 0.12 or enriched_report.composite_score >= 70)
+        and enriched_report.bias != "偏空"
+    )
+    dark_horse_boost = 6 if is_dark_horse else 0
+
+    # Lagging Value calculation
+    value_boost = 0
+    value_notes = []
+    if scan_type == "lagging_value":
+        # 1. Nicholas's AI Chain Boost (+12 points)
+        if ai_chain_layer is not None:
+            value_boost += 12
+            value_notes.append(f"AI產業鏈: {ai_chain_layer}")
+            
+        # 2. Nicholas's Bottleneck 🔥 Boost (+20 points)
+        if critical_bottleneck is not None:
+            value_boost += 20
+            value_notes.append(f"卡脖子瓶頸: {critical_bottleneck}")
+
+        # 3. Minnie's F-Score Boost
+        f_score = enriched_report.fundamental_score
+        if f_score >= 7:
+            value_boost += 15
+            value_notes.append(f"財務極強健(F-Score: {f_score}/9)")
+        elif f_score >= 5:
+            value_boost += 8
+            value_notes.append(f"財務平穩(F-Score: {f_score}/9)")
+        elif 1 <= f_score <= 3:
+            value_boost -= 12
+            value_notes.append(f"防護價值陷阱(F-Score僅 {f_score}/9)")
+
+        # 4. Minnie's Graham Safety Margin Boost
+        if enriched_report.graham_number and enriched_report.graham_number > 0:
+            close = enriched_report.latest_close
+            discount = (enriched_report.graham_number / close) - 1
+            if close < enriched_report.graham_number:
+                value_boost += 20
+                value_notes.append(f"低於葛拉漢價(折價 {discount*100:.1f}%)")
+            elif close < enriched_report.graham_number * 1.25:
+                value_boost += 10
+                value_notes.append(f"貼近葛拉漢價(溢價 {abs(discount)*100:.1f}%)")
+            else:
+                value_boost -= 5
+
+        # 5. Low P/E Valuation Boost
+        forward_pe = _safe_float(info.get("forwardPE")) if info else None
+        if forward_pe is not None:
+            if 0 < forward_pe <= 18:
+                value_boost += 12
+                value_notes.append(f"低前瞻本益比({forward_pe:.1f}倍)")
+            elif 18 < forward_pe <= 28:
+                value_boost += 5
+            elif forward_pe > 40:
+                value_boost -= 15
+                value_notes.append(f"估值偏高(本益比 {forward_pe:.1f}倍)")
+
+        # 6. Technical Pullback & Oversold Boost
+        rsi = enriched_report.rsi14
+        if rsi < 42:
+            value_boost += 10
+            value_notes.append(f"技術超跌(RSI: {rsi:.1f})")
+        elif rsi <= 50:
+            value_boost += 5
+            value_notes.append(f"回檔整理中(RSI: {rsi:.1f})")
+        elif rsi > 60:
+            value_boost -= 12
+            value_notes.append(f"短線已高(RSI: {rsi:.1f})")
+
+    if scan_type == "lagging_value":
+        daily_score = _clamp_int(
+            technical_score * 0.22
+            + news_score * 0.10
+            + fundamental_score * 0.36
+            + regime.regime_score * 0.08
+            + backtest_score * 0.24
+        )
+        daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + value_boost)
+    else:
+        daily_score = _clamp_int(
+            technical_score * 0.42
+            + news_score * 0.12
+            + fundamental_score * 0.16
+            + regime.regime_score * 0.08
+            + backtest_score * 0.22
+        )
+        daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost)
+
+    f_score = enriched_report.fundamental_score
+    val_gap = enriched_report.valuation_gap_pct
+    is_strong_value = (f_score >= 5 and val_gap is not None and val_gap >= 10.0)
+    action_label, buy_urgency, position_sizing = decide_action_label(
+        daily_score=daily_score,
+        regime=regime,
+        backtest=backtest,
+        bias=enriched_report.bias,
+        is_strong_value=is_strong_value
+    )
+
+    # 長線虧損閘門：即使長抱仍可能虧損的股票，一律不建議買進。
+    long_term_risk = enriched_report.long_term_risk
+    long_term_block_note = ""
+    if long_term_risk and long_term_risk.get("blocked"):
+        action_label = "長線恐虧損 不建議買進"
+        buy_urgency = "迴避"
+        position_sizing = "不建議建倉"
+        daily_score = min(daily_score, 40)
+        long_term_block_note = f"🔴【長線虧損風險】{long_term_risk.get('note', '')}"
+
+    sector_note = ""
+    if is_main_line:
+        if is_sector_leader:
+            sector_note = f"該股隸屬當前熱門主力板塊【{constituent.sector}】（板塊動能高達 {sector_score} 分）且為板塊強勢龍頭，獲得評定加權 +9 分。"
+        else:
+            sector_note = f"該股屬於今日主力市場主線板塊【{constituent.sector}】（板塊動能 {sector_score} 分），獲得主線加成 +6 分。"
+    elif sector_boost < 0:
+        sector_note = f"該股所處板塊【{constituent.sector}】近期資金動能疲弱，評級扣減 {abs(sector_boost)} 分。"
+
+    dark_horse_note = ""
+    if is_dark_horse:
+        dark_horse_note = f"🔥 偵測到【中線 1-3 個月爆發黑馬相】：布林通道緊縮且 1-3 個月中線歷史回測勝率高達 {backtest.win_rate_20d}% / 預期漲幅達 {backtest.avg_return_20d}%，具備極強中線飆股潛力，獲得黑馬加分 +6 分。"
+
+    lagging_value_note = ""
+    if scan_type == "lagging_value":
+        note_parts = []
+        if value_notes:
+            note_parts.append("、".join(value_notes))
+        if backtest.win_rate_20d > 0:
+            note_parts.append(f"歷史波段勝率 {backtest.win_rate_20d:.1f}%/平均報酬 {backtest.avg_return_20d:.2f}%")
+        
+        lagging_value_note = f"💎【真正落後價值股推薦】：{ '；'.join(note_parts) }。該股目前技術面拉回超跌、估值安全邊際高，具備強大中線補漲動能。"
+
+    # Nicholas Yang's AI Industry Chain & Bottleneck mappings (already mapped at top)
+    
+    # Calculate Novice Rating
+    forward_pe = _safe_float(info.get("forwardPE")) if info else None
+    novice_rating = calculate_novice_rating(daily_score, forward_pe, critical_bottleneck)
+    if long_term_risk and long_term_risk.get("blocked"):
+        novice_rating = "🔴 迴避"
+
+    reason_parts = [long_term_block_note, lagging_value_note, dark_horse_note, sector_note, enriched_report.reason, headline_summary, fundamental_summary, backtest.calibration_note]
+    reason = " ".join(part for part in reason_parts if part)
+
+    return SP500DailyPick(
+        symbol=constituent.symbol,
+        company_name=constituent.company_name,
+        sector=constituent.sector,
+        latest_close=enriched_report.latest_close,
+        bias=enriched_report.bias,
+        reason=reason,
+        rule_score=enriched_report.rule_score,
+        ai_score=enriched_report.ai_score,
+        composite_score=enriched_report.composite_score,
+        technical_score=technical_score,
+        news_score=news_score,
+        fundamental_score=fundamental_score,
+        regime_score=regime.regime_score,
+        backtest_score=backtest_score,
+        daily_score=daily_score,
+        buy_strength=enriched_report.buy_strength,
+        action_label=action_label,
+        buy_urgency=buy_urgency,
+        position_sizing=position_sizing,
+        today_action=enriched_report.today_action,
+        today_entry_zone=enriched_report.today_entry_zone,
+        today_note=enriched_report.today_note,
+        today_exit_action=enriched_report.today_exit_action,
+        today_exit_zone=enriched_report.today_exit_zone,
+        today_exit_note=enriched_report.today_exit_note,
+        expected_return_pct=enriched_report.expected_return_pct,
+        risk_reward_ratio=enriched_report.risk_reward_ratio,
+        holding_days_estimate=enriched_report.holding_days_estimate,
+        holding_window=enriched_report.holding_window,
+        buy_zone=enriched_report.buy_zone,
+        sell_zone=enriched_report.sell_zone,
+        stop_loss=enriched_report.stop_loss,
+        committee_summary=enriched_report.committee_summary,
+        committee_model=enriched_report.committee_model,
+        ai_enabled=enriched_report.ai_enabled,
+        ai_available=enriched_report.ai_available,
+        ai_error=enriched_report.ai_error,
+        chart=enriched_report.chart,
+        agents=enriched_report.agents,
+        horizons=enriched_report.horizons,
+        headline_count=headline_count,
+        headline_summary=headline_summary,
+        backtest=asdict(backtest),
+        sector_score=sector_score,
+        is_main_line=is_main_line,
+        is_sector_leader=is_sector_leader,
+        sector_boost=sector_boost,
+        is_dark_horse=is_dark_horse,
+        dark_horse_boost=dark_horse_boost,
+        ai_chain_layer=ai_chain_layer,
+        critical_bottleneck=critical_bottleneck,
+        novice_rating=novice_rating,
+        investingpro_fair_value=enriched_report.investingpro_fair_value,
+        valuation_gap_pct=enriched_report.valuation_gap_pct,
+        analyst_target_price=enriched_report.analyst_target_price,
+        warren_ai_momentum=enriched_report.warren_ai_momentum,
+        investingpro_models=enriched_report.investingpro_models,
+        cognitive_temperature_gap=enriched_report.cognitive_temperature_gap,
+        geopolitical_timing_advice=enriched_report.geopolitical_timing_advice,
+        value_trap_risk=enriched_report.value_trap_risk,
+        price_forecast=enriched_report.price_forecast,
+        long_term_risk=enriched_report.long_term_risk,
+    )
+
+
+
+def get_sp500_daily_top_picks(
+    *,
+    period: str = "3y",
+    limit: int = 50,
+    prefilter_limit: int = FAST_SHORTLIST_LIMIT,
+    use_ai_committee: bool = False,
+    committee_model: str = "gemma4:e4b",
+    market: str = "us",
+    scan_type: str = "optimal",
+) -> dict[str, Any]:
+    key = _cache_key(period, limit, use_ai_committee, committee_model, scan_type=scan_type) + f":{market}"
+    now = datetime.now()
+    cached = _SCAN_CACHE.get(key)
+    if cached and now - cached[0] <= timedelta(minutes=CACHE_TTL_MINUTES):
+        return cached[1]
+
+    if market == "tw":
+        constituents = fetch_taiwan_constituents()
+    else:
+        constituents = fetch_sp500_constituents()
+        
+    regime = compute_market_regime(market_hint=market)
+    constituent_map = {item.yf_symbol: item for item in constituents}
+    price_map = download_sp500_price_map([item.yf_symbol for item in constituents], period)
+
+    # 初篩：用 lightweight 報告快速排序整個宇宙（跳過個股回測/預測/估值抓取），並行加速。
+    def _prefilter_one(yf_symbol: str, frame: pd.DataFrame):
+        if len(frame) < 120:
+            return None
+        constituent = constituent_map.get(yf_symbol)
+        if constituent is None:
+            return None
+        try:
+            report = build_report(yf_symbol, frame, fetch_fundamentals=False, lightweight=True)
+        except Exception:
+            return None
+        return (constituent, frame, report)
+
+    candidates: list[tuple[SP500Constituent, pd.DataFrame, SignalReport]] = []
+    with ThreadPoolExecutor(max_workers=12) as prefilter_executor:
+        prefilter_futures = [
+            prefilter_executor.submit(_prefilter_one, yf_symbol, frame)
+            for yf_symbol, frame in price_map.items()
+        ]
+        for future in as_completed(prefilter_futures):
+            try:
+                result = future.result()
+            except Exception:
+                result = None
+            if result is not None:
+                candidates.append(result)
+
+    if not candidates:
+        raise ValueError("S&P 500 掃描沒有產生任何候選股票。")
+
+    # --- Start Sector Analysis ---
+    sectors_map: dict[str, list[tuple[SP500Constituent, pd.DataFrame, SignalReport]]] = {}
+    for item in candidates:
+        sec = item[0].sector or ("其他" if market == "tw" else "Other")
+        sectors_map.setdefault(sec, []).append(item)
+
+    sectors_metrics: list[dict[str, Any]] = []
+    for sec, members in sectors_map.items():
+        avg_composite = sum(item[2].composite_score for item in members) / len(members)
+        pct_above_ma20 = (sum(1 for item in members if item[2].latest_close > item[2].ma20) / len(members)) * 100
+        sector_score = _clamp_int(avg_composite * 0.6 + pct_above_ma20 * 0.4)
+        
+        tot_ret_5d = 0.0
+        for item in members:
+            fr = item[1]
+            if len(fr) >= 6:
+                ret = (fr["Close"].iloc[-1] / fr["Close"].iloc[-6] - 1) * 100
+                tot_ret_5d += ret
+        avg_ret_5d = round(tot_ret_5d / len(members), 2)
+        
+        sorted_members = sorted(members, key=lambda x: x[2].composite_score, reverse=True)
+        top_member_symbols = [x[0].symbol for x in sorted_members[:3]]
+        
+        if market == "tw":
+            role_dict = {
+                "半導體業": "AI 晶片與晶圓代工核心，全球科技主線標竿",
+                "電腦及週邊設備業": "AI 伺服器與電子代工，高成長動能主線",
+                "通信網路業": "大數據與光通訊題材，網通高成長波動主線",
+                "電子零組件業": "散熱與PCB關鍵零組件，受惠AI硬體升級",
+                "金融保險業": "息差與資產重組受惠，大盤穩健權值防禦板塊",
+                "電機機械業": "重電工程與綠能電網政策題材，高Beta題材主線",
+                "航運業": "全球航運運價與貿易景氣循環，高波動動能板塊",
+                "光電業": "光學感測與面板觸控題材，消費景氣復甦板塊",
+                "塑膠工業": "傳統石化原料景氣，穩健權值防禦大盤股",
+                "鋼鐵工業": "基礎建設原物料需求，傳統產業價值股",
+            }
+        else:
+            role_dict = {
+                "Information Technology": "AI 晶片、軟體與雲端技術，市場核心多頭主線",
+                "Communication Services": "大科技平台與高流量傳播，高成長動能主線",
+                "Consumer Discretionary": "消費景氣與電動車題材，高 Beta 彈性板塊",
+                "Financials": "利率政策與資產業績，權值穩健防禦大盤板塊",
+                "Health Care": "剛性醫療與生技創新，中長線抗衰退防禦板塊",
+                "Energy": "石油與天然氣探勘，受惠高通膨與油價避險板塊",
+                "Consumer Staples": "抗通膨剛性日用品，高配息低波動防禦板塊",
+                "Industrials": "國防航太與重型工業製造，景氣穩健成長板塊",
+                "Materials": "基礎原物料與化學品，受惠全球基建與通膨板塊",
+            }
+        market_role = role_dict.get(sec, "穩健價值與大盤結構板塊")
+        
+        sectors_metrics.append({
+            "name": sec,
+            "score": sector_score,
+            "avg_return_5d": avg_ret_5d,
+            "member_count": len(members),
+            "top_members": top_member_symbols,
+            "market_role": market_role,
+            "members_symbols": set(x[0].symbol for x in members),
+            "leaders": set(x[0].symbol for x in sorted_members[:2])
+        })
+    
+    sectors_metrics.sort(key=lambda x: x["score"], reverse=True)
+    
+    top_3_sectors = set(x["name"] for x in sectors_metrics[:3])
+    bottom_2_sectors = set()
+    if len(sectors_metrics) >= 5:
+        bottom_2_sectors = set(x["name"] for x in sectors_metrics[-2:])
+    elif len(sectors_metrics) > 3:
+        bottom_2_sectors = set(x["name"] for x in sectors_metrics[3:])
+        
+    symbol_to_sector_data: dict[str, dict[str, Any]] = {}
+    for sec_data in sectors_metrics:
+        is_main_line = sec_data["name"] in top_3_sectors
+        is_weak = sec_data["name"] in bottom_2_sectors
+        for sym in sec_data["members_symbols"]:
+            is_leader = sym in sec_data["leaders"]
+            boost = 6 if is_main_line else (-3 if is_weak else 0)
+            if is_main_line and is_leader:
+                boost += 3
+            symbol_to_sector_data[sym] = {
+                "sector_score": sec_data["score"],
+                "is_main_line": is_main_line,
+                "is_sector_leader": is_leader,
+                "sector_boost": boost
+            }
+    # --- End Sector Analysis ---
+
+    if scan_type == "lagging_value":
+        def calculate_pre_lagging_score(item, sector_boost: int) -> float:
+            constituent, frame, report = item
+            rsi = report.rsi14
+            close = report.latest_close
+            ma20 = report.ma20
+            ma50 = report.ma50
+            support = report.support
+            
+            # Base technical composite score with lower weight
+            score = report.composite_score * 0.3 + sector_boost * 0.3
+            
+            # 1. InvestingPro Valuation Gap bonus (High Weight!)
+            gap = report.valuation_gap_pct
+            if gap is not None:
+                if gap > 20:
+                    score += 50
+                elif gap > 10:
+                    score += 25
+                elif gap < -5:
+                    score -= 20
+            
+            # 2. RSI pullback bonus
+            if 30 <= rsi <= 48:
+                score += 35
+            elif 48 < rsi <= 55:
+                score += 15
+            elif rsi < 30:
+                score += 25
+            else:
+                score -= 20
+                
+            # 3. Pullback below MA20 bonus
+            if close < ma20:
+                score += 15
+                
+            # 4. Must be supported (not fully broken down)
+            if close >= ma50 * 0.96:
+                score += 15
+            else:
+                score -= 10
+                
+            # 5. Near support level bonus
+            if support > 0:
+                dist_to_support = (close / support) - 1
+                if 0 <= dist_to_support <= 0.05:
+                    score += 15
+                    
+            return score
+
+        candidates.sort(
+            key=lambda item: calculate_pre_lagging_score(
+                item,
+                symbol_to_sector_data.get(item[0].symbol, {}).get("sector_boost", 0)
+            ),
+            reverse=True,
+        )
+    else:
+        candidates.sort(
+            key=lambda item: (
+                item[2].composite_score + symbol_to_sector_data.get(item[0].symbol, {}).get("sector_boost", 0),
+                item[2].expected_return_pct,
+                item[2].risk_reward_ratio,
+            ),
+            reverse=True,
+        )
+
+    shortlist_size = min(len(candidates), max(limit, min(prefilter_limit, FAST_SHORTLIST_LIMIT)))
+    shortlisted = candidates[:shortlist_size]
+    external_enrich_limit = min(len(shortlisted), max(min(limit, FAST_EXTERNAL_ENRICH_LIMIT), 16))
+    ai_enrich_limit = min(external_enrich_limit, FAST_AI_ENRICH_LIMIT if use_ai_committee else 0)
+
+    picks: list[SP500DailyPick] = []
+    with ThreadPoolExecutor(max_workers=8 if use_ai_committee else 12) as executor:
+        futures = {
+            executor.submit(
+                enrich_candidate,
+                constituent,
+                frame,
+                report,
+                regime,
+                fetch_external_data=index < external_enrich_limit,
+                use_ai_committee=use_ai_committee and index < ai_enrich_limit,
+                committee_model=committee_model,
+                sector_score=symbol_to_sector_data.get(constituent.symbol, {}).get("sector_score", 50),
+                is_main_line=symbol_to_sector_data.get(constituent.symbol, {}).get("is_main_line", False),
+                is_sector_leader=symbol_to_sector_data.get(constituent.symbol, {}).get("is_sector_leader", False),
+                sector_boost=symbol_to_sector_data.get(constituent.symbol, {}).get("sector_boost", 0),
+                scan_type=scan_type,
+            ): constituent.symbol
+            for index, (constituent, frame, report) in enumerate(shortlisted)
+        }
+        for future in as_completed(futures):
+            try:
+                picks.append(future.result())
+            except Exception:
+                continue
+
+    def buy_priority(item: SP500DailyPick) -> tuple[int, int]:
+        if item.today_action == "今天可買":
+            return (5, item.daily_score)
+        if item.today_action == "今天可小量買":
+            return (4, item.daily_score)
+        if item.today_action in {"今天等回檔", "今天不要買"}:
+            return (3, item.daily_score)
+        if item.today_exit_action == "今天可小量賣":
+            return (2, item.daily_score)
+        if item.today_exit_action == "今天賣出":
+            return (1, item.daily_score)
+        return (0, item.daily_score)
+
+    if scan_type == "lagging_value":
+        picks.sort(
+            key=lambda item: (
+                item.daily_score,
+                item.backtest_score,
+                item.technical_score,
+                item.fundamental_score,
+                item.news_score,
+            ),
+            reverse=True,
+        )
+        ordered_picks = picks
+    else:
+        picks.sort(
+            key=lambda item: (
+                buy_priority(item)[0],
+                buy_priority(item)[1],
+                item.backtest_score,
+                item.technical_score,
+                item.fundamental_score,
+                item.news_score,
+            ),
+            reverse=True,
+        )
+        buy_first = [item for item in picks if item.today_action in {"今天可買", "今天可小量買"}]
+        non_buy = [item for item in picks if item.today_action not in {"今天可買", "今天可小量買"}]
+        ordered_picks = buy_first + non_buy
+
+    # Prepare serialized sectors list (clean up raw set objects)
+    serialized_sectors = []
+    for s in sectors_metrics:
+        serialized_sectors.append({
+            "name": s["name"],
+            "score": s["score"],
+            "is_main_line": s["name"] in top_3_sectors,
+            "avg_return_5d": s["avg_return_5d"],
+            "member_count": s["member_count"],
+            "top_members": s["top_members"],
+            "market_role": s["market_role"]
+        })
+
+    payload = {
+        "market_regime": asdict(regime),
+        "picks": [asdict(pick) for pick in ordered_picks[:limit]],
+        "sectors": serialized_sectors,
+        "generated_at": now.isoformat(),
+    }
+    _SCAN_CACHE[key] = (now, payload)
+    return payload

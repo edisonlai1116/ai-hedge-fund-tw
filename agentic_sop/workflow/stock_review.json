@@ -1,0 +1,27 @@
+{
+  "name": "stock-position-review",
+  "description": "股票持股檢視 SOP：holdings(解析成本檔) → position_review(DRAFT 檢視表)。需即時資料的欄位一律標 【待補】，不臆造。預設輸入為範例檔；實跑請 --input ../股票成本.txt。",
+  "input_default": "example/inputs/sample_holdings.txt",
+  "steps": [
+    {
+      "skill": "holdings",
+      "tool": "skills/holdings/tool.py",
+      "in": "$INPUT",
+      "out": "$RUN/a.positions.json",
+      "gate": {"type": "schema_gate", "args": {"required": ["positions", "position_count", "total_cost_value"]}}
+    },
+    {
+      "skill": "verify_count",
+      "tool": "skills/holdings/tool.py",
+      "in": "$INPUT",
+      "out": "$RUN/a2.positions.json",
+      "gate": {"type": "recompute_gate", "args": {"over": "positions", "op": "count", "equals": "position_count"}}
+    },
+    {
+      "skill": "position_review",
+      "tool": "skills/position_review/tool.py",
+      "in": "$RUN/a.positions.json",
+      "out": "$RUN/position_review.md"
+    }
+  ]
+}
