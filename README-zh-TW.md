@@ -148,6 +148,22 @@ cd app
 
 這個簡化版使用 Yahoo Finance 公開行情資料與技術指標，完全不需要 `.env`。
 
+### 用免費本地模型（Ollama）跑 AI 委員會（你原本的功能）
+
+查個股時可疊加「AI 委員會」評分，**用免費的本地模型（Ollama），不需要任何 API key／不花錢**。
+這部分原封不動保留，啟用方式：
+
+1. 安裝 [Ollama](https://ollama.com)，啟動後預設在 `http://localhost:11434`。
+2. 下載一個模型，例如：`ollama pull gemma2`（或 `llama3.1`、`qwen2.5` 等你有的模型）。
+3. 啟用：
+   - CLI：`\.run-simple-signal.ps1 -Ticker 2330 -Market tw -UseAiCommittee -CommitteeModel gemma2`
+   - 或直接：`poetry run python src/simple_signal.py --ticker 2330 --market tw --use-ai-committee --committee-model gemma2`
+   - Web（`run-simple-web.ps1`）：查詢介面上把「AI 委員會」開關打開。
+
+> 注意：**本地模型只能在跑 Ollama 的機器上用（＝你的電腦）**。免費的雲端（Render）跑不動 Ollama，
+> 所以雲端版維持免-Key 規則型分析；要在雲端也用模型需付費的遠端模型。
+> 程式預設模型字串是 `gemma4:e4b`，若你沒有該模型，請用 `-CommitteeModel` 指定你已 `ollama pull` 的模型。
+
 ## 免 Key 前端介面
 
 我另外做了一個可直接操作的前端頁面。

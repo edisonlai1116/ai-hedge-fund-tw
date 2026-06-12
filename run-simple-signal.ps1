@@ -1,10 +1,14 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [string]$Ticker,
 
     [string]$Market,
 
-    [string]$Period = "6mo"
+    [string]$Period = "6mo",
+
+    # 啟用本地 Ollama AI 委員會（需先安裝 Ollama 並下載模型）
+    [switch]$UseAiCommittee,
+    [string]$CommitteeModel = "gemma4:e4b"
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,6 +31,12 @@ $arguments = @(
 
 if ($Market) {
     $arguments += @("--market", $Market)
+}
+
+if ($UseAiCommittee) {
+    $arguments += "--use-ai-committee"
+    $arguments += @("--committee-model", $CommitteeModel)
+    Write-Host "AI 委員會：開啟（本地 Ollama 模型 $CommitteeModel）" -ForegroundColor Yellow
 }
 
 Write-Host "Running simple signal scan for: $Ticker" -ForegroundColor Cyan
