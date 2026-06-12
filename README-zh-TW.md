@@ -243,3 +243,37 @@ $env:PYTHONUTF8=1; python -m src.pipeline.daily_report
 除了股癌，另有 **`macro_news_sentiment`**（總經/地緣輿情）：追蹤川普關稅、戰爭衝突、Fed 利率等
 影響大盤的新聞（免 Key 關鍵字情緒），產生市場級多空偏向，已註冊進 `ANALYST_CONFIG`，在完整多師
 分析時也會納入。新聞模組為 `src/sentiment/news_feed.py`。
+
+## 把「查個股」互動網頁部署到雲端（Render，免 Key、免費）
+
+GitHub Pages 是靜態網頁，只能顯示每日預算好的清單，**不能讓你在網頁上隨打一檔就查**。要把你原本
+「輸入台股/美股個股 → 進出點、買賣建議、規則型 agent 意見」的互動功能放到網路上、不用開 CMD，
+就把它部署到一個會「一直開著」的免費後端主機。
+
+已備好的檔案：
+- `app/backend/web_app.py`：精簡免-Key 後端（只含 `simple-signals` / `sentiment` 路由 + 服務前端，
+  **不含 langchain 大師委員會**，所以小又快），並內建每 2 小時自動掃股癌 RSS 寫入 DB。
+- `Dockerfile.web` + `Dockerfile.web.dockerignore`：多階段建置（Node 建前端 → Python 跑後端）。
+- `render.yaml`：Render 藍圖，連到 repo 後一鍵建立服務。
+
+### 部署步驟（Render）
+1. 先把 repo 推上 GitHub（公開）。
+2. 到 https://render.com 用 GitHub 登入。
+3. 右上 **New +** → **Blueprint** → 選 `ai-hedge-fund-tw` repo → Render 會讀 `render.yaml` → **Apply**。
+4. 等第一次建置（約 5–10 分鐘）。完成後會給你一個網址，例如 `https://ai-hedge-fund-tw.onrender.com`。
+5. 開那個網址 → 輸入 `2330` 或 `NVDA` 就能查進出點與買賣建議。
+
+> 免費方案閒置約 15 分鐘會休眠，休眠後第一次開要等約 30–60 秒喚醒，屬正常。
+> 完整大師 LLM 委員會（巴菲特等）需要 API key，不在此免-Key 服務內；要用請在本機跑
+> `run-analysis.ps1`（見上面「常用 analyst 名稱」）。
+
+### 本機先驗證（選用，需先 `poetry install` 與 build 前端）
+```powershell
+# 後端（精簡免 Key）
+$env:PYTHONUTF8=1; poetry run uvicorn app.backend.web_app:app --port 8000
+```
+（或直接用既有的 `run-simple-web.ps1`，功能相同。）
+
+### 兩個網址各司其職
+- **Render**（互動）：隨打一檔台股/美股 → 進出點、買賣、規則型 agent 意見、股癌輿情。
+- **GitHub Pages**（每日總覽）：每天自動算好的「最該買」排序與歷史走勢。

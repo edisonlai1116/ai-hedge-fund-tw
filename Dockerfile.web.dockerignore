@@ -1,0 +1,19 @@
+# 給 Dockerfile.web 用的建置忽略清單（BuildKit 會優先讀 <Dockerfile>.dockerignore）。
+# 重點：排除本機 node_modules（Windows 版原生套件，會蓋掉容器內 Linux 版而壞掉）。
+.git
+.gitignore
+**/__pycache__
+*.py[cod]
+.env
+.venv
+**/node_modules
+app/frontend/dist
+.local
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+agentic_sop/runs
+docs/data/history
+tests
+scratch

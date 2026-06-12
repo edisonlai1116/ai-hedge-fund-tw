@@ -1,0 +1,13 @@
+# Render Blueprint：一個免費的 Docker Web 服務，跑免-Key 全棧（前端 + 查個股/股癌 後端）。
+# 用法：在 Render 連到這個 GitHub repo，選 "New +" → "Blueprint"，它會讀這個檔自動建立服務。
+services:
+  - type: web
+    name: ai-hedge-fund-tw
+    runtime: docker
+    dockerfilePath: ./Dockerfile.web
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUTF8
+        value: "1"

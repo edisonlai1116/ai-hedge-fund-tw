@@ -1,0 +1,34 @@
+# 免 Key Web 服務的多階段建置（給 Render 等免費雲端用）。
+# 階段一：用 Node 建前端 → dist。階段二：Python 跑精簡後端並服務 dist。
+
+# ---- 階段一：建前端 ----
+FROM node:20-slim AS frontend
+WORKDIR /fe
+COPY app/frontend/package*.json ./
+RUN npm ci
+COPY app/frontend/ ./
+# 空字串 → 前端 API 走「同源相對路徑」（與後端同一網域，免 CORS）
+ENV VITE_API_URL=""
+RUN npm run build
+
+# ---- 階段二：Python 執行環境 ----
+FROM python:3.11-slim AS app
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONUTF8=1 \
+    PYTHONPATH=/app
+WORKDIR /app
+
+# 只裝免-Key 服務需要的套件（不含 langchain，映像小、啟動快）
+RUN pip install --no-cache-dir \
+    "fastapi" "uvicorn[standard]" "pydantic>=2" "sqlalchemy>=2" \
+    yfinance feedparser requests pandas numpy beautifulsoup4 lxml python-multipart
+
+# 後端與分析引擎原始碼
+COPY src/ /app/src/
+COPY app/backend/ /app/app/backend/
+# 前端 build 產物（web_app 會從 app/frontend/dist 服務）
+COPY --from=frontend /fe/dist /app/app/frontend/dist
+
+EXPOSE 8000
+# Render 會提供 $PORT；本機預設 8000
+CMD ["sh", "-c", "uvicorn app.backend.web_app:app --host 0.0.0.0 --port ${PORT:-8000}"]
