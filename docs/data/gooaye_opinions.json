@@ -1,0 +1,59 @@
+{
+  "last_episode_id": "f208d558-a3a0-4812-a19a-777c69ac31bf",
+  "opinions": [
+    {
+      "target_ticker": "3017.TW",
+      "source_name": "Gooaye",
+      "analyst_name": "謝孟恭 (股癌)",
+      "sentiment_label": "Mild_Bullish",
+      "sentiment_score": 68,
+      "core_logic": "散熱大廠前陣子股價衝高後短線回檔，但 AI 伺服器長線成長趨勢未變，拉回均線附近是良性修正，適合分批試單。",
+      "original_quote": "散熱大廠前陣子股價衝高後短線回檔，但 AI 伺服器長線成長趨勢未變，拉回均線附近是良性修正，適合分批試單。"
+    },
+    {
+      "target_ticker": "2330.TW",
+      "source_name": "Gooaye",
+      "analyst_name": "謝孟恭 (股癌)",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 85,
+      "core_logic": "先進製程與 CoWoS 封裝產能極度供不應求，基本面無懈可擊，在大盤回檔時具備最高安全邊際，為資金避風港。",
+      "original_quote": "先進製程與 CoWoS 封裝產能極度供不應求，基本面無懈可擊，在大盤回檔時具備最高安全邊際，為資金避風港。"
+    },
+    {
+      "target_ticker": "5876.TW",
+      "source_name": "Gooaye",
+      "analyst_name": "謝孟恭 (股癌)",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 90,
+      "core_logic": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。",
+      "original_quote": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。"
+    },
+    {
+      "target_ticker": "MU",
+      "source_name": "Custom Ingestion Source",
+      "analyst_name": "工程師投資 (Engineer Alpha)",
+      "sentiment_label": "Strongly Bullish",
+      "sentiment_score": 92,
+      "core_logic": "【自定義輿情】普通人慢慢變富的最佳路徑是尋求高確定性的複利資產。美光 (MU) 作為 AI 基礎設施的龍頭之一，其 HBM3e 具備強大技術壁壘，目前股價拉回超跌，具備極高的安全邊際，是紀律性持續買入的極佳標的。",
+      "original_quote": "普通人慢慢变富的核心，在于在好公司被低估、技术面拉回超跌时，保持纪律性地持续买进。"
+    },
+    {
+      "target_ticker": "MU",
+      "source_name": "Custom Ingestion Source",
+      "analyst_name": "Minnie (米妮)",
+      "sentiment_label": "Strongly Bullish",
+      "sentiment_score": 95,
+      "core_logic": "【自定義輿情】美光受惠於 HBM3e (高頻寬記憶體) 的製程領先與產能滿載，第二季起隨 Blackwell B200 出貨訂單動能爆增。市場將其評為傳統週期股實屬低估，應重估為與 Nvidia/Apple 同屬的 AI 高增長主線，拉回即是極佳切入點。",
+      "original_quote": "Micron is no longer just a cyclical stock. With HBM3e co-designed with Nvidia, it is a structural AI growth leader."
+    },
+    {
+      "target_ticker": "2330",
+      "source_name": "Custom Ingestion Source",
+      "analyst_name": "老李",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 82,
+      "core_logic": "【自定義輿情】【自定義分析】個股 2330 具有健康的量價結構與外部機構評級支持，長線具備補漲潛力與抗震盪屬性。",
+      "original_quote": "我們建議在目前的合理價值區間關注 2330，其基本面依然穩固。"
+    }
+  ]
+}

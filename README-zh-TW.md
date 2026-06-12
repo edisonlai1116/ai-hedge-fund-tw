@@ -210,3 +210,35 @@ cd C:\Users\User\Desktop\codex\ai-hedge-fund-main
 
 詳見 `agentic_sop/INTEGRATION-zh-TW.md` 與 `agentic_sop/SOP.md`。Windows 中文語系須以 UTF-8 模式執行
 （`$env:PYTHONUTF8=1`，`run-sop.ps1` 已內建）。
+
+## 每日自動更新 + 開網頁就能看（免本地 CMD）
+
+部署到 GitHub 後，系統會**每天自動產生「每日最該買」報告**，你只要開網頁看，不用再開 CMD。
+
+架構（完全免伺服器、免費、免 Key）：
+- **GitHub Actions 排程**（`.github/workflows/daily.yml`，每日 06:30 台北）：跑 `src/pipeline/daily_report.py`，
+  掃股癌 RSS 偵測新集數→更新點名、抓總經/地緣新聞輿情、用 Yahoo 技術面對「你的持股 ∪ 股癌點名」每檔算
+  綜合買進分數並排序，把結果 commit 進 `docs/data/daily_report.json`。
+- **GitHub Pages 靜態網頁**（`docs/index.html`）：讀該 JSON 顯示市場輿情、股癌最新集數、每日最該買排序與
+  買賣區間。手機也能看。
+
+綜合買進分數 = 技術面 50% + 股癌共識 25% + 個股新聞 10% + 市場輿情 15%（權重見報告 JSON）。
+
+### 部署步驟（一次性）
+1. 先把 repo 推到 GitHub（見最上方）。
+2. GitHub repo → **Settings → Pages → Source 選 `Deploy from a branch`，分支 `main`、資料夾 `/docs`**。
+3. GitHub repo → **Actions** 分頁 → 開啟 workflow → 可先按 **Run workflow** 手動跑一次。
+4. 開 `https://edisonlai1116.github.io/ai-hedge-fund-tw/` 即看每日報告。
+
+> ⚠️ 隱私：GitHub Free 方案下 private repo 的 Pages 站台是**公開**的（有網址就看得到）。
+> 因此發布的 JSON **只含代號與分析結果，不含你的成本與股數**（`股票成本.txt` 本身不入版控）。
+
+### 本地手動跑一次（選用，需先 `poetry install`）
+```powershell
+$env:PYTHONUTF8=1; python -m src.pipeline.daily_report
+```
+
+### 新增的輿情 agent
+除了股癌，另有 **`macro_news_sentiment`**（總經/地緣輿情）：追蹤川普關稅、戰爭衝突、Fed 利率等
+影響大盤的新聞（免 Key 關鍵字情緒），產生市場級多空偏向，已註冊進 `ANALYST_CONFIG`，在完整多師
+分析時也會納入。新聞模組為 `src/sentiment/news_feed.py`。

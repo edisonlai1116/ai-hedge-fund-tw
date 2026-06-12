@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>每日最該買 · AI Hedge Fund (股癌輿情版)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2a3340;
+    --text:#e6edf3; --muted:#8b97a5; --accent:#58a6ff;
+    --bull:#2ea043; --bull-bg:#10311a; --bear:#f85149; --bear-bg:#3a1414;
+    --neutral:#9e6a03; --neutral-bg:#2e2410;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    line-height:1.5;padding:16px;max-width:960px;margin:0 auto}
+  h1{font-size:1.35rem;margin:.2em 0}
+  a{color:var(--accent)}
+  .muted{color:var(--muted);font-size:.85rem}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600;border:1px solid var(--border)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:12px 0}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .spacer{flex:1}
+  .pill-bull{color:var(--bull);background:var(--bull-bg);border-color:#1d5}
+  .pill-bear{color:var(--bear);background:var(--bear-bg);border-color:#a33}
+  .pill-neutral{color:#e3b341;background:var(--neutral-bg);border-color:#7a5}
+  .score{font-weight:700;font-size:1.05rem}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+  tr.pick{cursor:pointer}
+  tr.pick:hover{background:var(--panel2)}
+  .detail{display:none;background:var(--panel2)}
+  .detail.open{display:table-row}
+  .detail td{font-size:.85rem;color:#cdd6e0}
+  .tk{font-weight:700}
+  .tags .badge{margin-left:6px}
+  .bar{height:7px;border-radius:4px;background:#222b36;overflow:hidden;min-width:64px}
+  .bar > i{display:block;height:100%}
+  .hl{font-size:.8rem;color:var(--muted);margin:2px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px}
+  .stat .v{font-size:1.25rem;font-weight:700}
+  .disclaimer{font-size:.78rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:10px;margin-top:14px}
+  code{background:#0b1020;padding:1px 5px;border-radius:5px}
+  @media(max-width:560px){ th.hide-sm,td.hide-sm{display:none} h1{font-size:1.15rem} }
+</style>
+</head>
+<body>
+  <div class="row">
+    <h1>📈 每日最該買</h1>
+    <span class="spacer"></span>
+    <span class="badge" id="mode">—</span>
+  </div>
+  <div class="muted" id="updated">載入中…</div>
+
+  <div class="panel" id="macro-panel">
+    <div class="row">
+      <strong>🌍 市場輿情（總經/地緣）</strong>
+      <span class="spacer"></span>
+      <span class="badge" id="macro-label">—</span>
+      <span class="score" id="macro-score">—</span>
+    </div>
+    <div class="bar" style="margin:8px 0"><i id="macro-bar"></i></div>
+    <div class="hl" id="macro-heads"></div>
+  </div>
+
+  <div class="panel" id="gooaye-panel">
+    <div class="row">
+      <strong>🎙️ 股癌 Podcast 追蹤</strong>
+      <span class="spacer"></span>
+      <span class="badge" id="gooaye-state">—</span>
+    </div>
+    <div class="hl" id="gooaye-ep"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row"><strong>🏆 每日最該買排序</strong>
+      <span class="spacer"></span>
+      <span class="muted">點一列看股癌論述</span>
+    </div>
+    <table id="picks">
+      <thead><tr>
+        <th>#</th><th>標的</th><th>買進分數</th><th>建議</th>
+        <th class="hide-sm">技術面</th><th>股癌共識</th><th class="hide-sm">新聞</th>
+      </tr></thead>
+      <tbody id="picks-body"><tr><td colspan="7" class="muted">載入中…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="disclaimer" id="disclaimer"></div>
+
+<script>
+const sigClass = s => s>=65 ? "pill-bull" : (s<45 ? "pill-bear" : "pill-neutral");
+const barColor = s => s>=65 ? "var(--bull)" : (s<45 ? "var(--bear)" : "#e3b341");
+const recClass = r => /買進|偏多/.test(r) ? "pill-bull" : (/賣出|減碼|避險/.test(r) ? "pill-bear" : "pill-neutral");
+const esc = t => (t==null?"":String(t)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function bar(score){ return `<div class="bar"><i style="width:${Math.max(4,Math.min(100,score))}%;background:${barColor(score)}"></i></div>`; }
+
+fetch("data/daily_report.json?_=" + Date.now())
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(render)
+  .catch(err => {
+    document.getElementById("updated").textContent = "尚無報告資料（等待第一次每日排程執行）。錯誤：" + err;
+  });
+
+function render(d){
+  document.getElementById("mode").textContent = d.mode || "";
+  document.getElementById("updated").textContent = "更新時間：" + (d.generated_at || "—") + "（台北時間）";
+  document.getElementById("disclaimer").textContent = "⚠️ " + (d.disclaimer || "");
+
+  // macro
+  const m = d.macro || {};
+  document.getElementById("macro-score").textContent = (m.score ?? "—") + " / 100";
+  const ml = document.getElementById("macro-label");
+  ml.textContent = m.label || "—"; ml.className = "badge " + sigClass(m.score ?? 50);
+  document.getElementById("macro-bar").style.cssText =
+    `width:${Math.max(4,Math.min(100,m.score??50))}%;background:${barColor(m.score??50)}`;
+  document.getElementById("macro-heads").innerHTML =
+    (m.sample_headlines||[]).slice(0,5).map(h=>"• "+esc(h)).join("<br>") ||
+    "<span class='muted'>（此次未取得新聞標題，輿情以中性計）</span>";
+
+  // gooaye status
+  const g = d.gooaye_status || {};
+  const gs = document.getElementById("gooaye-state");
+  gs.textContent = g.updated ? "偵測到新集數，已更新" : "無新集數";
+  gs.className = "badge " + (g.updated ? "pill-bull" : "pill-neutral");
+  document.getElementById("gooaye-ep").innerHTML =
+    "最新集數：" + esc(g.episode_title || "—") +
+    (g.total_opinions!=null ? `　·　累積點名觀點 ${g.total_opinions} 則` : "");
+
+  // picks
+  const body = document.getElementById("picks-body");
+  const picks = d.top_picks || [];
+  if(!picks.length){ body.innerHTML = "<tr><td colspan='7' class='muted'>無標的</td></tr>"; return; }
+  body.innerHTML = "";
+  picks.forEach((p,i)=>{
+    const tags = (p.held?'<span class="badge">持股</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'');
+    const tech = p.technical;
+    const techCell = tech ? `${esc(tech.today_action||tech.bias||"")}<div class="muted">買 ${esc(tech.buy_zone||"—")}</div>` : '<span class="muted">—</span>';
+    const gscore = p.gooaye?.score ?? 50;
+    const tr = document.createElement("tr");
+    tr.className = "pick";
+    tr.innerHTML =
+      `<td>${i+1}</td>`+
+      `<td class="tk">${esc(p.ticker)}<div class="tags">${tags}</div></td>`+
+      `<td><span class="score">${p.buy_score}</span>${bar(p.buy_score)}</td>`+
+      `<td><span class="badge ${recClass(p.recommendation)}">${esc(p.recommendation)}</span></td>`+
+      `<td class="hide-sm">${techCell}</td>`+
+      `<td><span class="badge ${sigClass(gscore)}">${gscore}</span> <span class="muted">${esc(p.gooaye?.label||"")}</span></td>`+
+      `<td class="hide-sm">${p.news?.label?esc(p.news.label):'<span class="muted">—</span>'}</td>`;
+    const det = document.createElement("tr");
+    det.className = "detail";
+    const logic = p.gooaye?.top_logic, quote = p.gooaye?.top_quote;
+    det.innerHTML = `<td colspan="7">`+
+      (p.gooaye?.opinion_count ?
+        `<div class="hl"><strong>股癌/輿情論述：</strong>${esc(logic)||"—"}</div>`+
+        (quote?`<div class="hl">「${esc(quote)}」</div>`:"")
+        : `<div class="hl muted">此標的目前無股癌/輿情點名。</div>`)+
+      `<div class="hl">買進分數組成：技術 ${p.components?.technical} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`+
+      (tech?`<div class="hl">技術面：${esc(tech.bias||"")}　現價 ${esc(tech.latest_close)}　賣出 ${esc(tech.sell_zone||"—")}　停損 ${esc(tech.stop_loss||"—")}</div>`:"")+
+      `</td>`;
+    tr.addEventListener("click",()=>det.classList.toggle("open"));
+    body.appendChild(tr); body.appendChild(det);
+  });
+}
+</script>
+</body>
+</html>

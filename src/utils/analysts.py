@@ -21,6 +21,7 @@ from src.agents.nassim_taleb import nassim_taleb_agent
 from src.agents.news_sentiment import news_sentiment_agent
 from src.agents.growth_agent import growth_analyst_agent
 from src.agents.gooaye_sentiment import gooaye_sentiment_agent
+from src.agents.macro_news_sentiment import macro_news_sentiment_agent
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
@@ -175,6 +176,14 @@ ANALYST_CONFIG = {
         "agent_func": gooaye_sentiment_agent,
         "type": "analyst",
         "order": 19,
+    },
+    "macro_news_sentiment": {
+        "display_name": "Macro News (總經/地緣輿情)",
+        "description": "總經/地緣新聞輿情專家",
+        "investing_style": "追蹤川普關稅、戰爭衝突、Fed 利率、通膨等影響大盤走勢的新聞（免 Key 關鍵字情緒），產生市場級多空偏向，對所有標的套用為買賣判斷因素之一。",
+        "agent_func": macro_news_sentiment_agent,
+        "type": "analyst",
+        "order": 20,
     },
     "valuation_analyst": {
         "display_name": "Valuation Analyst",
