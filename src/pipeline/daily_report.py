@@ -47,6 +47,29 @@ TW_UNIVERSE = [
     "6505", "9910", "2474", "2345", "3661", "4938", "2379", "3017", "5871", "2327",
 ]
 
+# 美股 universe：大型權值/熱門股後盾清單。即使 Yahoo 當日熱門榜抓不到，美股也一定會進榜。
+US_UNIVERSE = [
+    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "AVGO", "TSLA", "BRK-B", "JPM",
+    "LLY", "V", "UNH", "XOM", "MA", "COST", "HD", "PG", "JNJ", "ABBV",
+    "NFLX", "BAC", "CRM", "ORCL", "AMD", "KO", "PEP", "WMT", "MRK", "CVX",
+    "ADBE", "QCOM", "TXN", "INTC", "MU", "PLTR", "SMCI", "ARM", "TSM", "ASML",
+]
+
+# 台股代號 → 中文名（給網頁顯示「2330 台積電」）。
+TW_NAMES = {
+    "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2308": "台達電", "2382": "廣達",
+    "2412": "中華電", "2881": "富邦金", "2882": "國泰金", "2891": "中信金", "2886": "兆豐金",
+    "3711": "日月光投控", "2303": "聯電", "2002": "中鋼", "1303": "南亞", "1301": "台塑",
+    "1216": "統一", "2207": "和泰車", "2884": "玉山金", "2885": "元大金", "2892": "第一金",
+    "2880": "華南金", "2883": "開發金", "5880": "合庫金", "2890": "永豐金", "2887": "台新金",
+    "3045": "台灣大", "4904": "遠傳", "2912": "統一超", "1101": "台泥", "2357": "華碩",
+    "2395": "研華", "2603": "長榮", "2609": "陽明", "2615": "萬海", "3008": "大立光",
+    "3034": "聯詠", "3037": "欣興", "3231": "緯創", "2376": "技嘉", "2377": "微星",
+    "6505": "台塑化", "9910": "豐泰", "2474": "可成", "2345": "智邦", "3661": "世芯-KY",
+    "4938": "和碩", "2379": "瑞昱", "3017": "奇鋐", "5871": "中租-KY", "2327": "國巨",
+    "5876": "上海商銀", "2301": "光寶科", "2421": "建準", "6409": "旭隼", "2890.TW": "永豐金",
+}
+
 
 # ===== 純函式（可離線單元測試） ============================================
 def compute_buy_score(technical: Optional[float], gooaye: Optional[float],
@@ -303,9 +326,12 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, m
     scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score)
     top_op = cons["opinions"][0] if cons.get("opinions") else None
     market = "tw" if symbol.endswith(".TW") or symbol.endswith(".TWO") else "us"
+    base = raw_ticker.split(".")[0].upper()
+    name = TW_NAMES.get(base, "") if market == "tw" else base
     return {
         "ticker": raw_ticker,
         "symbol": symbol,
+        "name": name,
         "market": market,
         "held": held,
         "gooaye_named": named,
@@ -339,10 +365,10 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
     named_simple = {n.split(".")[0].upper() for n in named_tickers}
     mover_simple = {m.split(".")[0].upper() for m in movers}
 
-    # 標的池（台美股）：美股當日熱門榜 ∪ 台股台灣50 ∪ 股癌點名（simple 代號去重，保留原字串）
+    # 標的池（台美股）：美股當日熱門榜 ∪ 美股大型股後盾 ∪ 台股台灣50 ∪ 股癌點名（simple 代號去重）
     universe = []
     seen = set()
-    for t in list(movers) + list(TW_UNIVERSE) + named_tickers:
+    for t in list(movers) + list(US_UNIVERSE) + list(TW_UNIVERSE) + named_tickers:
         key = t.split(".")[0].upper()
         if key not in seen:
             seen.add(key)

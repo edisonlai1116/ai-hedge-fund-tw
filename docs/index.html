@@ -53,7 +53,7 @@
   <div class="row">
     <h1>📈 每日台美股 Top 50 最值得買</h1>
     <span class="spacer"></span>
-    <a href="/" style="font-size:.85rem">🔍 查個股</a>
+    <a id="query-link" href="/" style="font-size:.85rem">🔍 查個股</a>
     <a href="history.html" style="font-size:.85rem">📊 歷史走勢</a>
   </div>
   <div class="muted" id="mode" style="margin-top:2px"></div>
@@ -103,6 +103,8 @@ const sigClass = s => s>=65 ? "pill-bull" : (s<45 ? "pill-bear" : "pill-neutral"
 const barColor = s => s>=65 ? "var(--bull)" : (s<45 ? "var(--bear)" : "#e3b341");
 const recClass = r => /買進|偏多/.test(r) ? "pill-bull" : (/賣出|減碼|避險/.test(r) ? "pill-bear" : "pill-neutral");
 const esc = t => (t==null?"":String(t)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+// GitHub Pages 是靜態站、沒有查個股後端 → 隱藏「查個股」連結（避免指向 / 而 404）。
+if(location.hostname.endsWith("github.io")){ const ql=document.getElementById("query-link"); if(ql) ql.style.display="none"; }
 
 function bar(score){ return `<div class="bar"><i style="width:${Math.max(4,Math.min(100,score))}%;background:${barColor(score)}"></i></div>`; }
 
@@ -202,7 +204,7 @@ function render(d){
     tr.dataset.market = p.market || "us";
     tr.innerHTML =
       `<td>${i+1}</td>`+
-      `<td class="tk">${esc(p.ticker)}<div class="tags">${tags}</div></td>`+
+      `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="tags">${tags}</div></td>`+
       `<td><span class="score">${p.buy_score}</span>${bar(p.buy_score)}</td>`+
       `<td><span class="badge ${recClass(p.recommendation)}">${esc(p.recommendation)}</span></td>`+
       `<td class="hide-sm">${techCell}</td>`+

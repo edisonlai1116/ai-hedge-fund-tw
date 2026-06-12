@@ -25,10 +25,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.backend.database.connection import engine
-from app.backend.database.models import Base
-from app.backend.routes.simple_signals import router as simple_signals_router
-from app.backend.routes.sentiment import router as sentiment_router
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("web_app")
@@ -37,22 +34,54 @@ GOOAYE_FEED = "https://feeds.soundon.fm/podcasts/954689a5-3096-43a4-a80b-7810b21
 
 app = FastAPI(title="AI Hedge Fund (免 Key Web)", version="1.0.0")
 
-# 建立資料表（sentiment 路由需要）
-Base.metadata.create_all(bind=engine)
-
 # 同源服務前端 → 理論上免 CORS；仍開放以防前端被單獨部署。
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_credentials=False,
     allow_methods=["*"], allow_headers=["*"],
 )
 
-app.include_router(simple_signals_router)
-app.include_router(sentiment_router)
+# 韌性啟動：任一段失敗都記錄完整錯誤但不讓整個服務崩潰（避免 Render 啟動即 exit 1）。
+_status = {"db": "skipped", "simple_signals": "not-loaded", "sentiment": "not-loaded", "errors": []}
+
+
+def _safe(label, fn):
+    try:
+        fn()
+        return True
+    except Exception:
+        tb = traceback.format_exc()
+        logger.error(f"[startup] {label} 失敗：\n{tb}")
+        _status["errors"].append({"where": label, "error": tb.strip().splitlines()[-1] if tb.strip() else "?"})
+        return False
+
+
+def _init_db():
+    from app.backend.database.connection import engine
+    from app.backend.database.models import Base
+    Base.metadata.create_all(bind=engine)
+    _status["db"] = "ok"
+
+
+def _load_simple_signals():
+    from app.backend.routes.simple_signals import router as r
+    app.include_router(r)
+    _status["simple_signals"] = "ok"
+
+
+def _load_sentiment():
+    from app.backend.routes.sentiment import router as r
+    app.include_router(r)
+    _status["sentiment"] = "ok"
+
+
+_safe("db", _init_db)
+_safe("simple_signals", _load_simple_signals)
+_safe("sentiment", _load_sentiment)
 
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True}
+    return {"ok": True, "status": _status}
 
 
 async def _gooaye_updater():
