@@ -217,8 +217,9 @@ cd C:\Users\User\Desktop\codex\ai-hedge-fund-main
 
 架構（完全免伺服器、免費、免 Key）：
 - **GitHub Actions 排程**（`.github/workflows/daily.yml`，每日 06:30 台北）：跑 `src/pipeline/daily_report.py`，
-  掃股癌 RSS 偵測新集數→更新點名、抓總經/地緣新聞輿情、用 Yahoo 技術面對「你的持股 ∪ 股癌點名」每檔算
-  綜合買進分數並排序，把結果 commit 進 `docs/data/daily_report.json`。
+  掃股癌 RSS 偵測新集數→更新點名、抓總經/地緣新聞輿情、用 Yahoo 技術面對「**美股當日熱門榜 ∪ 股癌點名**」
+  （反映每日市場變化；你的持股只用來標記、不主導排序）每檔算綜合買進分數並排序，commit 進 `docs/data/daily_report.json`。
+  當日熱門榜來源：`src/sentiment/market_movers.py`（Yahoo 免 Key 篩選 day_gainers / most_actives）。
 - **GitHub Pages 靜態網頁**（`docs/index.html`）：讀該 JSON 顯示市場輿情、股癌最新集數、每日最該買排序與
   買賣區間。手機也能看。
 

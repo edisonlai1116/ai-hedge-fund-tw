@@ -138,7 +138,7 @@ function render(d){
   if(!picks.length){ body.innerHTML = "<tr><td colspan='7' class='muted'>無標的</td></tr>"; return; }
   body.innerHTML = "";
   picks.forEach((p,i)=>{
-    const tags = (p.held?'<span class="badge">持股</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'');
+    const tags = (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'');
     const tech = p.technical;
     const techCell = tech ? `${esc(tech.today_action||tech.bias||"")}<div class="muted">買 ${esc(tech.buy_zone||"—")}</div>` : '<span class="muted">—</span>';
     const gscore = p.gooaye?.score ?? 50;

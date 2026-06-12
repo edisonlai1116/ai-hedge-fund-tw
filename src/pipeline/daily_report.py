@@ -200,7 +200,15 @@ def _macro() -> Dict:
         return {"score": 50, "label": "中性", "n": 0, "sample_headlines": []}
 
 
-def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool) -> Dict:
+def _movers(limit: int = 40) -> List[str]:
+    try:
+        from src.sentiment.market_movers import fetch_market_movers
+        return fetch_market_movers(limit=limit)
+    except Exception:
+        return []
+
+
+def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, mover: bool = False) -> Dict:
     """組裝單檔的買進分數列。"""
     symbol = _normalize(raw_ticker)
     tech = _technical(symbol)
@@ -218,6 +226,7 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool) -
         "symbol": symbol,
         "held": held,
         "gooaye_named": named,
+        "market_mover": mover,
         "buy_score": scored["buy_score"],
         "recommendation": recommendation(scored["buy_score"]),
         "components": scored["components"],
@@ -233,17 +242,24 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool) -
     }
 
 
-def build_report(holdings: List[str], opinions_store: Dict, macro: Dict, gooaye_status: Dict) -> Dict:
-    """組裝完整每日報告 dict。"""
+def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
+                 macro: Dict, gooaye_status: Dict) -> Dict:
+    """組裝完整每日報告 dict。
+
+    標的池（反映每日市場變化）＝ 美股當日熱門榜 ∪ 股癌點名；
+    持股只用來標記（不主導排序）。
+    """
     ops = opinions_store.get("opinions", []) if isinstance(opinions_store, dict) else (opinions_store or [])
     named_tickers = sorted({str(o.get("target_ticker", "")).strip() for o in ops if o.get("target_ticker")})
 
     held_set = {h.upper() for h in holdings}
     named_simple = {n.split(".")[0].upper() for n in named_tickers}
-    # 標的池：持股 ∪ 股癌點名（用 simple 代號去重，保留原字串）
+    mover_simple = {m.split(".")[0].upper() for m in movers}
+
+    # 標的池：熱門榜 ∪ 股癌點名（simple 代號去重，保留原字串）
     universe = []
     seen = set()
-    for t in holdings + named_tickers:
+    for t in list(movers) + named_tickers:
         key = t.split(".")[0].upper()
         if key not in seen:
             seen.add(key)
@@ -257,6 +273,7 @@ def build_report(holdings: List[str], opinions_store: Dict, macro: Dict, gooaye_
             t, macro_score,
             held=(key in held_set or t.upper() in held_set),
             named=(key in named_simple),
+            mover=(key in mover_simple),
         ))
     rows = rank_rows(rows)
 
@@ -265,7 +282,8 @@ def build_report(holdings: List[str], opinions_store: Dict, macro: Dict, gooaye_
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "generated_date": now.strftime("%Y-%m-%d"),
-        "mode": "免 Key（Yahoo 技術面 + 股癌共識 + 關鍵字新聞輿情）",
+        "mode": "免 Key（美股當日熱門榜 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
+        "universe": {"movers": len(movers), "gooaye_named": len(named_tickers), "total": len(universe)},
         "macro": {
             "score": macro_score,
             "label": macro.get("label", ""),
@@ -312,9 +330,11 @@ def main():
     holdings = parse_holding_tickers(_read_text(HOLDINGS_TXT))
     opinions_store = _read_json(OPINIONS_JSON, {"opinions": []})
     macro = _macro()
-    print(f"[daily_report] macro score={macro.get('score')} ({macro.get('n')} headlines); holdings={len(holdings)}")
+    movers = _movers()
+    print(f"[daily_report] macro score={macro.get('score')} ({macro.get('n')} headlines); "
+          f"movers={len(movers)}; holdings(tag only)={len(holdings)}")
 
-    report = build_report(holdings, opinions_store, macro, gooaye_status)
+    report = build_report(movers, holdings, opinions_store, macro, gooaye_status)
     _write_json(report, REPORT_JSON)
     _write_json(report, os.path.join(HISTORY_DIR, f"{report['generated_date']}.json"))
     idx = update_history_index(report)
