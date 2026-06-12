@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-13T00:47:16+08:00",
+  "generated_at": "2026-06-13T00:59:38+08:00",
   "generated_date": "2026-06-13",
   "mode": "免 Key（台美股 Top 50：美股熱門榜 + 台灣50 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
   "universe": {
@@ -57,7 +57,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "5876.TW",
@@ -85,7 +86,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2330",
@@ -113,7 +115,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3017",
@@ -141,7 +144,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2317",
@@ -169,7 +173,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2454",
@@ -197,7 +202,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2308",
@@ -225,7 +231,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2382",
@@ -253,7 +260,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2412",
@@ -281,7 +289,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2881",
@@ -309,7 +318,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2882",
@@ -337,7 +347,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2891",
@@ -365,7 +376,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2886",
@@ -393,7 +405,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3711",
@@ -421,7 +434,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2303",
@@ -449,7 +463,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2002",
@@ -477,7 +492,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "1303",
@@ -505,7 +521,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "1301",
@@ -533,7 +550,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "1216",
@@ -561,7 +579,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2207",
@@ -589,7 +608,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2884",
@@ -617,7 +637,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2885",
@@ -645,7 +666,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2892",
@@ -673,7 +695,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2880",
@@ -701,7 +724,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2883",
@@ -729,7 +753,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "5880",
@@ -757,7 +782,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2890",
@@ -785,7 +811,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2887",
@@ -813,7 +840,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3045",
@@ -841,7 +869,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "4904",
@@ -869,7 +898,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2912",
@@ -897,7 +927,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "1101",
@@ -925,7 +956,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2357",
@@ -953,7 +985,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2395",
@@ -981,7 +1014,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2603",
@@ -1009,7 +1043,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2609",
@@ -1037,7 +1072,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2615",
@@ -1065,7 +1101,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3008",
@@ -1093,7 +1130,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3034",
@@ -1121,7 +1159,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3037",
@@ -1149,7 +1188,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3231",
@@ -1177,7 +1217,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2376",
@@ -1205,7 +1246,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2377",
@@ -1233,7 +1275,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "6505",
@@ -1261,7 +1304,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "9910",
@@ -1289,7 +1333,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2474",
@@ -1317,7 +1362,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2345",
@@ -1345,7 +1391,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "3661",
@@ -1373,7 +1420,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "4938",
@@ -1401,7 +1449,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     },
     {
       "ticker": "2379",
@@ -1429,7 +1478,8 @@
       "news": {
         "score": 50,
         "label": "中性／無資料"
-      }
+      },
+      "detail": null
     }
   ],
   "disclaimer": "本報告為自動產生之研究輔助，非投資建議；資料來源含 Yahoo Finance、股癌 Podcast 與公開新聞，僅供參考。"

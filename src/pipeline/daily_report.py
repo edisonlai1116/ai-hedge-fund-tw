@@ -213,6 +213,42 @@ def _technical(symbol: str) -> Optional[Dict]:
         return None
 
 
+def _full_analysis(symbol: str) -> Optional[Dict]:
+    """Top 50 入選後的完整分析（lightweight=False）：取出各 agent 看法、
+    3/6/9/12 個月預測股價、各天期建議買賣價。失敗回 None。"""
+    try:
+        from src.simple_signal import download_prices, build_report
+        df = download_prices(symbol, "2y")
+        if df is None or df.empty:
+            return None
+        r = build_report(symbol, df, fetch_fundamentals=False, lightweight=False)
+        agents = [
+            {
+                "name": a.get("name"),
+                "signal": a.get("signal"),
+                "confidence": a.get("confidence"),
+                "summary": a.get("summary"),
+            }
+            for a in (getattr(r, "agents", None) or [])
+        ]
+        return {
+            "latest_close": getattr(r, "latest_close", None),
+            "bias": getattr(r, "bias", ""),
+            "today_action": getattr(r, "today_action", ""),
+            "buy_zone": getattr(r, "buy_zone", ""),
+            "sell_zone": getattr(r, "sell_zone", ""),
+            "stop_loss": getattr(r, "stop_loss", ""),
+            "expected_return_pct": getattr(r, "expected_return_pct", None),
+            "risk_reward_ratio": getattr(r, "risk_reward_ratio", None),
+            "agents": agents,
+            "horizons": getattr(r, "horizons", None) or [],
+            "price_forecast": getattr(r, "price_forecast", None),
+        }
+    except Exception as e:
+        print(f"[_full_analysis] {symbol} 降級：{e}")
+        return None
+
+
 def _ticker_news(symbol: str) -> Optional[Dict]:
     try:
         from src.sentiment.news_feed import ticker_news_sentiment
@@ -323,6 +359,10 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             mover=(key in mover_simple),
         ))
     rows = rank_rows(rows)[:TOP_N]   # 台美股合併取前 50
+
+    # 入選 Top 50 才跑完整分析（agents / 3-6-9-12 月預測 / 各天期買賣價），控制運算量。
+    for r in rows:
+        r["detail"] = _full_analysis(r["symbol"])
 
     tz = timezone(timedelta(hours=8))  # 台北時間
     now = datetime.now(tz)

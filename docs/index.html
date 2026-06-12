@@ -106,6 +106,54 @@ const esc = t => (t==null?"":String(t)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&
 
 function bar(score){ return `<div class="bar"><i style="width:${Math.max(4,Math.min(100,score))}%;background:${barColor(score)}"></i></div>`; }
 
+const stanceCls = s => /看多|偏多|多|bull|買/i.test(s||"") ? "pill-bull" : (/看空|偏空|空|bear|賣|減/i.test(s||"") ? "pill-bear" : "pill-neutral");
+
+function detailHtml(p){
+  const d = p.detail || {};
+  let h = "";
+  // 股癌 / 輿情
+  if(p.gooaye?.opinion_count){
+    h += `<div class="hl"><strong>股癌/輿情論述：</strong>${esc(p.gooaye.top_logic)||"—"}</div>`;
+    if(p.gooaye.top_quote) h += `<div class="hl">「${esc(p.gooaye.top_quote)}」</div>`;
+  } else { h += `<div class="hl muted">此標的目前無股癌/輿情點名。</div>`; }
+  // 操作建議價
+  if(d.buy_zone||d.sell_zone||d.stop_loss){
+    h += `<div class="hl"><strong>操作：</strong>${esc(d.today_action||d.bias||"")}　現價 ${esc(d.latest_close)}　`+
+         `買進 ${esc(d.buy_zone||"—")}　賣出 ${esc(d.sell_zone||"—")}　停損 ${esc(d.stop_loss||"—")}</div>`;
+  }
+  // 各 agent 看法
+  if(d.agents && d.agents.length){
+    h += `<div class="hl" style="margin-top:6px"><strong>各 agent 看法</strong></div>`;
+    h += `<table style="margin:2px 0 6px"><tbody>`;
+    d.agents.forEach(a=>{
+      h += `<tr><td style="white-space:nowrap">${esc(a.name)}</td>`+
+           `<td><span class="badge ${stanceCls(a.signal)}">${esc(a.signal)}</span></td>`+
+           `<td class="hide-sm">信心 ${esc(a.confidence)}</td>`+
+           `<td class="muted">${esc(a.summary)}</td></tr>`;
+    });
+    h += `</tbody></table>`;
+  }
+  // 3/6/9/12 個月預測股價
+  const pf = d.price_forecast;
+  if(pf && pf.horizons && pf.horizons.length){
+    h += `<div class="hl" style="margin-top:6px"><strong>3 / 6 / 9 / 12 個月預測股價</strong>`+
+         (pf.verdict?` — <span class="badge ${stanceCls(pf.verdict)}">${esc(pf.verdict)}</span>`:"")+`</div>`;
+    h += `<table style="margin:2px 0 6px"><thead><tr><th>期間</th><th>預估價</th><th>區間</th><th>預期報酬</th><th>傾向</th></tr></thead><tbody>`;
+    pf.horizons.forEach(z=>{
+      h += `<tr><td>${esc(z.label)}</td><td>${esc(z.base)}</td>`+
+           `<td class="muted">${esc(z.low)}~${esc(z.high)}</td>`+
+           `<td>${esc(z.expected_return_pct)}%</td>`+
+           `<td><span class="badge ${stanceCls(z.stance)}">${esc(z.stance)}</span></td></tr>`;
+    });
+    h += `</tbody></table>`;
+    if(pf.verdict_reason) h += `<div class="hl muted">${esc(pf.verdict_reason)}</div>`;
+  } else if(!d.agents || !d.agents.length){
+    h += `<div class="hl muted">完整分析（各 agent、3/6/9/12 月預測）將於每日排程在雲端產生後顯示。</div>`;
+  }
+  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
+  return h;
+}
+
 fetch("data/daily_report.json?_=" + Date.now())
   .then(r => r.ok ? r.json() : Promise.reject(r.status))
   .then(render)
@@ -162,15 +210,7 @@ function render(d){
       `<td class="hide-sm">${p.news?.label?esc(p.news.label):'<span class="muted">—</span>'}</td>`;
     const det = document.createElement("tr");
     det.className = "detail";
-    const logic = p.gooaye?.top_logic, quote = p.gooaye?.top_quote;
-    det.innerHTML = `<td colspan="7">`+
-      (p.gooaye?.opinion_count ?
-        `<div class="hl"><strong>股癌/輿情論述：</strong>${esc(logic)||"—"}</div>`+
-        (quote?`<div class="hl">「${esc(quote)}」</div>`:"")
-        : `<div class="hl muted">此標的目前無股癌/輿情點名。</div>`)+
-      `<div class="hl">買進分數組成：技術 ${p.components?.technical} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`+
-      (tech?`<div class="hl">技術面：${esc(tech.bias||"")}　現價 ${esc(tech.latest_close)}　賣出 ${esc(tech.sell_zone||"—")}　停損 ${esc(tech.stop_loss||"—")}</div>`:"")+
-      `</td>`;
+    det.innerHTML = `<td colspan="7">${detailHtml(p)}</td>`;
     tr.addEventListener("click",()=>det.classList.toggle("open"));
     body.appendChild(tr); body.appendChild(det);
   });
