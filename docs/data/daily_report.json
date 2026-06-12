@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-13T00:28:17+08:00",
+  "generated_at": "2026-06-13T00:33:20+08:00",
   "generated_date": "2026-06-13",
   "mode": "免 Key（美股當日熱門榜 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
   "universe": {
@@ -15,9 +15,10 @@
   },
   "gooaye_status": {
     "updated": false,
-    "episode_title": null,
-    "episode_id": "f208d558-a3a0-4812-a19a-777c69ac31bf",
-    "total_opinions": 6
+    "episode_title": "EP669 | 🎈",
+    "episode_id": "EP669 | 🎈",
+    "total_opinions": 6,
+    "episode_published": "Wed, 10 Jun 2026 07:37:19 GMT"
   },
   "weights": {
     "technical": 0.5,

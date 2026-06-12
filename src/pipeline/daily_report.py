@@ -103,10 +103,36 @@ def _read_text(path) -> str:
         return ""
 
 
+def _fetch_latest_episode_stdlib(feed_url: str) -> Dict:
+    """只用 Python 標準庫抓 RSS 最新一集（不需 feedparser）。失敗回 {}。
+
+    用於偵測/顯示最新集數（標題、日期、id）；不下載音檔、不轉錄。
+    """
+    import re
+    import urllib.request
+    try:
+        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+        xml = urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+    except Exception:
+        return {}
+    m = re.search(r"<item>(.*?)</item>", xml, re.S)
+    if not m:
+        return {}
+    item = m.group(1)
+    def _tag(name):
+        mm = re.search(rf"<{name}>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</{name}>", item, re.S)
+        return mm.group(1).strip() if mm else ""
+    title = _tag("title")
+    guid = _tag("guid") or title
+    pub = _tag("pubDate")
+    return {"id": guid, "title": title, "published": pub} if title else {}
+
+
 def scan_gooaye(feed_url: str = GOOAYE_FEED, opinions_path: str = OPINIONS_JSON) -> Dict:
     """掃描股癌 RSS；偵測到新集數就（mock fallback）抽取點名個股並 merge 進 opinions JSON。
 
     回傳 {updated, episode_title, episode_id, total_opinions}。任何失敗都安全降級。
+    免 feedparser 環境也能至少顯示最新集數（用標準庫抓 RSS）。
     """
     store = _read_json(opinions_path, {"last_episode_id": None, "opinions": []})
     if isinstance(store, list):  # 容錯：舊格式（純 list）
@@ -114,25 +140,32 @@ def scan_gooaye(feed_url: str = GOOAYE_FEED, opinions_path: str = OPINIONS_JSON)
 
     result = {"updated": False, "episode_title": None, "episode_id": store.get("last_episode_id"),
               "total_opinions": len(store.get("opinions", []))}
+
+    # 1) 先用 AudioFeedAdapter（feedparser）；可抽取點名個股（mock fallback）。
+    episode = None
     try:
         from src.sentiment.audio_feed_adapter import AudioFeedAdapter
         adapter = AudioFeedAdapter(feed_url=feed_url, source_name="Gooaye")
         episode = adapter.fetch_recent_data()
-        if not episode or "id" not in episode:
+        if episode and "id" in episode:
+            result["episode_title"] = episode.get("title")
+            result["episode_id"] = episode.get("id")
+            if episode["id"] != store.get("last_episode_id"):
+                opinions = adapter.extract_opinions(episode) or []
+                store["opinions"].extend(opinions)
+                store["last_episode_id"] = episode["id"]
+                _write_json(store, opinions_path)
+                result.update({"updated": True, "total_opinions": len(store["opinions"])})
             return result
-        result["episode_title"] = episode.get("title")
-        result["episode_id"] = episode.get("id")
-        if episode["id"] == store.get("last_episode_id"):
-            return result  # 沒有新集數
-
-        # 新集數 → 抽取點名個股（mock fallback 預設啟用，無 ffmpeg 也能跑）
-        opinions = adapter.extract_opinions(episode) or []
-        store["opinions"].extend(opinions)
-        store["last_episode_id"] = episode["id"]
-        _write_json(store, opinions_path)
-        result.update({"updated": True, "total_opinions": len(store["opinions"])})
     except Exception as e:
-        print(f"[scan_gooaye] 降級：{e}")
+        print(f"[scan_gooaye] AudioFeedAdapter 降級：{e}")
+
+    # 2) 退回標準庫：至少顯示最新集數（標題/日期），不抽取點名。
+    ep = _fetch_latest_episode_stdlib(feed_url)
+    if ep:
+        result["episode_title"] = ep.get("title")
+        result["episode_id"] = ep.get("id")
+        result["episode_published"] = ep.get("published")
     return result
 
 

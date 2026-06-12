@@ -130,6 +130,7 @@ function render(d){
   gs.className = "badge " + (g.updated ? "pill-bull" : "pill-neutral");
   document.getElementById("gooaye-ep").innerHTML =
     "最新集數：" + esc(g.episode_title || "—") +
+    (g.episode_published ? `（${esc(g.episode_published)}）` : "") +
     (g.total_opinions!=null ? `　·　累積點名觀點 ${g.total_opinions} 則` : "");
 
   // picks
