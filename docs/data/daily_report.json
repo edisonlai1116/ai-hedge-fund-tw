@@ -1,16 +1,25 @@
 {
-  "generated_at": "2026-06-13T00:08:38+08:00",
+  "generated_at": "2026-06-13T00:23:42+08:00",
   "generated_date": "2026-06-13",
   "mode": "免 Key（Yahoo 技術面 + 股癌共識 + 關鍵字新聞輿情）",
   "macro": {
-    "score": 50,
-    "label": "中性／無資料",
-    "headline_count": 0,
-    "sample_headlines": []
+    "score": 26,
+    "label": "偏空",
+    "headline_count": 50,
+    "sample_headlines": [
+      "Goldman Sachs doubles down on stock market outlook for 2026 - Yahoo Finance Singapore",
+      "The Stock Market’s Breaking Point May Be Near - Seeking Alpha",
+      "Jim Cramer warns key pillars of the bull market are beginning to crumble - CNBC",
+      "Stock Market Today, June 4: Broadcom Shares Plunge After AI Outlook Misses High Investor Expectations - The Motley Fool",
+      "Top economist Gary Shilling says a recession and a deep stock-market plunge are likely by year-end - Business Insider",
+      "Stock Market Today, June 1: Stock Market Today, June 1: UiPath Rises After Strong Q1 Results and Raised Outlook - The Motley Fool",
+      "Wall Street rides high into June on hopes that the war will soon come to an end. Here's what's ahead - CNBC",
+      "US Stock Market Outlook: Returning to Balance of Growth and Value Stocks - Morningstar"
+    ]
   },
   "gooaye_status": {
     "updated": false,
-    "episode_title": null,
+    "episode_title": "EP669 | 🎈",
     "episode_id": "f208d558-a3a0-4812-a19a-777c69ac31bf",
     "total_opinions": 6
   },
@@ -24,17 +33,25 @@
     {
       "ticker": "MU",
       "symbol": "MU",
-      "held": true,
+      "held": false,
       "gooaye_named": true,
-      "buy_score": 61,
-      "recommendation": "偏多分批",
+      "buy_score": 75,
+      "recommendation": "強力買進",
       "components": {
-        "technical": 50,
+        "technical": 84,
         "gooaye": 94,
-        "ticker_news": 50,
-        "macro": 50
+        "ticker_news": 56,
+        "macro": 26
       },
-      "technical": null,
+      "technical": {
+        "composite_score": 84,
+        "bias": "偏多",
+        "today_action": "今天可買",
+        "buy_zone": "978.12 - 993.56",
+        "sell_zone": "1170.57 - 1269.77",
+        "stop_loss": "919.43 - 948.77",
+        "latest_close": 992.01
+      },
       "gooaye": {
         "score": 94,
         "label": "強力多頭共識",
@@ -43,34 +60,8 @@
         "top_quote": "普通人慢慢变富的核心，在于在好公司被低估、技术面拉回超跌时，保持纪律性地持续买进。"
       },
       "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "5876.TW",
-      "symbol": "5876.TW",
-      "held": false,
-      "gooaye_named": true,
-      "buy_score": 60,
-      "recommendation": "偏多分批",
-      "components": {
-        "technical": 50,
-        "gooaye": 90,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 90,
-        "label": "強力多頭共識",
-        "opinion_count": 1,
-        "top_logic": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。",
-        "top_quote": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。"
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
+        "score": 56,
+        "label": "中性"
       }
     },
     {
@@ -78,15 +69,23 @@
       "symbol": "2330.TW",
       "held": false,
       "gooaye_named": true,
-      "buy_score": 58,
+      "buy_score": 66,
       "recommendation": "偏多分批",
       "components": {
-        "technical": 50,
+        "technical": 71,
         "gooaye": 84,
-        "ticker_news": 50,
-        "macro": 50
+        "ticker_news": 60,
+        "macro": 26
       },
-      "technical": null,
+      "technical": {
+        "composite_score": 71,
+        "bias": "中性",
+        "today_action": "今天不要買",
+        "buy_zone": "2252.25 - 2277.71",
+        "sell_zone": "2610.00 - 2790.00",
+        "stop_loss": "2117.11 - 2184.68",
+        "latest_close": 2250.0
+      },
       "gooaye": {
         "score": 84,
         "label": "強力多頭共識",
@@ -95,8 +94,8 @@
         "top_quote": "先進製程與 CoWoS 封裝產能極度供不應求，基本面無懈可擊，在大盤回檔時具備最高安全邊際，為資金避風港。"
       },
       "news": {
-        "score": 50,
-        "label": "中性／無資料"
+        "score": 60,
+        "label": "中性"
       }
     },
     {
@@ -104,15 +103,23 @@
       "symbol": "3017.TW",
       "held": false,
       "gooaye_named": true,
-      "buy_score": 54,
-      "recommendation": "中性觀望",
+      "buy_score": 59,
+      "recommendation": "偏多分批",
       "components": {
-        "technical": 50,
+        "technical": 63,
         "gooaye": 68,
-        "ticker_news": 50,
-        "macro": 50
+        "ticker_news": 69,
+        "macro": 26
       },
-      "technical": null,
+      "technical": {
+        "composite_score": 63,
+        "bias": "中性",
+        "today_action": "今天不要買",
+        "buy_zone": "2337.33 - 2511.29",
+        "sell_zone": "3070.20 - 3220.70",
+        "stop_loss": "2197.09 - 2267.21",
+        "latest_close": 2335.0
+      },
       "gooaye": {
         "score": 68,
         "label": "中性偏多共識",
@@ -121,892 +128,42 @@
         "top_quote": "散熱大廠前陣子股價衝高後短線回檔，但 AI 伺服器長線成長趨勢未變，拉回均線附近是良性修正，適合分批試單。"
       },
       "news": {
-        "score": 50,
-        "label": "中性／無資料"
+        "score": 69,
+        "label": "偏多"
       }
     },
     {
-      "ticker": "alab",
-      "symbol": "ALAB",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
+      "ticker": "5876.TW",
+      "symbol": "5876.TW",
+      "held": false,
+      "gooaye_named": true,
+      "buy_score": 58,
+      "recommendation": "偏多分批",
       "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
+        "technical": 46,
+        "gooaye": 90,
+        "ticker_news": 82,
+        "macro": 26
       },
-      "technical": null,
+      "technical": {
+        "composite_score": 46,
+        "bias": "偏多",
+        "today_action": "今天可小量買",
+        "buy_zone": "41.11 - 41.41",
+        "sell_zone": "49.56 - 53.76",
+        "stop_loss": "38.64 - 39.87",
+        "latest_close": 42.0
+      },
       "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
+        "score": 90,
+        "label": "強力多頭共識",
+        "opinion_count": 1,
+        "top_logic": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。",
+        "top_quote": "股價長期落後，前瞻本益比僅 11 倍，且較葛拉漢價折價將近 40%，獲利與配息穩定，大盤震盪時防禦性強，具備極強的補漲空間。"
       },
       "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "ceg",
-      "symbol": "CEG",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "meta",
-      "symbol": "META",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "MRVL",
-      "symbol": "MRVL",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "ADBE",
-      "symbol": "ADBE",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "symbol": "AMZN",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "AVGO",
-      "symbol": "AVGO",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "CDW",
-      "symbol": "CDW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "CRWV",
-      "symbol": "CRWV",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "ETN",
-      "symbol": "ETN",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "GEV",
-      "symbol": "GEV",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "GOOG",
-      "symbol": "GOOG",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "GRAB",
-      "symbol": "GRAB",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "symbol": "MSFT",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "symbol": "NVDA",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "symbol": "PLTR",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "SOFI",
-      "symbol": "SOFI",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "symbol": "TSLA",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "VST",
-      "symbol": "VST",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "AES",
-      "symbol": "AES",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "BE",
-      "symbol": "BE",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "COIN",
-      "symbol": "COIN",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "FLR",
-      "symbol": "FLR",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "LITE",
-      "symbol": "LITE",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "MP",
-      "symbol": "MP",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "NRG",
-      "symbol": "NRG",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "TEL",
-      "symbol": "TEL",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "00403A",
-      "symbol": "00403A.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "00948B",
-      "symbol": "00948B.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "2301",
-      "symbol": "2301.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "2308",
-      "symbol": "2308.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "2421",
-      "symbol": "2421.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "2890",
-      "symbol": "2890.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
-      }
-    },
-    {
-      "ticker": "6409",
-      "symbol": "6409.TW",
-      "held": true,
-      "gooaye_named": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 50
-      },
-      "technical": null,
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性／無資料"
+        "score": 82,
+        "label": "偏多"
       }
     }
   ],
