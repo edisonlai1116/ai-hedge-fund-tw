@@ -1536,6 +1536,33 @@ def calculate_novice_rating(daily_score: int, pe_ratio: float | None, bottleneck
         return "🔴 迴避"
 
 
+def _gooaye_agent_opinion(symbol: str) -> dict:
+    """把股癌/輿情共識做成「其中一種 agent 看法」，附加到個股分析的 agents 清單。
+
+    讀 WeightedConsensusEngine（股癌 Podcast + 社群輿情，免 Key）；有點名 → 真實多空看法，
+    無點名/資料庫不可用 → 中性並註明，確保股癌一律以一個 agent 呈現。signal 與其他 agent 一致用偏多/中性/偏空。
+    """
+    score, label, logic = 50, "", ""
+    try:
+        from src.sentiment.consensus_engine import WeightedConsensusEngine
+        cons = WeightedConsensusEngine().get_stock_consensus(symbol)
+        ops = cons.get("opinions") or []
+        score = int(cons.get("consensus_score", 50))
+        label = cons.get("consensus_label", "")
+        if ops:
+            top = ops[0]
+            logic = top.get("core_logic") or top.get("original_quote") or ""
+            signal = "偏多" if score >= 65 else ("偏空" if score < 45 else "中性")
+            confidence = max(35, min(90, abs(score - 50) * 2))
+            summary = f"股癌/輿情共識 {score} 分（{label}）：{logic}"[:140]
+            return asdict(AgentOpinion(key="gooaye", name="股癌 (Gooaye)", signal=signal,
+                                       confidence=confidence, summary=summary))
+    except Exception:
+        pass
+    return asdict(AgentOpinion(key="gooaye", name="股癌 (Gooaye)", signal="中性",
+                               confidence=40, summary="股癌/社群輿情近期未明確點名此股，暫以中性看待。"))
+
+
 def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = True, lightweight: bool = False) -> SignalReport:
     # lightweight=True 用於大盤掃描的初篩排序：跳過個股回測/預測/估值抓取等較重的運算，
     # 只算出排序所需的 composite_score / expected_return / 風報比，正式入選後再做完整分析。
@@ -1718,6 +1745,8 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             agent_edges=agent_edges,
         )
     ]
+    # 股癌（Gooaye）/社群輿情也列為其中一種 agent 看法。
+    agents.append(_gooaye_agent_opinion(symbol))
     horizons = [asdict(view) for view in build_horizon_views(frame)]
     chart = [
         {
