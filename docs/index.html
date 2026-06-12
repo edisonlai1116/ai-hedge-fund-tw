@@ -44,16 +44,19 @@
   .stat .v{font-size:1.25rem;font-weight:700}
   .disclaimer{font-size:.78rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:10px;margin-top:14px}
   code{background:#0b1020;padding:1px 5px;border-radius:5px}
+  .filt{cursor:pointer;user-select:none}
+  .filt.on{background:var(--accent);color:#001;border-color:var(--accent)}
   @media(max-width:560px){ th.hide-sm,td.hide-sm{display:none} h1{font-size:1.15rem} }
 </style>
 </head>
 <body>
   <div class="row">
-    <h1>📈 每日最該買</h1>
+    <h1>📈 每日台美股 Top 50 最值得買</h1>
     <span class="spacer"></span>
+    <a href="/" style="font-size:.85rem">🔍 查個股</a>
     <a href="history.html" style="font-size:.85rem">📊 歷史走勢</a>
-    <span class="badge" id="mode">—</span>
   </div>
+  <div class="muted" id="mode" style="margin-top:2px"></div>
   <div class="muted" id="updated">載入中…</div>
 
   <div class="panel" id="macro-panel">
@@ -79,8 +82,11 @@
   <div class="panel">
     <div class="row"><strong>🏆 每日最該買排序</strong>
       <span class="spacer"></span>
-      <span class="muted">點一列看股癌論述</span>
+      <span class="filt badge" data-m="all" onclick="setFilter('all')">全部</span>
+      <span class="filt badge" data-m="tw" onclick="setFilter('tw')">台股</span>
+      <span class="filt badge" data-m="us" onclick="setFilter('us')">美股</span>
     </div>
+    <div class="muted" style="margin:4px 0">點一列看股癌論述</div>
     <table id="picks">
       <thead><tr>
         <th>#</th><th>標的</th><th>買進分數</th><th>建議</th>
@@ -139,12 +145,13 @@ function render(d){
   if(!picks.length){ body.innerHTML = "<tr><td colspan='7' class='muted'>無標的</td></tr>"; return; }
   body.innerHTML = "";
   picks.forEach((p,i)=>{
-    const tags = (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'');
+    const tags = `<span class="badge">${p.market==='tw'?'台股':'美股'}</span>` + (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'');
     const tech = p.technical;
     const techCell = tech ? `${esc(tech.today_action||tech.bias||"")}<div class="muted">買 ${esc(tech.buy_zone||"—")}</div>` : '<span class="muted">—</span>';
     const gscore = p.gooaye?.score ?? 50;
     const tr = document.createElement("tr");
     tr.className = "pick";
+    tr.dataset.market = p.market || "us";
     tr.innerHTML =
       `<td>${i+1}</td>`+
       `<td class="tk">${esc(p.ticker)}<div class="tags">${tags}</div></td>`+
@@ -166,6 +173,19 @@ function render(d){
       `</td>`;
     tr.addEventListener("click",()=>det.classList.toggle("open"));
     body.appendChild(tr); body.appendChild(det);
+  });
+  setFilter(curFilter);
+}
+
+let curFilter = "all";
+function setFilter(m){
+  curFilter = m;
+  document.querySelectorAll(".filt").forEach(b=>b.classList.toggle("on", b.dataset.m===m));
+  document.querySelectorAll("#picks-body tr.pick").forEach(tr=>{
+    const show = (m==="all") || (tr.dataset.market===m);
+    tr.style.display = show ? "" : "none";
+    const det = tr.nextElementSibling;
+    if(det && det.classList.contains("detail")){ det.style.display = show ? "" : "none"; if(!show) det.classList.remove("open"); }
   });
 }
 </script>

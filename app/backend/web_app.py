@@ -98,7 +98,14 @@ async def _startup():
     asyncio.create_task(_gooaye_updater())
 
 
-# 服務前端 build（必須放在所有 API 路由之後；mount 在 "/" 會接住其餘路徑）。
+# /daily：每日台美股 Top 50 靜態頁（與 GitHub Pages 同一份 docs/）。先掛，才不會被 "/" 接走。
+_DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs")
+if os.path.isdir(_DOCS):
+    app.mount("/daily", StaticFiles(directory=_DOCS, html=True), name="daily")
+else:
+    logger.warning(f"docs 不存在（{_DOCS}）；/daily 不可用。")
+
+# 服務前端 build（必須放在所有 API 路由與 /daily 之後；mount 在 "/" 會接住其餘路徑）。
 _DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
 if os.path.isdir(_DIST):
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="frontend")

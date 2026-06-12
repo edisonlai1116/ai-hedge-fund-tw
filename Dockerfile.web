@@ -26,6 +26,8 @@ RUN pip install --no-cache-dir \
 # 後端與分析引擎原始碼
 COPY src/ /app/src/
 COPY app/backend/ /app/app/backend/
+# 每日 Top 50 靜態頁與資料（web_app 服務在 /daily）
+COPY docs/ /app/docs/
 # 前端 build 產物（web_app 會從 app/frontend/dist 服務）
 COPY --from=frontend /fe/dist /app/app/frontend/dist
 

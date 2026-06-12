@@ -35,6 +35,18 @@ GOOAYE_FEED = "https://feeds.soundon.fm/podcasts/954689a5-3096-43a4-a80b-7810b21
 WEIGHTS = {"technical": 0.50, "gooaye": 0.25, "ticker_news": 0.10, "macro": 0.15}
 _NUM = re.compile(r"^-?\d[\d,]*(?:\.\d+)?$")
 
+# 最終排序輸出的檔數（台美股合併取前 N）
+TOP_N = 50
+
+# 台股 universe：台灣 50（0050）成分股為主的大型權值/熱門股（免 Key，固定清單）。
+TW_UNIVERSE = [
+    "2330", "2317", "2454", "2308", "2382", "2412", "2881", "2882", "2891", "2886",
+    "3711", "2303", "2002", "1303", "1301", "1216", "2207", "2884", "2885", "2892",
+    "2880", "2883", "5880", "2890", "2887", "3045", "4904", "2912", "1101", "2357",
+    "2395", "2603", "2609", "2615", "3008", "3034", "3037", "3231", "2376", "2377",
+    "6505", "9910", "2474", "2345", "3661", "4938", "2379", "3017", "5871", "2327",
+]
+
 
 # ===== 純函式（可離線單元測試） ============================================
 def compute_buy_score(technical: Optional[float], gooaye: Optional[float],
@@ -254,9 +266,11 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, m
 
     scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score)
     top_op = cons["opinions"][0] if cons.get("opinions") else None
+    market = "tw" if symbol.endswith(".TW") or symbol.endswith(".TWO") else "us"
     return {
         "ticker": raw_ticker,
         "symbol": symbol,
+        "market": market,
         "held": held,
         "gooaye_named": named,
         "market_mover": mover,
@@ -289,10 +303,10 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
     named_simple = {n.split(".")[0].upper() for n in named_tickers}
     mover_simple = {m.split(".")[0].upper() for m in movers}
 
-    # 標的池：熱門榜 ∪ 股癌點名（simple 代號去重，保留原字串）
+    # 標的池（台美股）：美股當日熱門榜 ∪ 台股台灣50 ∪ 股癌點名（simple 代號去重，保留原字串）
     universe = []
     seen = set()
-    for t in list(movers) + named_tickers:
+    for t in list(movers) + list(TW_UNIVERSE) + named_tickers:
         key = t.split(".")[0].upper()
         if key not in seen:
             seen.add(key)
@@ -308,15 +322,20 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             named=(key in named_simple),
             mover=(key in mover_simple),
         ))
-    rows = rank_rows(rows)
+    rows = rank_rows(rows)[:TOP_N]   # 台美股合併取前 50
 
     tz = timezone(timedelta(hours=8))  # 台北時間
     now = datetime.now(tz)
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "generated_date": now.strftime("%Y-%m-%d"),
-        "mode": "免 Key（美股當日熱門榜 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
-        "universe": {"movers": len(movers), "gooaye_named": len(named_tickers), "total": len(universe)},
+        "mode": "免 Key（台美股 Top 50：美股熱門榜 + 台灣50 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
+        "universe": {
+            "us_movers": len(movers), "tw_universe": len(TW_UNIVERSE),
+            "gooaye_named": len(named_tickers), "scanned": len(universe), "top_n": TOP_N,
+            "tw_in_top": sum(1 for r in rows if r.get("market") == "tw"),
+            "us_in_top": sum(1 for r in rows if r.get("market") == "us"),
+        },
         "macro": {
             "score": macro_score,
             "label": macro.get("label", ""),

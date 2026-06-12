@@ -14,6 +14,5 @@ app/frontend/dist
 *.db-wal
 *.db-shm
 agentic_sop/runs
-docs/data/history
 tests
 scratch

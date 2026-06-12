@@ -274,6 +274,10 @@ $env:PYTHONUTF8=1; poetry run uvicorn app.backend.web_app:app --port 8000
 ```
 （或直接用既有的 `run-simple-web.ps1`，功能相同。）
 
-### 兩個網址各司其職
-- **Render**（互動）：隨打一檔台股/美股 → 進出點、買賣、規則型 agent 意見、股癌輿情。
-- **GitHub Pages**（每日總覽）：每天自動算好的「最該買」排序與歷史走勢。
+### 部署後同一個網站就有全部功能
+Render 部署的這個站，同網域下有兩個頁面：
+- `/`（首頁）：**查個股**——輸入台股/美股 → 進出點、買賣建議、規則型 agent 意見、股癌輿情。
+- `/daily/`：**每日台美股 Top 50 最值得買**——美股當日熱門榜＋台灣50＋股癌點名，綜合排序，可切換台股/美股。
+
+GitHub Actions 每天會重算 Top 50 並 commit；Render 設了 `autoDeploy`，會在每日更新後自動重新部署，
+所以 `/daily/` 會跟著更新。（GitHub Pages 那份每日頁仍可用，內容與 `/daily/` 相同。）
