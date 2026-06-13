@@ -222,19 +222,6 @@ export default function App() {
       .catch(() => setGooayeMap({}));
   }, []);
 
-  // 記住真實持股輸入與上次健檢日期（localStorage）。
-  useEffect(() => {
-    saveRealHoldings(holdingsText, holdingsLastReviewed);
-  }, [holdingsText, holdingsLastReviewed]);
-
-  // 每天首次開啟、且已記住持股時，自動跑一次持股健檢（不用每次重 key）。
-  useEffect(() => {
-    if (holdingsText.trim() && holdingsLastReviewed !== localDateStr()) {
-      handleReviewHoldings({ auto: true });
-    }
-    // 僅掛載時判斷一次
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -492,59 +479,7 @@ export default function App() {
           ) : null}
 
           {activeTab === 'holdings' ? (
-            <div className="space-y-5">
-              <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <BriefcaseBusiness className="h-4 w-4" />
-                    持股健檢
-                  </CardTitle>
-                  <CardDescription>
-                    每行一檔：代碼 成本 股數（例：AAPL 185 20、台股 2330 785 1）。系統會判斷賣出、減碼或續抱。
-                    持股會自動記住，每天首次開啟此頁會自動健檢，不用每次重 key。
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3 lg:grid-cols-[1fr_200px] lg:items-start">
-                  <textarea
-                    className="min-h-[120px] w-full rounded-md border border-slate-200 bg-white p-3 text-sm outline-none focus:border-slate-400"
-                    placeholder={'AAPL 185 20\nNVDA 109 10\n2330 785 1'}
-                    value={holdingsText}
-                    onChange={(event) => setHoldingsText(event.target.value)}
-                  />
-                  <div className="space-y-2">
-                    <Button className="h-10 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={holdingsLoading} onClick={() => handleReviewHoldings()} type="button">
-                      {holdingsLoading ? '檢查中' : '檢查持股'}
-                    </Button>
-                    <p className="text-xs text-slate-400">
-                      {holdingsLastReviewed ? `上次健檢：${holdingsLastReviewed}` : '尚未健檢'}
-                      {holdingsText.trim() ? '　·　已記住，每日自動健檢' : ''}
-                    </p>
-                  </div>
-                </CardContent>
-                {holdingsError ? <p className="px-6 pb-4 text-sm text-rose-600">{holdingsError}</p> : null}
-              </Card>
-
-              {selectedHolding ? <HoldingSummaryCard holding={selectedHolding} /> : null}
-
-              <ErrorBoundary key={`holdings-${result?.symbol ?? 'none'}`}>
-                <SignalInsight
-                  result={result}
-                  lists={
-                    holdings.length > 0 ? (
-                      <ResultList
-                        title="持股健檢結果"
-                        items={holdings}
-                        onSelectHolding={(item) => {
-                          setSelectedHolding(item);
-                          setResult(item.signal);
-                        }}
-                        selectedSymbol={result?.symbol}
-                      />
-                    ) : null
-                  }
-                />
-              </ErrorBoundary>
-            </div>
+            <HoldingsManager useAiCommittee={useAiCommittee} committeeModel={committeeModel} gooayeMap={gooayeMap} />
           ) : null}
 
           {activeTab === 'backtest' ? (
@@ -2188,6 +2123,304 @@ function PaperEquityChart({ history, startCapital }: { history: PaperEquityPoint
         <div>橘線：SPY 買進持有</div>
         <div>灰虛線：起始本金 {paperUsd(startCapital)}</div>
       </div>
+    </div>
+  );
+}
+
+/* ===================== 我的真實持股健檢（結構化、記憶、每日自動） ===================== */
+
+const REAL_HOLDINGS_V2_KEY = 'real_holdings_v2';
+type RealHolding = { ticker: string; cost: number; shares: number };
+
+function parseHoldingsLines(text: string): RealHolding[] {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const p = l.split(/[\s,，、]+/).filter(Boolean);
+      return { ticker: (p[0] || '').toUpperCase(), cost: Number(p[1]) || 0, shares: Number(p[2]) || 0 };
+    })
+    .filter((h) => h.ticker);
+}
+function loadRealHoldingsV2(): { holdings: RealHolding[]; lastReviewed: string } {
+  try {
+    const raw = localStorage.getItem(REAL_HOLDINGS_V2_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (Array.isArray(d.holdings)) return { holdings: d.holdings, lastReviewed: d.lastReviewed ?? '' };
+    }
+    // 從舊版（v1 文字框）遷移
+    const v1 = localStorage.getItem('real_holdings_v1');
+    if (v1) {
+      const d = JSON.parse(v1);
+      return { holdings: parseHoldingsLines(d.text || ''), lastReviewed: d.lastReviewed ?? '' };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { holdings: [], lastReviewed: '' };
+}
+function saveRealHoldingsV2(holdings: RealHolding[], lastReviewed: string): void {
+  try {
+    localStorage.setItem(REAL_HOLDINGS_V2_KEY, JSON.stringify({ holdings, lastReviewed }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function HoldingsManager({
+  useAiCommittee,
+  committeeModel,
+  gooayeMap,
+}: {
+  useAiCommittee: boolean;
+  committeeModel: string;
+  gooayeMap: Record<string, GooayeOpinion>;
+}) {
+  const initial = loadRealHoldingsV2();
+  const [holdings, setHoldings] = useState<RealHolding[]>(initial.holdings);
+  const [lastReviewed, setLastReviewed] = useState(initial.lastReviewed);
+  const holdingsRef = useRef(holdings);
+  const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [reviewing, setReviewing] = useState(false);
+  const [error, setError] = useState('');
+  const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
+  const [fTicker, setFTicker] = useState('');
+  const [fCost, setFCost] = useState('');
+  const [fShares, setFShares] = useState('');
+
+  useEffect(() => {
+    holdingsRef.current = holdings;
+    saveRealHoldingsV2(holdings, lastReviewed);
+  }, [holdings, lastReviewed]);
+
+  const runReview = useCallback(async () => {
+    const list = holdingsRef.current;
+    if (!list.length) {
+      setReviews({});
+      return;
+    }
+    setReviewing(true);
+    setError('');
+    try {
+      const res = await reviewHoldings({
+        holdings: list.map((h) => ({ ticker: h.ticker, cost_basis: h.cost, shares: h.shares })),
+        useAiCommittee,
+        committeeModel,
+      });
+      const map: Record<string, HoldingReviewResult> = {};
+      res.forEach((r) => {
+        if (r && r.symbol) map[tickerBaseKey(r.symbol)] = r;
+      });
+      setReviews(map);
+      setLastReviewed(localDateStr());
+      try {
+        const q = await fetchQuotes(list.map((h) => h.ticker));
+        const nm: Record<string, string> = {};
+        q.forEach((it) => {
+          if (it.ok && it.name && it.name !== it.symbol) nm[tickerBaseKey(it.symbol)] = it.name;
+        });
+        setNames(nm);
+      } catch {
+        /* 名稱非必要 */
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '持股健檢失敗。');
+    } finally {
+      setReviewing(false);
+    }
+  }, [useAiCommittee, committeeModel]);
+
+  useEffect(() => {
+    // 每天首次開啟、已有持股時自動健檢一次
+    if (holdingsRef.current.length && initial.lastReviewed !== localDateStr()) runReview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function addHolding() {
+    const t = fTicker.trim().toUpperCase();
+    const c = parseFloat(fCost);
+    const s = parseFloat(fShares);
+    setError('');
+    if (!t) return setError('請輸入代碼。');
+    if (!(c > 0)) return setError('平均成本需大於 0。');
+    if (!(s > 0)) return setError('股數需大於 0。');
+    const next = [...holdingsRef.current.filter((h) => h.ticker !== t), { ticker: t, cost: c, shares: s }];
+    holdingsRef.current = next;
+    setHoldings(next);
+    setFTicker('');
+    setFCost('');
+    setFShares('');
+    runReview();
+  }
+  function removeHolding(t: string) {
+    const next = holdingsRef.current.filter((h) => h.ticker !== t);
+    holdingsRef.current = next;
+    setHoldings(next);
+    runReview();
+  }
+
+  const sellSignals = holdings
+    .map((h) => ({ ticker: h.ticker, rv: reviews[tickerBaseKey(h.ticker)] }))
+    .filter((x): x is { ticker: string; rv: HoldingReviewResult } => Boolean(x.rv) && paperTrimNum(x.rv!.trim_ratio) > 0);
+
+  return (
+    <div className="space-y-5">
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BriefcaseBusiness className="h-4 w-4" />
+                我的真實持股健檢
+              </CardTitle>
+              <CardDescription>新增持股後系統會記住；每天首次開啟此頁自動健檢，依波段策略判斷續抱／減碼／賣出，不用每次重 key。</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">{lastReviewed ? `上次健檢：${lastReviewed}` : '尚未健檢'}</span>
+              <Button type="button" onClick={() => runReview()} disabled={reviewing || !holdings.length} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">
+                {reviewing ? '健檢中…' : '🔍 重新健檢'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-[1fr_140px_120px_auto] md:items-end">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">代碼（美股 AAPL／台股 2330）</span>
+              <Input value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / 2330" className="h-10 bg-white" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">平均成本（原幣）</span>
+              <Input type="number" min="0" step="any" value={fCost} onChange={(e) => setFCost(e.target.value)} className="h-10 bg-white" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">股數</span>
+              <Input type="number" min="0" step="any" value={fShares} onChange={(e) => setFShares(e.target.value)} className="h-10 bg-white" />
+            </label>
+            <Button type="button" onClick={addHolding} className="h-10 bg-slate-950 text-white hover:bg-slate-800 md:w-28">
+              新增持股
+            </Button>
+          </div>
+          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        </CardContent>
+      </Card>
+
+      {sellSignals.length ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" />
+            策略對你的真實持股發出減碼／賣出訊號（請自行判斷是否執行）
+          </div>
+          <div className="mt-1.5 space-y-1 text-xs">
+            {sellSignals.map((s) => (
+              <div key={s.ticker}>
+                <span className="font-semibold">{s.ticker}</span>：{s.rv.verdict}・建議出場 {s.rv.trim_ratio}・強度 {s.rv.urgency}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">持股健檢結果</CardTitle>
+          <CardDescription>點一列看策略理由與操作區間。報酬率以你的成本對最新收盤計算（原幣）。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {holdings.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="py-1.5 pr-2 font-medium">標的</th>
+                    <th className="py-1.5 pr-2 font-medium">股數</th>
+                    <th className="py-1.5 pr-2 font-medium">成本(原幣)</th>
+                    <th className="py-1.5 pr-2 font-medium">現價(原幣)</th>
+                    <th className="py-1.5 pr-2 font-medium">報酬率</th>
+                    <th className="py-1.5 pr-2 font-medium">策略訊號</th>
+                    <th className="py-1.5 pr-2 font-medium" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {holdings.map((h) => {
+                    const key = tickerBaseKey(h.ticker);
+                    const rv = reviews[key];
+                    const ccy = paperCurrencyOf(h.ticker);
+                    const name = names[key];
+                    const cur = rv ? rv.latest_close : null;
+                    const pnl = rv ? rv.pnl_pct : null;
+                    const op = gooayeMap[key];
+                    const open = openRows[h.ticker];
+                    return (
+                      <Fragment key={h.ticker}>
+                        <tr className="cursor-pointer border-t border-slate-100 hover:bg-slate-50" onClick={() => setOpenRows((prev) => ({ ...prev, [h.ticker]: !prev[h.ticker] }))}>
+                          <td className="py-1.5 pr-2 font-semibold text-slate-900">
+                            <div className="flex items-center gap-1.5">
+                              {h.ticker}
+                              {name ? <span className="font-normal text-slate-500">{name}</span> : null}
+                              {op ? (
+                                <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
+                                  <Mic className="h-2.5 w-2.5" />股癌點名
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="py-1.5 pr-2 text-slate-700">{h.shares}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">{paperNative(h.cost, ccy)}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">{cur != null ? paperNative(cur, ccy) : '-'}</td>
+                          <td className={`py-1.5 pr-2 font-medium ${toneOf(pnl)}`}>{pnl != null ? paperPct(pnl) : '-'}</td>
+                          <td className="py-1.5 pr-2">
+                            {rv ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
+                                <span className="text-xs text-slate-500">出{rv.trim_ratio}·強度{rv.urgency}</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400">{reviewing ? '健檢中…' : '—'}</span>
+                            )}
+                          </td>
+                          <td className="py-1.5 pr-2">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); removeHolding(h.ticker); }} className="text-rose-600 hover:text-rose-700" title="刪除持股">
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                        {open ? (
+                          <tr className="border-t border-slate-100 bg-slate-50">
+                            <td colSpan={7} className="px-2 py-3 text-xs leading-5 text-slate-600">
+                              {rv ? (
+                                <div className="space-y-1">
+                                  <div>
+                                    <span className="font-semibold">策略結論：</span>
+                                    <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
+                                    <span className="ml-1">強度 {rv.urgency}・建議出場 {rv.trim_ratio}</span>
+                                  </div>
+                                  {rv.holding_reason ? <div>{rv.holding_reason}</div> : null}
+                                  <div>
+                                    <span className="font-semibold">操作區間：</span>趨勢 {rv.signal?.bias ?? '—'}　買進區 {rv.signal?.buy_zone ?? '—'}　賣出區 {rv.signal?.sell_zone ?? '—'}　停損 {rv.protective_stop || rv.signal?.stop_loss || '—'}
+                                  </div>
+                                  {op ? <div className="text-slate-500">🎙️ 股癌：{op.core_logic}</div> : null}
+                                </div>
+                              ) : (
+                                <div className="text-slate-400">尚未健檢，點「🔍 重新健檢」。</div>
+                              )}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">尚無持股。用上方表單新增（例：AAPL 185 20、台股 2330 785 1），系統會記住並每天自動健檢。</div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
