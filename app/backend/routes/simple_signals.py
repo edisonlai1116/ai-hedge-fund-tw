@@ -354,75 +354,27 @@ def _attach_backtest(report, frame) -> None:
 def _build_holding_verdict(
     report, cost_basis: float | None
 ) -> tuple[str, str, str, str]:
+    # 賣出與否「看股票實際狀況」決定（趨勢結構、動能、過熱、壓力、中長線預測、長線風險、引擎當日出場訊號），
+    # 不以獲利%為觸發。獲利%僅用來把「全出」標成 停損(虧損) 或 獲利了結(獲利)。
     close = report.latest_close
     ma20 = report.ma20
     ma50 = report.ma50
-    ma120 = getattr(report, "ma120", 0.0) or ma50  # 波段策略長線（缺值回退 MA50）
+    ma120 = getattr(report, "ma120", 0.0) or ma50
     rsi = report.rsi14
     bias = report.bias
+    macd_val = getattr(report, "macd_value", 0.0) or 0.0
+    macd_sig = getattr(report, "macd_signal", 0.0) or 0.0
+    macd_hist = getattr(report, "macd_hist", 0.0) or 0.0
+    resistance = getattr(report, "resistance", 0.0) or 0.0
+    exit_action = getattr(report, "today_exit_action", "") or ""
     pnl_pct = None if cost_basis in (None, 0) else ((close / cost_basis) - 1) * 100
 
-    # 多層趨勢驗證：只要收盤價在 MA50 的 1.5% 以內且非偏空，就視為長期多頭
-    is_long_term_bullish = (close >= ma50 * 0.985) and (bias != "偏空")
-
-    # 稍微回落至 MA20 以下，但仍在 MA50 防線之上
-    is_minor_pullback = (close < ma20) and (close >= ma50 * 0.97)
-
-    if is_long_term_bullish:
-        # 達策略 +35% 目標：分批落袋鎖利、其餘續抱「讓獲利奔跑」——趨勢未壞不全出，
-        # 真正全數出場留給後面「跌破 MA50/MA120」的防守性賣出。比例隨延伸程度提高，但仍保留多數部位。
-        if pnl_pct is not None and pnl_pct >= 35:
-            if pnl_pct >= 80 or rsi >= 78:
-                hot = f"、且短線過熱 (RSI {rsi:.0f})" if rsi >= 78 else ""
-                return (
-                    "分批獲利",
-                    "中",
-                    "50%",
-                    f"獲利已達 {pnl_pct:.0f}%（遠超策略 +35% 目標{hot}）。建議分批了結約一半落袋鎖利，"
-                    f"其餘續抱讓獲利奔跑，守住 MA50（{ma50:.2f} 元）與移動停損；跌破長線 MA120（{ma120:.2f} 元）再全數出場。",
-                )
-            return (
-                "分批獲利",
-                "低",
-                "30%",
-                f"獲利已達 {pnl_pct:.0f}%（達策略 +35% 目標）。建議先了結約三成鎖利，其餘續抱讓獲利奔跑、"
-                f"守住 MA50（{ma50:.2f} 元）；多頭趨勢未轉壞前不必急著全出。",
-            )
-
-        if is_minor_pullback:
-            # 長期趨勢強，短線回檔不急著出場
-            return (
-                "強勢續抱",
-                "低",
-                "0%",
-                f"大趨勢依然健康（收盤貼近 MA50: {ma50:.2f} 元以上），目前只是正常回檔範圍，"
-                f"尚未出現三死叉訊號。建議守穩生命線 MA50（{ma50:.2f} 元）續抱。",
-            )
-
-        # 長期偏多，僅在 RSI 極度超買時執行獲利了結
-        if rsi >= 78 and report.today_exit_action in {"今天賣出", "今天可小量賣"}:
-            if pnl_pct is not None and pnl_pct >= 20:
-                return (
-                    "分批獲利",
-                    "中",
-                    "30%",
-                    f"本波段已進入超買區 (RSI: {rsi:.1f}) 且出現高點，"
-                    f"目前獲利豐厚，建議先獲利了結 30% 部位，留倉。",
-                )
-            return (
-                "觀察減碼",
-                "中",
-                "20%",
-                f"本波段技術指標已進入超買 (RSI: {rsi:.1f})，"
-                f"建議分批，守住 20% 核心部位等待回調，剩餘續抱 MA50 以上。",
-            )
-
-    # 嚴格防線驗證：跌破 MA50 超過 3.5% 才算真正破位
-    is_price_broken = close < ma50 * 0.965
-    is_structural_break = (close < ma50) and (ma20 < ma50)
-    # 波段策略長線出場：跌破長線 MA120（生命線）即視為波段結構破壞。
-    is_long_line_break = ma120 > 0 and close < ma120
-    is_defensive_break = is_price_broken or is_structural_break or is_long_line_break
+    pf = report.price_forecast if isinstance(getattr(report, "price_forecast", None), dict) else {}
+    forecast_verdict = str(pf.get("verdict", "") or "")
+    forecast_bearish = any(k in forecast_verdict for k in ("減碼", "偏空", "偏弱", "不建議", "恐虧損"))
+    ltr = report.long_term_risk if isinstance(getattr(report, "long_term_risk", None), dict) else {}
+    ltr_blocked = bool(ltr.get("blocked"))
+    ltr_severity = str(ltr.get("severity", "low") or "low")
 
     # 解析停損價
     stop_val = None
@@ -434,50 +386,100 @@ def _build_holding_verdict(
     except Exception:
         pass
 
+    # ---- 1) 趨勢「確認」轉壞 → 防守性全數出場（依股況，與獲利無關）----
+    #     僅在真正跌破中期生命線 MA50 / 均線轉空 / 觸停損 / 引擎判賣 時才全出；
+    #     只是低於長線 MA120（但仍守在 MA50 上）不算破位，留到下方當「減碼警訊」。
+    is_structural_break = (close < ma50) and (ma20 < ma50)    # 均線空頭排列
+    is_price_broken = close < ma50 * 0.965                     # 明確跌破 MA50（>3.5%）
     is_stop_broken = stop_val is not None and close < stop_val
     is_bearish_break = (bias == "偏空") and (close < ma50)
+    is_sell_today = exit_action == "今天賣出"                  # 引擎：偏空且跌破 MA50
 
-    if is_defensive_break or is_stop_broken or is_bearish_break:
-        # 觸發的防線描述（波段策略長線 MA120 優先，其次中期 MA50）
-        line_info = (
-            f"長線生命線 MA120（{ma120:.2f} 元）" if is_long_line_break else f"中期防守線 MA50（{ma50:.2f} 元）"
-        )
-        # 嚴格防守性賣出
+    if is_structural_break or is_price_broken or is_stop_broken or is_bearish_break or is_sell_today:
+        stop_info = f"並觸及防守價（{stop_val:.2f} 元）" if is_stop_broken else ""
         if pnl_pct is not None and pnl_pct < 0:
-            stop_info = f"且觸及防守價（{stop_val:.2f} 元）" if is_stop_broken else ""
             return (
                 "停損出場",
                 "高",
                 "100%",
-                f"股價已確實跌破{line_info}{stop_info}，"
-                f"波段結構已轉走弱。依策略規避下行風險，建議全面停損，保存實力。",
+                f"股價已確認跌破中期生命線 MA50（{ma50:.2f} 元）{stop_info}、均線轉空（趨勢 {bias}）。"
+                f"股況惡化且為虧損，依紀律全數停損、保存實力。",
             )
         return (
             "獲利了結",
             "高",
             "100%",
-            f"股價確認跌破{line_info}，多頭波段結構遭到破壞。"
-            f"依策略建議將現有獲利部位全面獲利了結，落袋為安。",
+            f"股價已確認跌破中期生命線 MA50（{ma50:.2f} 元）{stop_info}、多頭結構破壞（趨勢 {bias}）。"
+            f"此為股況轉弱（非單看獲利），建議全數獲利了結、落袋為安。",
         )
 
-    # 中間情況
-    if report.today_exit_action == "今天賣出":
-        if pnl_pct is not None and pnl_pct < 0:
-            return "今天賣出", "高", "100%", "趨勢已轉弱，若有持股建議今天直接退場。"
-        return "今天賣出", "高", "100%", "價格進入高檔獲利區，今天優先落袋。"
+    # ---- 2) 仍守在 MA50 之上，但出現實際的「價格面」轉弱/過熱 → 依嚴重度分批減碼（比例看股況，不看獲利）----
+    long_line_warn = ma120 > 0 and close < ma120                 # 跌破長線 MA120（仍守 MA50）= 長線轉弱警訊
+    momentum_fading = (macd_val < macd_sig) or (macd_hist < 0)   # MACD 死叉或柱狀轉負 → 動能轉弱
+    overbought = rsi >= 72
+    extreme_ob = rsi >= 80
+    near_resistance = resistance > 0 and close >= resistance * 0.985
+    trim_today = exit_action == "今天可小量賣"                   # 引擎：RSI 過熱可小量賣
+    risk_flag = ltr_blocked or ltr_severity in ("medium", "high")
 
-    if report.today_exit_action == "今天可小量賣":
-        if pnl_pct is not None and pnl_pct >= 20:
-            return "分賣一半", "中", "50%", "已有顯著獲利，這裡先賣一半比較穩健。"
-        return "分賣三成", "中", "30%", "技術面偏強，先減碼一成，剩下繼續觀察。"
+    # 「實際價格面」轉弱訊號（純統計預測 / 長線風險不單獨觸發賣出，只作加重或提示）。
+    weak_price_action = trim_today or overbought or long_line_warn
+    if weak_price_action:
+        reasons: list[str] = []
+        if extreme_ob:
+            reasons.append(f"RSI {rsi:.0f} 嚴重超買")
+        elif overbought:
+            reasons.append(f"RSI {rsi:.0f} 偏熱")
+        if long_line_warn:
+            reasons.append(f"跌破長線 MA120（{ma120:.2f} 元）")
+        if momentum_fading:
+            reasons.append("MACD 動能轉弱")
+        if near_resistance:
+            reasons.append("逼近壓力區")
+        if forecast_bearish:
+            reasons.append(f"中長線預測偏空（{forecast_verdict}）")
+        if risk_flag:
+            reasons.append("長線虧損風險偏高" if (ltr_blocked or ltr_severity == "high") else "長線風險升高")
 
-    # 預設：穩健續抱
+        severe = (
+            extreme_ob
+            or (long_line_warn and momentum_fading)
+            or (overbought and momentum_fading and near_resistance)
+            or ((forecast_bearish or risk_flag) and (long_line_warn or overbought))
+        )
+        if severe:
+            return (
+                "分批減碼",
+                "中",
+                "50%",
+                f"趨勢尚未跌破 MA50（{ma50:.2f} 元），但{'、'.join(reasons)}。"
+                f"依股況建議減碼約一半鎖利，其餘守 MA50 續抱，轉弱再全出。",
+            )
+        return (
+            "觀察減碼",
+            "中",
+            "30%",
+            f"多頭趨勢仍在，惟{'、'.join(reasons)}。"
+            f"依股況建議小幅減碼約三成，核心部位守 MA50（{ma50:.2f} 元）續抱。",
+        )
+
+    # ---- 3) 股況健康 → 續抱（不因帳面獲利多就賣）----
+    caution = ""
+    if forecast_bearish or risk_flag:
+        caution = "　註：中長線預測/風險偏保守，但價格面尚無轉弱訊號，續抱並留意即可。"
+    if (close < ma20) and (close >= ma50 * 0.97):
+        return (
+            "強勢續抱",
+            "低",
+            "0%",
+            f"短線回檔至 MA20 下方，但守穩生命線 MA50（{ma50:.2f} 元）、動能未轉弱，趨勢健康，續抱即可。{caution}",
+        )
     return (
         "續抱觀察",
         "低",
         "0%",
-        f"中期上升軌道未被破壞，目前股價在合理波動範圍內，"
-        f"建議守穩關鍵支撐 MA50（{ma50:.2f} 元）防線續抱。",
+        f"中期上升軌道未破、無實際賣出訊號（趨勢 {bias}、RSI {rsi:.0f}）。"
+        f"守 MA50（{ma50:.2f} 元）續抱，待出現實際賣出訊號再處理，不因帳面獲利多寡而賣。{caution}",
     )
 
 
