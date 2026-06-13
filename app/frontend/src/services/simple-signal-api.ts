@@ -120,6 +120,7 @@ export type SimpleSignalResult = {
   latest_close: number;
   ma20: number;
   ma50: number;
+  ma120?: number;
   rsi14: number;
   atr14: number;
   support: number;
@@ -314,6 +315,16 @@ export type AiMainlineBacktestPayload = {
   maxHoldingDays?: number;
 };
 
+export type QuoteItem = {
+  symbol: string;
+  resolved?: string;
+  price?: number;
+  currency?: string;
+  name?: string;
+  ok: boolean;
+  error?: string;
+};
+
 async function parseResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
   const data = await response.json();
   if (!response.ok) {
@@ -391,6 +402,37 @@ export async function fetchSp500DailyTop(payload: {
   return parseResponse<SP500DailyScanResponse>(response, '每日排行掃描失敗。');
 }
 
+export type SystemStatus = {
+  server_time: string | null;
+  gooaye: {
+    episode_title: string | null;
+    episode_id: string | null;
+    published_date: string | null;
+    opinion_count: number | null;
+    last_checked: string | null;
+    source: string;
+  };
+  daily_report: {
+    generated_at: string | null;
+    generated_date: string | null;
+    top_n: number | null;
+  };
+};
+
+export async function fetchSystemStatus(): Promise<SystemStatus> {
+  const response = await fetch(`${API_BASE_URL}/status?_=${Date.now()}`);
+  return parseResponse<SystemStatus>(response, '系統狀態取得失敗。');
+}
+
+export async function fetchQuotes(symbols: string[]): Promise<QuoteItem[]> {
+  if (!symbols.length) return [];
+  const response = await fetch(
+    `${API_BASE_URL}/quotes?symbols=${encodeURIComponent(symbols.join(','))}&_=${Date.now()}`,
+  );
+  const data = await parseResponse<{ quotes: QuoteItem[] }>(response, '報價取得失敗。');
+  return data.quotes ?? [];
+}
+
 export async function runAiMainlineBacktest(
   payload: AiMainlineBacktestPayload = {},
 ): Promise<AiMainlineBacktestResult> {
@@ -405,7 +447,7 @@ export async function runAiMainlineBacktest(
       max_positions: payload.maxPositions ?? 8,
       take_profit_pct: payload.takeProfitPct ?? 35,
       trailing_stop_pct: payload.trailingStopPct ?? 18,
-      max_holding_days: payload.maxHoldingDays ?? 378,
+      max_holding_days: payload.maxHoldingDays ?? 126,
     }),
   });
   return parseResponse<AiMainlineBacktestResult>(response, 'AI 主線長線回測失敗。');

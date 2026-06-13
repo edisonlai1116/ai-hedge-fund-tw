@@ -1,15 +1,19 @@
-import type { ErrorInfo, FormEvent, ReactNode } from 'react';
-import { Component, useState } from 'react';
+import type { ChangeEvent, ErrorInfo, FormEvent, ReactNode } from 'react';
+import { Component, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
   BriefcaseBusiness,
+  ChevronDown,
   Clock3,
   LineChart,
+  RadioTower,
   Search,
   ShieldAlert,
   Sparkles,
   TrendingUp,
+  Wallet,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -19,9 +23,12 @@ import { Toaster } from './components/ui/sonner';
 import {
   analyzeSimpleSignal,
   analyzeSimpleSignalBatch,
+  fetchQuotes,
   fetchSp500DailyTop,
+  fetchSystemStatus,
   reviewHoldings,
   runAiMainlineBacktest,
+  type SystemStatus,
   type AgentView,
   type AiMainlineBacktestResult,
   type ChartPoint,
@@ -119,13 +126,14 @@ function finalVerdict(result: DetailResult): string {
   return '先觀察，等待更明確位置';
 }
 
-type TabKey = 'analyze' | 'daily' | 'holdings' | 'backtest';
+type TabKey = 'analyze' | 'daily' | 'holdings' | 'backtest' | 'portfolio';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
   { key: 'analyze', label: '個股分析', icon: Search, hint: '單股或多股技術＋AI 評分' },
   { key: 'daily', label: '每日掃描', icon: Sparkles, hint: '當日最佳買點 Top 50' },
   { key: 'holdings', label: '持股健檢', icon: BriefcaseBusiness, hint: '判斷續抱 / 減碼 / 賣出' },
   { key: 'backtest', label: 'AI 主線長線回測', icon: LineChart, hint: '產業鏈投組投報率驗證' },
+  { key: 'portfolio', label: '跟單對帳本', icon: Wallet, hint: '5 萬美金實單跟蹤 vs 大盤' },
 ];
 
 export default function App() {
@@ -280,6 +288,7 @@ export default function App() {
                 className="h-9 w-40 bg-white"
                 title="AI 委員會模型名稱"
               />
+              <SystemStatusBadge />
             </div>
           </div>
         </header>
@@ -467,7 +476,7 @@ export default function App() {
                       AI 主線投組長線回測
                     </div>
                     <div className="text-xs text-slate-500">
-                      以 AI 產業鏈主線股、6-18 個月波段策略，驗證「AI 主線長線投資」整體投報率與對標超額報酬。
+                      以 AI 產業鏈主線股、寬鬆停利(35%/移損18%)讓獲利奔跑、持有上限 6 個月的波段策略，驗證整體投報率與對標超額報酬。經 5/10 年回測，此波段優於 3–6 月緊縮打法。
                     </div>
                   </div>
                 </div>
@@ -503,10 +512,118 @@ export default function App() {
               )}
             </div>
           ) : null}
+
+          {activeTab === 'portfolio' ? (
+            <PortfolioTab
+              recommendations={dailyScan?.picks ?? []}
+              useAiCommittee={useAiCommittee}
+              committeeModel={committeeModel}
+            />
+          ) : null}
         </section>
       </main>
       <Toaster />
     </>
+  );
+}
+
+function fmtStamp(value: string | null | undefined): string {
+  if (!value) return '—';
+  // ISO（2026-06-13T06:30:00+08:00）取到分鐘；其他格式（RSS 日期）原樣顯示。
+  const m = value.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+  return m ? `${m[1]} ${m[2]}` : value;
+}
+
+function SystemStatusBadge() {
+  const [status, setStatus] = useState<SystemStatus | null>(null);
+  const [open, setOpen] = useState(false);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetchSystemStatus()
+        .then((s) => {
+          if (alive) {
+            setStatus(s);
+            setErr(false);
+          }
+        })
+        .catch(() => {
+          if (alive) setErr(true);
+        });
+    load();
+    const id = window.setInterval(load, 5 * 60 * 1000); // 每 5 分鐘刷新
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, []);
+
+  const ep = status?.gooaye.episode_title;
+  const label = err ? '狀態取得失敗' : ep ? `股癌 ${ep}` : '載入中…';
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-9 max-w-[220px] items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-600 hover:border-slate-400"
+        title="系統更新狀態"
+      >
+        <span className={`h-2 w-2 shrink-0 rounded-full ${err ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+        <RadioTower className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        <span className="truncate font-medium text-slate-900">{label}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-50 mt-1 w-80 rounded-md border border-slate-200 bg-white p-3 text-xs shadow-lg">
+          <div className="mb-2 flex items-center gap-1.5 font-semibold text-slate-900">
+            <RadioTower className="h-4 w-4 text-slate-500" />
+            系統更新狀態
+          </div>
+          {err ? (
+            <div className="text-rose-600">無法取得狀態（後端 /status 未連線）。</div>
+          ) : !status ? (
+            <div className="text-slate-500">載入中…</div>
+          ) : (
+            <div className="space-y-2">
+              <StatusRow label="股癌最新集數" value={status.gooaye.episode_title ?? '—'} strong />
+              <StatusRow label="集數發布時間" value={fmtStamp(status.gooaye.published_date)} />
+              <StatusRow
+                label="累積點名觀點"
+                value={status.gooaye.opinion_count != null ? `${status.gooaye.opinion_count} 則` : '—'}
+              />
+              <StatusRow
+                label="背景掃描最後檢查"
+                value={status.gooaye.last_checked ? fmtStamp(status.gooaye.last_checked) : '（每 2 小時自動掃描）'}
+              />
+              <div className="my-1 border-t border-slate-100" />
+              <StatusRow
+                label="每日 Top 50 報告"
+                value={fmtStamp(status.daily_report.generated_at) !== '—' ? fmtStamp(status.daily_report.generated_at) : status.daily_report.generated_date ?? '—'}
+                strong
+              />
+              <StatusRow label="報告標的數" value={status.daily_report.top_n != null ? `${status.daily_report.top_n} 檔` : '—'} />
+              <div className="my-1 border-t border-slate-100" />
+              <StatusRow label="伺服器時間" value={fmtStamp(status.server_time)} />
+              <div className="pt-1 text-[11px] leading-4 text-slate-400">
+                股癌集數每 2 小時自動掃描；每日 Top 50 報告由排程每日重建。時間有變動代表系統有在更新。
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function StatusRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-slate-500">{label}</span>
+      <span className={`text-right ${strong ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>{value}</span>
+    </div>
   );
 }
 
@@ -588,6 +705,7 @@ function StockOverviewCard({ result }: { result: DetailResult }) {
             <MetricCard label="建議買點區" value={result.buy_zone} />
             <MetricCard label="建議賣點區" value={result.sell_zone} />
             <MetricCard label="停損區" value={result.stop_loss} />
+            <MetricCard label="長線 MA120" value={result.ma120 ? safeFixed(result.ma120, 2) : '-'} />
             <MetricCard label="RSI14" value={safeFixed(result.rsi14, 1)} />
           </div>
           <p className="mt-2 text-xs leading-5 text-slate-500">{result.reason}</p>
@@ -1090,6 +1208,724 @@ function MetricCard({ label, value, icon, valueClassName }: { label: string; val
         <span>{label}</span>
       </div>
       <div className={`break-words text-sm font-semibold text-slate-900 ${valueClassName ?? ''}`}>{value}</div>
+    </div>
+  );
+}
+
+/* ===================== 跟單對帳本（紙上實單 vs 大盤） ===================== */
+
+const PORTFOLIO_KEY = 'fund_paper_v1';
+const PORTFOLIO_START_CAPITAL = 50000;
+
+type PaperPosition = { shares: number; avgCost: number };
+type PaperTrade = {
+  id: string;
+  date: string;
+  type: 'buy' | 'sell';
+  ticker: string;
+  shares: number;
+  price: number;
+  amount: number;
+  realized: number | null;
+  note: string;
+};
+type PaperBenchmark = { symbol: string; price: number; date: string; shares: number };
+type PaperEquityPoint = { date: string; equity: number; benchmark: number | null };
+type PaperAccount = {
+  startCapital: number;
+  startDate: string;
+  startBenchmark: PaperBenchmark | null;
+  cash: number;
+  positions: Record<string, PaperPosition>;
+  trades: PaperTrade[];
+  realized: number;
+  equityHistory: PaperEquityPoint[];
+};
+
+function paperToday(): string {
+  return new Date().toLocaleDateString('en-CA');
+}
+function paperUid(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function paperUsd(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  return '$' + Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function paperPct(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+}
+function toneOf(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return 'text-slate-900';
+  return value > 0 ? 'text-emerald-700' : value < 0 ? 'text-rose-700' : 'text-slate-900';
+}
+function paperTrimNum(text?: string): number {
+  const n = parseFloat(String(text ?? '').replace('%', ''));
+  return Number.isNaN(n) ? 0 : n;
+}
+function verdictBadgeClass(rv: HoldingReviewResult): string {
+  const n = paperTrimNum(rv.trim_ratio);
+  if (n >= 100 || /賣出|停損|了結/.test(rv.verdict)) return 'border-rose-200 bg-rose-100 text-rose-700';
+  if (n > 0) return 'border-amber-200 bg-amber-100 text-amber-700';
+  return 'border-emerald-200 bg-emerald-100 text-emerald-700';
+}
+function blankPaperAccount(): PaperAccount {
+  return {
+    startCapital: PORTFOLIO_START_CAPITAL,
+    startDate: paperToday(),
+    startBenchmark: null,
+    cash: PORTFOLIO_START_CAPITAL,
+    positions: {},
+    trades: [],
+    realized: 0,
+    equityHistory: [],
+  };
+}
+function loadPaperAccount(): PaperAccount {
+  try {
+    const raw = localStorage.getItem(PORTFOLIO_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as PaperAccount;
+      if (parsed && parsed.positions && Array.isArray(parsed.trades)) return parsed;
+    }
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return blankPaperAccount();
+}
+function paperPriceOf(account: PaperAccount, quotes: Record<string, number>, ticker: string): number | null {
+  if (quotes[ticker] != null) return quotes[ticker];
+  const pos = account.positions[ticker];
+  return pos ? pos.avgCost : null;
+}
+function paperMarketValue(account: PaperAccount, quotes: Record<string, number>): number {
+  return Object.keys(account.positions).reduce((sum, t) => {
+    const p = paperPriceOf(account, quotes, t);
+    return sum + (p ?? 0) * account.positions[t].shares;
+  }, 0);
+}
+function paperEquity(account: PaperAccount, quotes: Record<string, number>): number {
+  return account.cash + paperMarketValue(account, quotes);
+}
+function rebuildPaperAccount(trades: PaperTrade[], startCapital: number): Pick<PaperAccount, 'cash' | 'positions' | 'realized' | 'trades'> {
+  let cash = startCapital;
+  let realized = 0;
+  const positions: Record<string, PaperPosition> = {};
+  const ordered = [...trades].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const rebuilt: PaperTrade[] = [];
+  for (const t of ordered) {
+    if (t.type === 'buy') {
+      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0 };
+      const ns = pos.shares + t.shares;
+      pos.avgCost = ns > 0 ? (pos.avgCost * pos.shares + t.shares * t.price) / ns : 0;
+      pos.shares = ns;
+      positions[t.ticker] = pos;
+      cash -= t.shares * t.price;
+      rebuilt.push({ ...t, realized: null });
+    } else {
+      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0 };
+      const realizedTrade = (t.price - pos.avgCost) * t.shares;
+      pos.shares -= t.shares;
+      cash += t.shares * t.price;
+      realized += realizedTrade;
+      if (pos.shares <= 1e-6) delete positions[t.ticker];
+      else positions[t.ticker] = pos;
+      rebuilt.push({ ...t, realized: realizedTrade });
+    }
+  }
+  return { cash, positions, realized, trades: rebuilt };
+}
+
+function PortfolioTab({
+  recommendations,
+  useAiCommittee,
+  committeeModel,
+}: {
+  recommendations: SP500DailyPick[];
+  useAiCommittee: boolean;
+  committeeModel: string;
+}) {
+  const [account, setAccount] = useState<PaperAccount>(() => loadPaperAccount());
+  const accountRef = useRef(account);
+  const [quotes, setQuotes] = useState<Record<string, number>>({});
+  const [quotesOk, setQuotesOk] = useState(false);
+  const [quoteMsg, setQuoteMsg] = useState('');
+  const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
+  const [reviewMsg, setReviewMsg] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+  const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
+
+  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
+  const [fTicker, setFTicker] = useState('');
+  const [fShares, setFShares] = useState('');
+  const [fPrice, setFPrice] = useState('');
+  const [fDate, setFDate] = useState(paperToday());
+  const [fNote, setFNote] = useState('');
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    accountRef.current = account;
+    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(account));
+  }, [account]);
+
+  const commit = useCallback((next: PaperAccount) => {
+    accountRef.current = next;
+    setAccount(next);
+  }, []);
+
+  const refreshQuotes = useCallback(async () => {
+    const acc = accountRef.current;
+    const syms = Array.from(new Set<string>([...Object.keys(acc.positions), 'SPY']));
+    try {
+      const items = await fetchQuotes(syms);
+      const q: Record<string, number> = {};
+      items.forEach((it) => {
+        if (it.ok && typeof it.price === 'number') q[it.symbol] = it.price;
+      });
+      const ok = items.some((it) => it.ok);
+      setQuotes(q);
+      setQuotesOk(ok);
+      setQuoteMsg(ok ? '' : '目前取不到即時報價，未實現損益暫以成本價估算。');
+      setAccount((prev) => {
+        let next = prev;
+        if (!prev.startBenchmark && q.SPY) {
+          next = {
+            ...next,
+            startBenchmark: { symbol: 'SPY', price: q.SPY, date: paperToday(), shares: prev.startCapital / q.SPY },
+          };
+        }
+        if (ok) {
+          const eq = paperEquity(next, q);
+          const bm = next.startBenchmark && q.SPY ? next.startBenchmark.shares * q.SPY : null;
+          const d = paperToday();
+          const hist = [...next.equityHistory];
+          const last = hist[hist.length - 1];
+          if (last && last.date === d) hist[hist.length - 1] = { date: d, equity: eq, benchmark: bm };
+          else hist.push({ date: d, equity: eq, benchmark: bm });
+          next = { ...next, equityHistory: hist };
+        }
+        accountRef.current = next;
+        return next;
+      });
+    } catch {
+      setQuotesOk(false);
+      setQuoteMsg('此網站取不到即時報價（/quotes 無法連線）。仍可記錄交易，未實現損益以成本價估算。');
+    }
+  }, []);
+
+  const reviewHoldingsNow = useCallback(async () => {
+    const acc = accountRef.current;
+    const tickers = Object.keys(acc.positions);
+    if (!tickers.length) {
+      setReviews({});
+      setReviewMsg('');
+      return;
+    }
+    setReviewing(true);
+    try {
+      const res = await reviewHoldings({
+        holdings: tickers.map((t) => ({ ticker: t, cost_basis: acc.positions[t].avgCost, shares: acc.positions[t].shares })),
+        period: '2y',
+        useAiCommittee,
+        committeeModel,
+      });
+      const map: Record<string, HoldingReviewResult> = {};
+      res.forEach((r) => {
+        if (r && r.symbol) map[r.symbol.toUpperCase()] = r;
+      });
+      setReviews(map);
+      setReviewMsg(`策略評估更新：${paperToday()}`);
+    } catch {
+      setReviewMsg('策略評估暫時無法取得（需後端 /simple-signals）。');
+    } finally {
+      setReviewing(false);
+    }
+  }, [useAiCommittee, committeeModel]);
+
+  useEffect(() => {
+    refreshQuotes();
+    if (Object.keys(accountRef.current.positions).length) reviewHoldingsNow();
+    // 僅在掛載時跑一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function submitTrade() {
+    const ticker = fTicker.trim().toUpperCase();
+    const shares = parseFloat(fShares);
+    const price = parseFloat(fPrice);
+    const date = fDate || paperToday();
+    const note = fNote.trim();
+    setFormError('');
+    if (!ticker) return setFormError('請輸入標的代號。');
+    if (!(shares > 0)) return setFormError('股數需大於 0。');
+    if (!(price > 0)) return setFormError('價格需大於 0。');
+    const amount = shares * price;
+    const acc = accountRef.current;
+
+    if (tradeType === 'buy') {
+      if (amount > acc.cash + 1e-6) return setFormError(`現金不足：需 ${paperUsd(amount)}，可用 ${paperUsd(acc.cash)}。`);
+      const pos = acc.positions[ticker] ?? { shares: 0, avgCost: 0 };
+      const ns = pos.shares + shares;
+      const next: PaperAccount = {
+        ...acc,
+        cash: acc.cash - amount,
+        positions: { ...acc.positions, [ticker]: { shares: ns, avgCost: (pos.avgCost * pos.shares + amount) / ns } },
+        trades: [...acc.trades, { id: paperUid(), date, type: 'buy', ticker, shares, price, amount, realized: null, note }],
+      };
+      commit(next);
+    } else {
+      const pos = acc.positions[ticker];
+      if (!pos || pos.shares < shares - 1e-6) return setFormError(`持股不足：目前持有 ${pos ? pos.shares : 0} 股。`);
+      const realizedTrade = (price - pos.avgCost) * shares;
+      const positions = { ...acc.positions };
+      const remaining = pos.shares - shares;
+      if (remaining <= 1e-6) delete positions[ticker];
+      else positions[ticker] = { ...pos, shares: remaining };
+      const next: PaperAccount = {
+        ...acc,
+        cash: acc.cash + amount,
+        realized: acc.realized + realizedTrade,
+        positions,
+        trades: [...acc.trades, { id: paperUid(), date, type: 'sell', ticker, shares, price, amount, realized: realizedTrade, note }],
+      };
+      commit(next);
+    }
+    setFShares('');
+    setFPrice('');
+    setFNote('');
+    refreshQuotes();
+    reviewHoldingsNow();
+  }
+
+  function deleteTrade(id: string) {
+    if (!window.confirm('刪除這筆交易？系統會依剩餘交易重算整個帳戶。')) return;
+    const acc = accountRef.current;
+    const remainingTrades = acc.trades.filter((t) => t.id !== id);
+    const rebuilt = rebuildPaperAccount(remainingTrades, acc.startCapital);
+    commit({ ...acc, ...rebuilt });
+    refreshQuotes();
+    reviewHoldingsNow();
+  }
+
+  function prefillBuy(ticker: string, price?: number) {
+    setTradeType('buy');
+    setFTicker(ticker);
+    if (price != null) setFPrice(String(price));
+    setFDate(paperToday());
+    setFormError('');
+  }
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(accountRef.current, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `paper-fund-${paperToday()}.json`;
+    a.click();
+  }
+  function importData(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as PaperAccount;
+        if (!parsed.positions || !Array.isArray(parsed.trades)) throw new Error('bad');
+        commit(parsed);
+        refreshQuotes();
+        reviewHoldingsNow();
+      } catch {
+        window.alert('檔案格式不正確。');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+  function resetAll() {
+    if (!window.confirm('確定要清空帳戶、回到 $50,000 起始狀態？建議先「匯出備份」。')) return;
+    commit(blankPaperAccount());
+    setQuotes({});
+    setReviews({});
+    refreshQuotes();
+  }
+
+  const equity = useMemo(() => paperEquity(account, quotes), [account, quotes]);
+  const marketValue = useMemo(() => paperMarketValue(account, quotes), [account, quotes]);
+  const totalReturnPct = ((equity - account.startCapital) / account.startCapital) * 100;
+  const benchmarkEquity = account.startBenchmark && quotes.SPY ? account.startBenchmark.shares * quotes.SPY : null;
+  const benchmarkReturnPct = benchmarkEquity != null ? ((benchmarkEquity - account.startCapital) / account.startCapital) * 100 : null;
+  const vsDeltaPct = benchmarkReturnPct != null ? totalReturnPct - benchmarkReturnPct : null;
+
+  const sellSignals = Object.keys(account.positions)
+    .map((t) => ({ ticker: t, rv: reviews[t] }))
+    .filter((x): x is { ticker: string; rv: HoldingReviewResult } => Boolean(x.rv) && paperTrimNum(x.rv!.trim_ratio) > 0);
+
+  const positionTickers = Object.keys(account.positions);
+  const usRecs = recommendations.slice(0, 20);
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-slate-500" />
+          <div>
+            <div className="text-sm font-semibold text-slate-900">跟單對帳本</div>
+            <div className="text-xs text-slate-500">
+              起始本金 {paperUsd(account.startCapital)} ・ 開帳日 {account.startDate} ・ 依推薦自行操作，驗證能否贏過大盤(SPY)。資料只存在本機瀏覽器。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {quoteMsg ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">ℹ️ {quoteMsg}</div>
+      ) : null}
+
+      {sellSignals.length ? (
+        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" />
+            策略對你的持股發出減碼／賣出訊號（請自行判斷是否執行）
+          </div>
+          <div className="mt-1.5 space-y-1 text-xs">
+            {sellSignals.map((s) => (
+              <div key={s.ticker}>
+                <span className="font-semibold">{s.ticker}</span>：{s.rv.verdict}・建議出場 {s.rv.trim_ratio}・強度 {s.rv.urgency}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <MetricCard label="總資產（現金＋持倉）" value={paperUsd(equity)} icon={<Wallet className="h-4 w-4" />} />
+        <MetricCard label="總報酬" value={paperPct(totalReturnPct)} valueClassName={toneOf(totalReturnPct)} />
+        <MetricCard label="vs 大盤(SPY)" value={vsDeltaPct == null ? '-' : paperPct(vsDeltaPct)} valueClassName={toneOf(vsDeltaPct)} />
+        <MetricCard label="現金" value={paperUsd(account.cash)} />
+        <MetricCard label="持倉市值" value={paperUsd(marketValue)} />
+        <MetricCard label="已實現損益" value={paperUsd(account.realized)} valueClassName={toneOf(account.realized)} />
+      </div>
+
+      {benchmarkReturnPct != null ? (
+        <div className="text-xs text-slate-500">
+          大盤(SPY)同期報酬 {paperPct(benchmarkReturnPct)}（基準價 {paperUsd(account.startBenchmark?.price)} @ {account.startBenchmark?.date}）。
+          {vsDeltaPct != null && vsDeltaPct >= 0 ? '　🎉 目前贏過大盤。' : '　目前落後大盤。'}
+        </div>
+      ) : (
+        <div className="text-xs text-slate-500">等取得 SPY 報價後鎖定大盤對照基準。</div>
+      )}
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">資產曲線 vs 大盤</CardTitle>
+          <CardDescription>每次開啟此分頁（成功取得報價時）記錄一個每日資產點。藍線＝你的帳戶，橘線＝SPY 買進持有。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaperEquityChart history={account.equityHistory} startCapital={account.startCapital} />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">記一筆交易</CardTitle>
+          <CardDescription>依推薦或自己的判斷記錄買入 / 賣出。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="inline-flex overflow-hidden rounded-md border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setTradeType('buy')}
+              className={`px-4 py-2 text-sm font-medium ${tradeType === 'buy' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}`}
+            >
+              買入
+            </button>
+            <button
+              type="button"
+              onClick={() => setTradeType('sell')}
+              className={`px-4 py-2 text-sm font-medium ${tradeType === 'sell' ? 'bg-rose-600 text-white' : 'bg-white text-slate-600'}`}
+            >
+              賣出
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_110px_130px_150px_1fr_auto] md:items-end">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">標的代號</span>
+              <Input list="paper-rec-tickers" value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / MU" className="h-10 bg-white" />
+              <datalist id="paper-rec-tickers">
+                {usRecs.map((r) => (
+                  <option key={r.symbol} value={r.symbol} />
+                ))}
+              </datalist>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">股數</span>
+              <Input type="number" min="0" step="any" value={fShares} onChange={(e) => setFShares(e.target.value)} className="h-10 bg-white" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">價格(USD)</span>
+              <Input type="number" min="0" step="any" value={fPrice} onChange={(e) => setFPrice(e.target.value)} className="h-10 bg-white" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">日期</span>
+              <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} className="h-10 bg-white" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-slate-600">備註（選填）</span>
+              <Input value={fNote} onChange={(e) => setFNote(e.target.value)} placeholder="依推薦 / 停損…" className="h-10 bg-white" />
+            </label>
+            <Button
+              type="button"
+              onClick={submitTrade}
+              className={`h-10 md:w-28 ${tradeType === 'buy' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'} text-white`}
+            >
+              {tradeType === 'buy' ? '記錄買入' : '記錄賣出'}
+            </Button>
+          </div>
+          {formError ? <p className="text-sm text-rose-600">{formError}</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">今日推薦（點「買入」自動帶入表單）</CardTitle>
+          <CardDescription>來自「每日掃描」分頁的結果。請先到該分頁掃出 Top 50，這裡才會帶出可跟單的清單。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usRecs.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="py-1.5 pr-2 font-medium">標的</th>
+                    <th className="py-1.5 pr-2 font-medium">每日分數</th>
+                    <th className="py-1.5 pr-2 font-medium">建議</th>
+                    <th className="py-1.5 pr-2 font-medium">最新收盤</th>
+                    <th className="py-1.5 pr-2 font-medium" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {usRecs.map((r) => (
+                    <tr key={r.symbol} className="border-t border-slate-100">
+                      <td className="py-1.5 pr-2 font-semibold text-slate-900">{r.symbol}</td>
+                      <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
+                      <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>{r.action_label ?? r.today_action}</td>
+                      <td className="py-1.5 pr-2 text-slate-700">{safeFixed(r.latest_close, 2)}</td>
+                      <td className="py-1.5 pr-2">
+                        <Button type="button" onClick={() => prefillBuy(r.symbol, r.latest_close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">
+                          買入
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">尚無推薦。請先到「每日掃描」分頁按「掃描 Top 50」。</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-base">目前持倉</CardTitle>
+              <CardDescription>點一列看策略理由與買/賣強度。策略建議減碼/賣出時會在最上方紅框提醒。</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {reviewMsg ? <span className="text-xs text-slate-400">{reviewMsg}</span> : null}
+              <Button type="button" onClick={reviewHoldingsNow} disabled={reviewing} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">
+                {reviewing ? '評估中…' : '🔍 重新評估持股'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {positionTickers.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="py-1.5 pr-2 font-medium">標的</th>
+                    <th className="py-1.5 pr-2 font-medium">股數</th>
+                    <th className="py-1.5 pr-2 font-medium">均價</th>
+                    <th className="py-1.5 pr-2 font-medium">現價</th>
+                    <th className="py-1.5 pr-2 font-medium">未實現損益</th>
+                    <th className="py-1.5 pr-2 font-medium">報酬率</th>
+                    <th className="py-1.5 pr-2 font-medium">策略訊號</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {positionTickers.map((t) => {
+                    const pos = account.positions[t];
+                    const cur = paperPriceOf(account, quotes, t);
+                    const upl = cur != null ? (cur - pos.avgCost) * pos.shares : null;
+                    const uplPct = cur != null ? ((cur - pos.avgCost) / pos.avgCost) * 100 : null;
+                    const rv = reviews[t];
+                    const open = openRows[t];
+                    return (
+                      <Fragment key={t}>
+                        <tr className="cursor-pointer border-t border-slate-100 hover:bg-slate-50" onClick={() => setOpenRows((prev) => ({ ...prev, [t]: !prev[t] }))}>
+                          <td className="py-1.5 pr-2 font-semibold text-slate-900">{t}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">{pos.shares}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">{paperUsd(pos.avgCost)}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">
+                            {cur != null ? paperUsd(cur) : '-'}
+                            {quotes[t] == null ? <span className="ml-1 text-xs text-slate-400">(成本估)</span> : null}
+                          </td>
+                          <td className={`py-1.5 pr-2 font-medium ${toneOf(upl)}`}>{upl != null ? paperUsd(upl) : '-'}</td>
+                          <td className={`py-1.5 pr-2 font-medium ${toneOf(uplPct)}`}>{uplPct != null ? paperPct(uplPct) : '-'}</td>
+                          <td className="py-1.5 pr-2">
+                            {rv ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
+                                <span className="text-xs text-slate-500">出{rv.trim_ratio}·強度{rv.urgency}</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                        {open ? (
+                          <tr className="border-t border-slate-100 bg-slate-50">
+                            <td colSpan={7} className="px-2 py-3 text-xs leading-5 text-slate-600">
+                              {rv ? (
+                                <div className="space-y-1">
+                                  <div>
+                                    <span className="font-semibold">策略結論：</span>
+                                    <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
+                                    <span className="ml-1">強度 {rv.urgency}・建議出場 {rv.trim_ratio}</span>
+                                  </div>
+                                  {rv.holding_reason ? <div>{rv.holding_reason}</div> : null}
+                                  <div>
+                                    <span className="font-semibold">操作區間：</span>趨勢 {rv.signal?.bias ?? '—'}　買進區 {rv.signal?.buy_zone ?? '—'}　賣出區 {rv.signal?.sell_zone ?? '—'}　停損 {rv.protective_stop || rv.signal?.stop_loss || '—'}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">今日動作：</span>買進 {rv.signal?.today_action ?? '—'}
+                                    {rv.signal?.buy_strength ? `（強度 ${rv.signal.buy_strength}）` : ''}　賣出 {rv.signal?.today_exit_action ?? '—'}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-slate-400">尚未評估。點上方「🔍 重新評估持股」取得策略訊號。</div>
+                              )}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">尚無持倉。</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base">交易紀錄</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" onClick={refreshQuotes} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">🔄 重新整理報價</Button>
+              <Button type="button" onClick={exportData} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">⬇ 匯出備份</Button>
+              <label className="inline-flex h-9 cursor-pointer items-center rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:border-slate-400">
+                ⬆ 匯入
+                <input type="file" accept="application/json" className="hidden" onChange={importData} />
+              </label>
+              <Button type="button" onClick={resetAll} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">♻ 重設帳戶</Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {account.trades.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="py-1.5 pr-2 font-medium">日期</th>
+                    <th className="py-1.5 pr-2 font-medium">動作</th>
+                    <th className="py-1.5 pr-2 font-medium">標的</th>
+                    <th className="py-1.5 pr-2 font-medium">股數</th>
+                    <th className="py-1.5 pr-2 font-medium">價格</th>
+                    <th className="py-1.5 pr-2 font-medium">金額</th>
+                    <th className="py-1.5 pr-2 font-medium">已實現</th>
+                    <th className="py-1.5 pr-2 font-medium">備註</th>
+                    <th className="py-1.5 pr-2 font-medium" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...account.trades]
+                    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+                    .map((t) => (
+                      <tr key={t.id} className="border-t border-slate-100">
+                        <td className="py-1.5 pr-2 text-slate-600">{t.date}</td>
+                        <td className="py-1.5 pr-2">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${t.type === 'buy' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                            {t.type === 'buy' ? '買入' : '賣出'}
+                          </span>
+                        </td>
+                        <td className="py-1.5 pr-2 font-semibold text-slate-900">{t.ticker}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{t.shares}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{paperUsd(t.price)}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{paperUsd(t.amount)}</td>
+                        <td className={`py-1.5 pr-2 font-medium ${toneOf(t.realized)}`}>{t.realized != null ? paperUsd(t.realized) : '-'}</td>
+                        <td className="py-1.5 pr-2 text-slate-500">{t.note}</td>
+                        <td className="py-1.5 pr-2">
+                          <button type="button" onClick={() => deleteTrade(t.id)} className="text-rose-600 hover:text-rose-700" title="刪除">
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500">尚無交易。</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <p className="text-xs leading-5 text-slate-400">
+        ⚠️ 本頁為紙上跟單模擬：資料只存在你這台瀏覽器（localStorage），不會上傳，換裝置請先「匯出備份」。報價來自 yfinance 最近收盤；大盤對照以「開帳當天把全部本金買進並持有 SPY」計算。非投資建議。
+      </p>
+    </div>
+  );
+}
+
+function PaperEquityChart({ history, startCapital }: { history: PaperEquityPoint[]; startCapital: number }) {
+  const points = history.filter((p) => p.equity != null);
+  if (points.length < 2) {
+    return <div className="text-sm text-slate-500">累積 2 天以上資料後顯示曲線。</div>;
+  }
+  const width = 860;
+  const height = 220;
+  const padding = 18;
+  const equities = points.map((p) => p.equity);
+  const benchmarks = points.map((p) => p.benchmark).filter((v): v is number => v != null);
+  const all = equities.concat(benchmarks, [startCapital]);
+  const minValue = Math.min(...all) * 0.99;
+  const maxValue = Math.max(...all) * 1.01;
+  const toX = (index: number) => padding + (index / Math.max(points.length - 1, 1)) * (width - padding * 2);
+  const toY = (value: number) => height - padding - ((value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
+  const equityPath = buildPath(points.map((p, i) => ({ x: toX(i), y: toY(p.equity) })));
+  const benchPath = buildPath(points.map((p, i) => (p.benchmark == null ? null : { x: toX(i), y: toY(p.benchmark) })).filter(Boolean) as Array<{ x: number; y: number }>);
+  const baselineY = toY(startCapital);
+  return (
+    <div className="space-y-2">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full rounded-md border border-slate-200 bg-white">
+        <line x1={padding} y1={baselineY} x2={width - padding} y2={baselineY} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
+        {benchPath ? <path d={benchPath} fill="none" stroke="#f97316" strokeWidth="2" /> : null}
+        <path d={equityPath} fill="none" stroke="#2563eb" strokeWidth="2.2" />
+      </svg>
+      <div className="grid gap-2 text-xs text-slate-500 md:grid-cols-3">
+        <div>藍線：你的帳戶</div>
+        <div>橘線：SPY 買進持有</div>
+        <div>灰虛線：起始本金 {paperUsd(startCapital)}</div>
+      </div>
     </div>
   );
 }

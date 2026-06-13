@@ -95,6 +95,7 @@ class SignalReport:
     value_trap_risk: str | None = None
     price_forecast: dict | None = None
     long_term_risk: dict | None = None
+    ma120: float = 0.0  # 長線生命線（波段策略的長線出場依據）
 
 
 
@@ -308,6 +309,7 @@ def _clone_report(report: SignalReport) -> SignalReport:
         value_trap_risk=report.value_trap_risk,
         price_forecast=dict(report.price_forecast) if report.price_forecast else None,
         long_term_risk=dict(report.long_term_risk) if report.long_term_risk else None,
+        ma120=report.ma120,
     )
 
 
@@ -423,11 +425,11 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
             if close > active_trade["peak_close"]:
                 active_trade["peak_close"] = close
                 
-            # Trailing stop: Protect gains by trailing at 20% below the peak close reached
-            trailing_stop = max(active_trade["stop_loss"], active_trade["peak_close"] * 0.80)
-            
-            # 1. Stop loss hit (close meets trailing stop or closes below long-term MA120 after 15 days)
-            if close <= trailing_stop or (close < ma120 and active_trade["days_held"] > 15):
+            # 移動停損：自波段高點回落 18%（與 AI 主線回測勝出的波段參數一致：讓獲利奔跑）
+            trailing_stop = max(active_trade["stop_loss"], active_trade["peak_close"] * 0.82)
+
+            # 1. 出場：觸及移動停損，或持有 >30 日後跌破長線 MA120
+            if close <= trailing_stop or (close < ma120 and active_trade["days_held"] > 30):
                 exit_price = close
                 exit_ret = ((exit_price / active_trade["entry_price"]) - 1) * 100
                 completed_trades.append({
@@ -454,8 +456,8 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
                     "outcome": "獲利"
                 })
                 active_trade = None
-            # 3. Max holding period reached (250 trading days - 1 calendar year)
-            elif active_trade["days_held"] >= 250:
+            # 3. 達最長持有期（126 交易日 ≈ 6 個月；回測最佳波段上限）
+            elif active_trade["days_held"] >= 126:
                 exit_price = close
                 exit_ret = ((exit_price / active_trade["entry_price"]) - 1) * 100
                 completed_trades.append({
@@ -1597,6 +1599,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
     ma10 = float(latest["MA10"])
     ma20 = float(latest["MA20"])
     ma50 = float(latest["MA50"])
+    ma120 = float(latest["MA120"]) if "MA120" in latest and not pd.isna(latest["MA120"]) else ma50
     rsi14 = float(latest["RSI14"])
     atr14 = float(latest["ATR14"])
     support = float(recent20["Low"].min())
@@ -1973,6 +1976,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         value_trap_risk=value_trap_risk,
         price_forecast=price_forecast or None,
         long_term_risk=long_term_risk,
+        ma120=round(ma120, 2),
     )
 
     report.decision_assistance = generate_decision_assistance(report)

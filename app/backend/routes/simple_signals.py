@@ -78,6 +78,7 @@ class SimpleSignalResponse(BaseModel):
     latest_close: float
     ma20: float
     ma50: float
+    ma120: float = 0.0
     rsi14: float
     atr14: float
     support: float
@@ -170,7 +171,7 @@ class AiMainlineBacktestRequest(BaseModel):
     max_positions: int = Field(default=8, ge=1, le=20, description="Max concurrent holdings")
     take_profit_pct: float = Field(default=35.0, gt=0, le=200, description="Target take-profit percentage")
     trailing_stop_pct: float = Field(default=18.0, gt=0, le=60, description="Trailing stop percentage")
-    max_holding_days: int = Field(default=378, ge=60, le=900, description="Max holding days (~18 months default)")
+    max_holding_days: int = Field(default=126, ge=60, le=900, description="Max holding days (~6 months default; backtest-optimal band)")
 
 
 class AiMainlineTradeResponse(BaseModel):
@@ -356,9 +357,20 @@ def _build_holding_verdict(
     close = report.latest_close
     ma20 = report.ma20
     ma50 = report.ma50
+    ma120 = getattr(report, "ma120", 0.0) or ma50  # 波段策略長線（缺值回退 MA50）
     rsi = report.rsi14
     bias = report.bias
     pnl_pct = None if cost_basis in (None, 0) else ((close / cost_basis) - 1) * 100
+
+    # 波段策略停利點：達 +35% 目標報酬 → 依「讓獲利奔跑到目標」策略獲利了結（最高優先）。
+    if pnl_pct is not None and pnl_pct >= 35:
+        return (
+            "獲利了結",
+            "中",
+            "100%",
+            f"已達波段策略 +35% 目標報酬（成本 {cost_basis:.2f}、現價 {close:.2f}，獲利 {pnl_pct:.0f}%）。"
+            f"依回測勝出的波段策略，於目標價落袋為安、保留資金轉進下一檔主線。",
+        )
 
     # 多層趨勢驗證：只要收盤價在 MA50 的 1.5% 以內且非偏空，就視為長期多頭
     is_long_term_bullish = (close >= ma50 * 0.985) and (bias != "偏空")
@@ -398,7 +410,9 @@ def _build_holding_verdict(
     # 嚴格防線驗證：跌破 MA50 超過 3.5% 才算真正破位
     is_price_broken = close < ma50 * 0.965
     is_structural_break = (close < ma50) and (ma20 < ma50)
-    is_defensive_break = is_price_broken or is_structural_break
+    # 波段策略長線出場：跌破長線 MA120（生命線）即視為波段結構破壞。
+    is_long_line_break = ma120 > 0 and close < ma120
+    is_defensive_break = is_price_broken or is_structural_break or is_long_line_break
 
     # 解析停損價
     stop_val = None
@@ -414,6 +428,10 @@ def _build_holding_verdict(
     is_bearish_break = (bias == "偏空") and (close < ma50)
 
     if is_defensive_break or is_stop_broken or is_bearish_break:
+        # 觸發的防線描述（波段策略長線 MA120 優先，其次中期 MA50）
+        line_info = (
+            f"長線生命線 MA120（{ma120:.2f} 元）" if is_long_line_break else f"中期防守線 MA50（{ma50:.2f} 元）"
+        )
         # 嚴格防守性賣出
         if pnl_pct is not None and pnl_pct < 0:
             stop_info = f"且觸及防守價（{stop_val:.2f} 元）" if is_stop_broken else ""
@@ -421,15 +439,15 @@ def _build_holding_verdict(
                 "停損出場",
                 "高",
                 "100%",
-                f"股價已確實跌破中期防守線 MA50（{ma50:.2f} 元）{stop_info}，"
-                f"結構性趨勢已轉走弱。為規避下行風險，建議全面停損，保存實力。",
+                f"股價已確實跌破{line_info}{stop_info}，"
+                f"波段結構已轉走弱。依策略規避下行風險，建議全面停損，保存實力。",
             )
         return (
             "獲利了結",
             "高",
             "100%",
-            f"股價確認跌破中期防守線 MA50（{ma50:.2f} 元）並觸及防守價，"
-            f"多頭結構遭到破壞。建議將現有獲利部位全面獲利了結，落袋為安。",
+            f"股價確認跌破{line_info}，多頭波段結構遭到破壞。"
+            f"依策略建議將現有獲利部位全面獲利了結，落袋為安。",
         )
 
     # 中間情況

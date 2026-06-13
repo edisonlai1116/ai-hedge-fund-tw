@@ -84,6 +84,133 @@ def healthz():
     return {"ok": True, "status": _status}
 
 
+@app.get("/status")
+def system_status():
+    """系統更新狀態（給前端右上角顯示，確認真的有在更新）：
+    - 股癌：目前更新到第幾集（集名/集數 + 發布時間）＋ 背景掃描最後檢查時間（證明 2 小時更新有在跑）
+    - 每日 Top 50 報告：上次產生時間/日期
+    """
+    from datetime import datetime, timedelta, timezone
+
+    tz = timezone(timedelta(hours=8))
+    out = {
+        "server_time": datetime.now(tz).isoformat(timespec="seconds"),
+        "gooaye": {"episode_title": None, "episode_id": None, "published_date": None,
+                   "opinion_count": None, "last_checked": None, "source": "none"},
+        "daily_report": {"generated_at": None, "generated_date": None, "top_n": None},
+    }
+
+    # 1) 每日報告（docs/data/daily_report.json）：報告更新時間 + 報告所用股癌集數
+    try:
+        import json
+        report_path = os.path.join(_DOCS, "data", "daily_report.json")
+        with open(report_path, encoding="utf-8") as f:
+            report = json.load(f)
+        out["daily_report"]["generated_at"] = report.get("generated_at")
+        out["daily_report"]["generated_date"] = report.get("generated_date")
+        out["daily_report"]["top_n"] = (report.get("universe") or {}).get("top_n")
+        gs = report.get("gooaye_status") or {}
+        out["gooaye"].update({
+            "episode_title": gs.get("episode_title"),
+            "episode_id": gs.get("episode_id"),
+            "published_date": gs.get("episode_published"),
+            "opinion_count": gs.get("total_opinions"),
+            "source": "report" if gs.get("episode_title") else out["gooaye"]["source"],
+        })
+    except Exception as e:
+        logger.info(f"/status 讀每日報告失敗：{e}")
+
+    # 2) DB 最新集數（背景每 2h 掃描寫入）：證明系統「現在」仍在更新
+    try:
+        from app.backend.database.connection import SessionLocal
+        from app.backend.database.models import PodcastEpisode, PodcastTicker
+
+        db = SessionLocal()
+        try:
+            ep = db.query(PodcastEpisode).order_by(PodcastEpisode.created_at.desc()).first()
+            if ep is not None:
+                cnt = db.query(PodcastTicker).filter(PodcastTicker.episode_id == ep.id).count()
+                out["gooaye"].update({
+                    "episode_title": ep.title or out["gooaye"]["episode_title"],
+                    "episode_id": ep.id or out["gooaye"]["episode_id"],
+                    "published_date": ep.published_date or out["gooaye"]["published_date"],
+                    "opinion_count": cnt if cnt else out["gooaye"]["opinion_count"],
+                    "last_checked": ep.created_at.isoformat(timespec="seconds") if ep.created_at else None,
+                    "source": "db",
+                })
+        finally:
+            db.close()
+    except Exception as e:
+        logger.info(f"/status 讀 DB 集數失敗：{e}")
+
+    return out
+
+
+# 即時報價（給「跟單對帳本」算未實現損益與 SPY 對照用）。
+# 走 yfinance 最近收盤，免 API key；做 60 秒記憶體快取避免被頁面反覆打爆。
+_QUOTE_CACHE: dict[str, dict] = {}  # symbol -> {"price","name","currency","ts"}
+_QUOTE_TTL = 60.0
+
+
+@app.get("/quotes")
+def quotes(symbols: str = ""):
+    """傳回多檔最新收盤價：/quotes?symbols=AAPL,MU,2330,SPY
+
+    回傳 {"quotes":[{"symbol","resolved","price","currency","name","ok"}...]}。
+    任一檔抓不到只把該檔標 ok=false，不讓整個請求失敗。
+    """
+    import time
+
+    raw = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    if not raw:
+        return {"quotes": []}
+
+    try:
+        import yfinance as yf
+        from src.simple_signal import normalize_ticker
+    except Exception as e:  # 套件缺失時降級
+        logger.warning(f"/quotes 無法載入 yfinance：{e}")
+        return {"quotes": [{"symbol": s, "ok": False, "error": "quote-engine-unavailable"} for s in raw]}
+
+    now = time.time()
+    out = []
+    for sym in raw[:60]:  # 上限保護
+        cached = _QUOTE_CACHE.get(sym)
+        if cached and (now - cached["ts"] < _QUOTE_TTL):
+            out.append({**{k: cached[k] for k in ("symbol", "resolved", "price", "currency", "name")}, "ok": True})
+            continue
+        try:
+            market = "tw" if (sym.isdigit() or sym.endswith((".TW", ".TWO"))) else None
+            resolved = normalize_ticker(sym, market)
+            tk = yf.Ticker(resolved)
+            df = tk.history(period="5d")
+            if df is None or df.empty or "Close" not in df:
+                raise ValueError("no price data")
+            price = float(df["Close"].dropna().iloc[-1])
+            info = {}
+            try:
+                info = tk.fast_info or {}
+            except Exception:
+                info = {}
+            currency = (info.get("currency") if isinstance(info, dict) else None) or (
+                "TWD" if resolved.endswith((".TW", ".TWO")) else "USD"
+            )
+            rec = {
+                "symbol": sym,
+                "resolved": resolved,
+                "price": round(price, 4),
+                "currency": currency,
+                "name": sym,
+                "ts": now,
+            }
+            _QUOTE_CACHE[sym] = rec
+            out.append({k: rec[k] for k in ("symbol", "resolved", "price", "currency", "name")} | {"ok": True})
+        except Exception as e:
+            logger.info(f"/quotes 抓不到 {sym}：{e}")
+            out.append({"symbol": sym, "ok": False, "error": "no-data"})
+    return {"quotes": out}
+
+
 async def _gooaye_updater():
     """每 2 小時自動掃股癌 RSS；偵測到新集數就（mock fallback）抽取點名並寫入 DB。"""
     await asyncio.sleep(8)
