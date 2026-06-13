@@ -18,7 +18,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     SP500_SCAN_LIMIT=40 \
     SP500_SCAN_PERIOD=1y \
-    SP500_SCAN_WORKERS=4
+    SP500_SCAN_WORKERS=4 \
+    AI_BACKTEST_MAX_PERIOD=5y
 WORKDIR /app
 
 # 只裝免-Key 服務需要的套件（不含 langchain，映像小、啟動快）

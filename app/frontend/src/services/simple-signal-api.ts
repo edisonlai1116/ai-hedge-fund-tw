@@ -326,9 +326,25 @@ export type QuoteItem = {
 };
 
 async function parseResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
-  const data = await response.json();
+  // 先取文字再嘗試解析：雲端逾時/錯誤時後端可能回 HTML 錯誤頁，直接 .json() 會丟出
+  // 看不懂的「Unexpected token '<'」。改為給使用者清楚的中文訊息。
+  const text = await response.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  if (data === null || typeof data !== 'object') {
+    if (!response.ok) {
+      throw new Error(
+        `${fallbackMessage}（伺服器回應 ${response.status}）。免費雲端資源有限，回測 / 掃描資料量大時可能逾時或被中斷；請改用較短的回看期間、稍後再試，或於本機執行。`,
+      );
+    }
+    throw new Error(`${fallbackMessage}（伺服器回應非預期格式，可能逾時或服務忙線，請稍後再試）。`);
+  }
   if (!response.ok) {
-    throw new Error(data.detail || fallbackMessage);
+    throw new Error((data as { detail?: string }).detail || fallbackMessage);
   }
   return data as T;
 }

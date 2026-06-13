@@ -18,3 +18,6 @@ services:
         value: "1y"
       - key: SP500_SCAN_WORKERS
         value: "4"
+      # AI 主線長線回測：免費機把回看期間夾到 5 年，避免下載 20 檔×更長期間逾時（回 HTML 錯誤頁）。
+      - key: AI_BACKTEST_MAX_PERIOD
+        value: "5y"
