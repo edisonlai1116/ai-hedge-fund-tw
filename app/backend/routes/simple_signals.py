@@ -362,16 +362,6 @@ def _build_holding_verdict(
     bias = report.bias
     pnl_pct = None if cost_basis in (None, 0) else ((close / cost_basis) - 1) * 100
 
-    # 波段策略停利點：達 +35% 目標報酬 → 依「讓獲利奔跑到目標」策略獲利了結（最高優先）。
-    if pnl_pct is not None and pnl_pct >= 35:
-        return (
-            "獲利了結",
-            "中",
-            "100%",
-            f"已達波段策略 +35% 目標報酬（成本 {cost_basis:.2f}、現價 {close:.2f}，獲利 {pnl_pct:.0f}%）。"
-            f"依回測勝出的波段策略，於目標價落袋為安、保留資金轉進下一檔主線。",
-        )
-
     # 多層趨勢驗證：只要收盤價在 MA50 的 1.5% 以內且非偏空，就視為長期多頭
     is_long_term_bullish = (close >= ma50 * 0.985) and (bias != "偏空")
 
@@ -379,6 +369,26 @@ def _build_holding_verdict(
     is_minor_pullback = (close < ma20) and (close >= ma50 * 0.97)
 
     if is_long_term_bullish:
+        # 達策略 +35% 目標：分批落袋鎖利、其餘續抱「讓獲利奔跑」——趨勢未壞不全出，
+        # 真正全數出場留給後面「跌破 MA50/MA120」的防守性賣出。比例隨延伸程度提高，但仍保留多數部位。
+        if pnl_pct is not None and pnl_pct >= 35:
+            if pnl_pct >= 80 or rsi >= 78:
+                hot = f"、且短線過熱 (RSI {rsi:.0f})" if rsi >= 78 else ""
+                return (
+                    "分批獲利",
+                    "中",
+                    "50%",
+                    f"獲利已達 {pnl_pct:.0f}%（遠超策略 +35% 目標{hot}）。建議分批了結約一半落袋鎖利，"
+                    f"其餘續抱讓獲利奔跑，守住 MA50（{ma50:.2f} 元）與移動停損；跌破長線 MA120（{ma120:.2f} 元）再全數出場。",
+                )
+            return (
+                "分批獲利",
+                "低",
+                "30%",
+                f"獲利已達 {pnl_pct:.0f}%（達策略 +35% 目標）。建議先了結約三成鎖利，其餘續抱讓獲利奔跑、"
+                f"守住 MA50（{ma50:.2f} 元）；多頭趨勢未轉壞前不必急著全出。",
+            )
+
         if is_minor_pullback:
             # 長期趨勢強，短線回檔不急著出場
             return (
