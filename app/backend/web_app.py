@@ -146,6 +146,55 @@ def system_status():
     return out
 
 
+# 市場情緒 → 現金/股票配置建議（給模擬操作參考）。下載 SPY+VIX 較重，做 30 分鐘快取。
+_REGIME_CACHE: dict[str, dict] = {}  # market -> {"data":..., "ts":...}
+_REGIME_TTL = 1800.0
+
+
+@app.get("/market-regime")
+def market_regime(market: str = "us"):
+    """依市場情緒（VIX + 貪婪指數 + 回撤）建議「股票 / 現金」配置比例，供模擬操作參考。
+
+    回傳含 vix、貪婪指數、regime_score(0–100，越高越偏多/risk-on)、house 動作建議，
+    以及由 regime_score 推導的 suggested_stock_pct / suggested_cash_pct。
+    """
+    import time
+
+    mkt = "tw" if str(market).lower() == "tw" else "us"
+    cached = _REGIME_CACHE.get(mkt)
+    if cached and (time.time() - cached["ts"] < _REGIME_TTL):
+        return cached["data"]
+
+    try:
+        from src.sp500_daily import compute_market_regime
+        r = compute_market_regime(mkt)
+    except Exception as e:
+        logger.info(f"/market-regime 計算失敗：{e}")
+        return {"ok": False, "error": "regime-unavailable", "market": mkt}
+
+    # regime_score(0–100，越高越該偏多)→ 建議股票% (夾在 30–85，保留銀彈與避免梭哈)，現金% = 餘額。
+    score = int(getattr(r, "regime_score", 50) or 50)
+    stock_pct = max(30, min(85, round(score / 5) * 5))
+    cash_pct = 100 - stock_pct
+    data = {
+        "ok": True,
+        "market": mkt,
+        "vix_close": round(float(getattr(r, "vix_close", 0.0) or 0.0), 2),
+        "vix_regime": getattr(r, "vix_regime", ""),
+        "fear_greed_score": int(getattr(r, "fear_greed_score", 50) or 50),
+        "fear_greed_label": getattr(r, "fear_greed_label", ""),
+        "spy_drawdown_pct": round(float(getattr(r, "spy_drawdown_pct", 0.0) or 0.0), 2),
+        "regime_score": score,
+        "action": getattr(r, "action", ""),
+        "risk_budget": getattr(r, "risk_budget", ""),
+        "summary": getattr(r, "summary", ""),
+        "suggested_stock_pct": stock_pct,
+        "suggested_cash_pct": cash_pct,
+    }
+    _REGIME_CACHE[mkt] = {"data": data, "ts": time.time()}
+    return data
+
+
 # 即時報價（給「跟單對帳本」算未實現損益與 SPY 對照用）。
 # 走 yfinance 最近收盤，免 API key；做 60 秒記憶體快取避免被頁面反覆打爆。
 _QUOTE_CACHE: dict[str, dict] = {}  # symbol -> {"price","name","currency","ts"}

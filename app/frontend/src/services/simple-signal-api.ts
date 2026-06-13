@@ -424,6 +424,46 @@ export async function fetchSystemStatus(): Promise<SystemStatus> {
   return parseResponse<SystemStatus>(response, '系統狀態取得失敗。');
 }
 
+export type MarketRegimeSuggestion = {
+  ok: boolean;
+  market: string;
+  vix_close: number;
+  vix_regime: string;
+  fear_greed_score: number;
+  fear_greed_label: string;
+  spy_drawdown_pct: number;
+  regime_score: number;
+  action: string;
+  risk_budget: string;
+  summary: string;
+  suggested_stock_pct: number;
+  suggested_cash_pct: number;
+};
+
+export async function fetchMarketRegime(market: 'us' | 'tw' = 'us'): Promise<MarketRegimeSuggestion> {
+  const response = await fetch(`${API_BASE_URL}/market-regime?market=${market}&_=${Date.now()}`);
+  return parseResponse<MarketRegimeSuggestion>(response, '市場情緒取得失敗。');
+}
+
+export type GooayeOpinion = {
+  target_ticker: string;
+  sentiment_label: string;
+  sentiment_score: number;
+  core_logic: string;
+  analyst_name?: string;
+};
+
+export async function fetchGooayeOpinions(): Promise<GooayeOpinion[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/daily/data/gooaye_opinions.json?_=${Date.now()}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.opinions ?? []) as GooayeOpinion[];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchQuotes(symbols: string[]): Promise<QuoteItem[]> {
   if (!symbols.length) return [];
   const response = await fetch(

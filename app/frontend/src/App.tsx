@@ -7,7 +7,9 @@ import {
   BriefcaseBusiness,
   ChevronDown,
   Clock3,
+  Gauge,
   LineChart,
+  Mic,
   RadioTower,
   Search,
   ShieldAlert,
@@ -23,6 +25,8 @@ import { Toaster } from './components/ui/sonner';
 import {
   analyzeSimpleSignal,
   analyzeSimpleSignalBatch,
+  fetchGooayeOpinions,
+  fetchMarketRegime,
   fetchQuotes,
   fetchSp500DailyTop,
   fetchSystemStatus,
@@ -32,11 +36,13 @@ import {
   type AgentView,
   type AiMainlineBacktestResult,
   type ChartPoint,
+  type GooayeOpinion,
   type HoldingReviewItemPayload,
   type HoldingReviewResult,
   type HorizonView,
   type LongTermRisk,
   type MarketRegime,
+  type MarketRegimeSuggestion,
   type PriceForecast,
   type SP500DailyPick,
   type SP500DailyScanResponse,
@@ -84,6 +90,48 @@ function parseTickers(raw: string): string[] {
     .split(/[\s,\n，、]+/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+// 統一比對鍵：去 .TW/.TWO 後綴並大寫（股癌點名對照、持股健檢比對共用）。
+function tickerBaseKey(ticker: string): string {
+  return (ticker || '').trim().toUpperCase().replace(/\.(TW|TWO)$/, '');
+}
+function buildGooayeMap(opinions: GooayeOpinion[]): Record<string, GooayeOpinion> {
+  const map: Record<string, GooayeOpinion> = {};
+  for (const op of opinions) {
+    if (op?.target_ticker) map[tickerBaseKey(op.target_ticker)] = op;
+  }
+  return map;
+}
+function gooayeStanceTone(label: string): string {
+  if (/bull|多|買/i.test(label)) return 'bg-emerald-100 text-emerald-700';
+  if (/bear|空|賣|減/i.test(label)) return 'bg-rose-100 text-rose-700';
+  return 'bg-slate-200 text-slate-600';
+}
+
+// 真實持股（持股健檢）持久化：記住輸入＋上次健檢日期，避免每次重 key、並可每天自動健檢。
+const REAL_HOLDINGS_KEY = 'real_holdings_v1';
+function loadRealHoldings(): { text: string; lastReviewed: string } {
+  try {
+    const raw = localStorage.getItem(REAL_HOLDINGS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      return { text: typeof d.text === 'string' ? d.text : '', lastReviewed: d.lastReviewed ?? '' };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { text: '', lastReviewed: '' };
+}
+function saveRealHoldings(text: string, lastReviewed: string): void {
+  try {
+    localStorage.setItem(REAL_HOLDINGS_KEY, JSON.stringify({ text, lastReviewed }));
+  } catch {
+    /* ignore */
+  }
+}
+function localDateStr(): string {
+  return new Date().toLocaleDateString('en-CA');
 }
 
 function parseHoldingsInput(raw: string, market: 'us' | 'tw' | ''): HoldingReviewItemPayload[] {
@@ -138,7 +186,8 @@ const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] 
 
 export default function App() {
   const [ticker, setTicker] = useState('');
-  const [holdingsText, setHoldingsText] = useState('');
+  const [holdingsText, setHoldingsText] = useState(() => loadRealHoldings().text);
+  const [holdingsLastReviewed, setHoldingsLastReviewed] = useState(() => loadRealHoldings().lastReviewed);
   const [market, setMarket] = useState<'us' | 'tw' | ''>('');
   const [scanMarket, setScanMarket] = useState<'us' | 'tw'>('us');
   const [scanType, setScanType] = useState<'optimal' | 'lagging_value'>('optimal');
@@ -165,6 +214,27 @@ export default function App() {
   const [selectedHolding, setSelectedHolding] = useState<HoldingReviewResult | null>(null);
   const [dailyScan, setDailyScan] = useState<SP500DailyScanResponse | null>(null);
   const [backtest, setBacktest] = useState<AiMainlineBacktestResult | null>(null);
+  const [gooayeMap, setGooayeMap] = useState<Record<string, GooayeOpinion>>({});
+
+  useEffect(() => {
+    fetchGooayeOpinions()
+      .then((ops) => setGooayeMap(buildGooayeMap(ops)))
+      .catch(() => setGooayeMap({}));
+  }, []);
+
+  // 記住真實持股輸入與上次健檢日期（localStorage）。
+  useEffect(() => {
+    saveRealHoldings(holdingsText, holdingsLastReviewed);
+  }, [holdingsText, holdingsLastReviewed]);
+
+  // 每天首次開啟、且已記住持股時，自動跑一次持股健檢（不用每次重 key）。
+  useEffect(() => {
+    if (holdingsText.trim() && holdingsLastReviewed !== localDateStr()) {
+      handleReviewHoldings({ auto: true });
+    }
+    // 僅掛載時判斷一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -196,10 +266,10 @@ export default function App() {
     }
   }
 
-  async function handleReviewHoldings() {
+  async function handleReviewHoldings(opts?: { auto?: boolean }) {
     const parsed = parseHoldingsInput(holdingsText, market);
     if (parsed.length === 0) {
-      setHoldingsError('請至少輸入一筆持股，例如 AAPL 185 20。');
+      if (!opts?.auto) setHoldingsError('請至少輸入一筆持股，例如 AAPL 185 20。');
       return;
     }
 
@@ -208,6 +278,7 @@ export default function App() {
     try {
       const response = await reviewHoldings({ holdings: parsed, useAiCommittee, committeeModel });
       setHoldings(response);
+      setHoldingsLastReviewed(localDateStr()); // 記錄今日已健檢（每天首次開啟自動健檢用）
       if (response[0]) {
         setSelectedHolding(response[0]);
         setResult(response[0].signal);
@@ -411,6 +482,7 @@ export default function App() {
                           setResult(item);
                         }}
                         selectedSymbol={result?.symbol}
+                        gooayeMap={gooayeMap}
                       />
                     ) : null
                   }
@@ -427,7 +499,10 @@ export default function App() {
                     <BriefcaseBusiness className="h-4 w-4" />
                     持股健檢
                   </CardTitle>
-                  <CardDescription>每行一檔：代碼 成本 股數（例：AAPL 185 20）。系統會判斷賣出、減碼或續抱。</CardDescription>
+                  <CardDescription>
+                    每行一檔：代碼 成本 股數（例：AAPL 185 20、台股 2330 785 1）。系統會判斷賣出、減碼或續抱。
+                    持股會自動記住，每天首次開啟此頁會自動健檢，不用每次重 key。
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 lg:grid-cols-[1fr_200px] lg:items-start">
                   <textarea
@@ -436,9 +511,15 @@ export default function App() {
                     value={holdingsText}
                     onChange={(event) => setHoldingsText(event.target.value)}
                   />
-                  <Button className="h-10 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={holdingsLoading} onClick={handleReviewHoldings} type="button">
-                    {holdingsLoading ? '檢查中' : '檢查持股'}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button className="h-10 w-full bg-slate-950 text-white hover:bg-slate-800" disabled={holdingsLoading} onClick={() => handleReviewHoldings()} type="button">
+                      {holdingsLoading ? '檢查中' : '檢查持股'}
+                    </Button>
+                    <p className="text-xs text-slate-400">
+                      {holdingsLastReviewed ? `上次健檢：${holdingsLastReviewed}` : '尚未健檢'}
+                      {holdingsText.trim() ? '　·　已記住，每日自動健檢' : ''}
+                    </p>
+                  </div>
                 </CardContent>
                 {holdingsError ? <p className="px-6 pb-4 text-sm text-rose-600">{holdingsError}</p> : null}
               </Card>
@@ -518,6 +599,7 @@ export default function App() {
               recommendations={dailyScan?.picks ?? []}
               useAiCommittee={useAiCommittee}
               committeeModel={committeeModel}
+              gooayeMap={gooayeMap}
             />
           ) : null}
         </section>
@@ -909,11 +991,13 @@ function SignalList({
   items,
   selectedSymbol,
   onSelect,
+  gooayeMap,
 }: {
   title: string;
   items: DetailResult[];
   selectedSymbol?: string;
   onSelect: (item: DetailResult) => void;
+  gooayeMap?: Record<string, GooayeOpinion>;
 }) {
   return (
     <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
@@ -921,25 +1005,36 @@ function SignalList({
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-2">
-        {items.map((item, index) => (
-          <button
-            key={`${item.symbol}-${index}`}
-            className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[44px_1fr_120px_120px_90px] md:items-center ${
-              selectedSymbol === item.symbol ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white'
-            }`}
-            onClick={() => onSelect(item)}
-            type="button"
-          >
-            <div className="font-mono text-xs text-slate-500">#{index + 1}</div>
-            <div>
-              <div className="font-semibold text-slate-900">{item.symbol}</div>
-              <div className="text-xs text-slate-500">{'company_name' in item ? item.company_name : finalVerdict(item)}</div>
-            </div>
-            <div className={`font-medium ${actionTone(item.today_action)}`}>{item.today_action}</div>
-            <div className={`font-medium ${actionTone(item.today_exit_action)}`}>{item.today_exit_action}</div>
-            <div className="text-slate-700">{'daily_score' in item ? item.daily_score : item.composite_score}</div>
-          </button>
-        ))}
+        {items.map((item, index) => {
+          const op = gooayeMap?.[tickerBaseKey(item.symbol)];
+          return (
+            <button
+              key={`${item.symbol}-${index}`}
+              className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[44px_1fr_120px_120px_90px] md:items-center ${
+                selectedSymbol === item.symbol ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white'
+              }`}
+              onClick={() => onSelect(item)}
+              type="button"
+            >
+              <div className="font-mono text-xs text-slate-500">#{index + 1}</div>
+              <div>
+                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                  {item.symbol}
+                  {op ? (
+                    <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
+                      <Mic className="h-2.5 w-2.5" />股癌點名
+                    </span>
+                  ) : null}
+                </div>
+                <div className="text-xs text-slate-500">{'company_name' in item ? item.company_name : finalVerdict(item)}</div>
+                {op ? <div className="mt-0.5 text-[11px] leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
+              </div>
+              <div className={`font-medium ${actionTone(item.today_action)}`}>{item.today_action}</div>
+              <div className={`font-medium ${actionTone(item.today_exit_action)}`}>{item.today_exit_action}</div>
+              <div className="text-slate-700">{'daily_score' in item ? item.daily_score : item.composite_score}</div>
+            </button>
+          );
+        })}
       </CardContent>
     </Card>
   );
@@ -1406,10 +1501,12 @@ function PortfolioTab({
   recommendations,
   useAiCommittee,
   committeeModel,
+  gooayeMap,
 }: {
   recommendations: SP500DailyPick[];
   useAiCommittee: boolean;
   committeeModel: string;
+  gooayeMap: Record<string, GooayeOpinion>;
 }) {
   const [account, setAccount] = useState<PaperAccount>(() => loadPaperAccount());
   const accountRef = useRef(account);
@@ -1417,6 +1514,7 @@ function PortfolioTab({
   const [quoteMeta, setQuoteMeta] = useState<Record<string, { name?: string; currency?: string }>>({});
   const [quotesOk, setQuotesOk] = useState(false);
   const [quoteMsg, setQuoteMsg] = useState('');
+  const [regime, setRegime] = useState<MarketRegimeSuggestion | null>(null);
   const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
   const [reviewMsg, setReviewMsg] = useState('');
   const [reviewing, setReviewing] = useState(false);
@@ -1528,6 +1626,9 @@ function PortfolioTab({
   useEffect(() => {
     refreshQuotes();
     if (Object.keys(accountRef.current.positions).length) reviewHoldingsNow();
+    fetchMarketRegime('us')
+      .then((r) => setRegime(r.ok ? r : null))
+      .catch(() => setRegime(null));
     // 僅在掛載時跑一次
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1716,6 +1817,36 @@ function PortfolioTab({
         <div className="text-xs text-slate-500">等取得 SPY 報價後鎖定大盤對照基準。</div>
       )}
 
+      {regime ? (
+        <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Gauge className="h-4 w-4 text-slate-500" />
+              今日市場情緒 → 建議現金 / 股票比例
+            </CardTitle>
+            <CardDescription>依 VIX 與貪婪指數推估的風險預算，供你模擬調整持股水位參考。</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard label="VIX 波動率" value={`${regime.vix_close.toFixed(2)}（${regime.vix_regime}）`} />
+              <MetricCard label="貪婪指數" value={`${regime.fear_greed_score}（${regime.fear_greed_label}）`} />
+              <MetricCard label="建議股票水位" value={`${regime.suggested_stock_pct}%`} valueClassName="text-emerald-700" />
+              <MetricCard label="建議現金水位" value={`${regime.suggested_cash_pct}%`} valueClassName="text-sky-700" />
+            </div>
+            <div className="overflow-hidden rounded-full bg-slate-100">
+              <div className="flex h-3 w-full">
+                <div className="h-full bg-emerald-500" style={{ width: `${regime.suggested_stock_pct}%` }} />
+                <div className="h-full bg-sky-400" style={{ width: `${regime.suggested_cash_pct}%` }} />
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">
+              以目前總資產 {paperUsd(equity)} 換算 ≈ 股票 {paperUsd((equity * regime.suggested_stock_pct) / 100)} ／ 現金 {paperUsd((equity * regime.suggested_cash_pct) / 100)}。
+              <span className="ml-1">house 觀點：{regime.action}（{regime.risk_budget}）。{regime.summary}</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">資產曲線 vs 大盤</CardTitle>
@@ -1807,13 +1938,22 @@ function PortfolioTab({
                 <tbody>
                   {recList.map((r) => {
                     const ccy = paperCurrencyOf(r.symbol);
+                    const op = gooayeMap[tickerBaseKey(r.symbol)];
                     return (
                       <tr key={r.symbol} className="border-t border-slate-100">
                         <td className="py-1.5 pr-2 font-semibold text-slate-900">
-                          {r.symbol}
-                          {r.company_name && r.company_name !== r.symbol ? (
-                            <span className="ml-1 font-normal text-slate-500">{r.company_name}</span>
-                          ) : null}
+                          <div className="flex items-center gap-1.5">
+                            {r.symbol}
+                            {r.company_name && r.company_name !== r.symbol ? (
+                              <span className="font-normal text-slate-500">{r.company_name}</span>
+                            ) : null}
+                            {op ? (
+                              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
+                                <Mic className="h-2.5 w-2.5" />股癌點名
+                              </span>
+                            ) : null}
+                          </div>
+                          {op ? <div className="mt-0.5 max-w-[260px] text-[11px] font-normal leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
                         </td>
                         <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
                         <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>{r.action_label ?? r.today_action}</td>
