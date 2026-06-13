@@ -1,11 +1,11 @@
 [
   {
     "date": "2026-06-13",
-    "generated_at": "2026-06-13T01:19:46+08:00",
-    "macro_score": 50,
-    "top_ticker": "MU",
-    "top_score": 61,
-    "strong_buy": 0,
+    "generated_at": "2026-06-13T08:00:57+08:00",
+    "macro_score": 28,
+    "top_ticker": "2330",
+    "top_score": 78,
+    "strong_buy": 3,
     "pick_count": 50
   }
 ]
