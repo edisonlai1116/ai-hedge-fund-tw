@@ -1217,16 +1217,21 @@ function MetricCard({ label, value, icon, valueClassName }: { label: string; val
 const PORTFOLIO_KEY = 'fund_paper_v1';
 const PORTFOLIO_START_CAPITAL = 50000;
 
-type PaperPosition = { shares: number; avgCost: number };
+type PaperCurrency = 'USD' | 'TWD';
+// avgCost：原幣每股成本（顯示用）；avgCostUsd：美金每股成本（帳戶結算用，買進當下以匯率換算）
+type PaperPosition = { shares: number; avgCost: number; avgCostUsd: number; currency: PaperCurrency; name?: string };
 type PaperTrade = {
   id: string;
   date: string;
   type: 'buy' | 'sell';
   ticker: string;
   shares: number;
-  price: number;
-  amount: number;
-  realized: number | null;
+  price: number; // 原幣每股價格
+  priceUsd: number; // 美金每股價格（成交當下換算；帳戶以此結算）
+  currency: PaperCurrency;
+  name?: string;
+  amount: number; // 美金成交金額（= shares × priceUsd）
+  realized: number | null; // 美金已實現損益
   note: string;
 };
 type PaperBenchmark = { symbol: string; price: number; date: string; shares: number };
@@ -1251,6 +1256,35 @@ function paperUid(): string {
 function paperUsd(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return '$' + Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+// 台股代號偵測（純數字，或 .TW/.TWO 結尾）。
+function isTwTicker(ticker: string): boolean {
+  const t = ticker.trim().toUpperCase();
+  return /^\d+(\.TW[O]?)?$/.test(t) || t.endsWith('.TW') || t.endsWith('.TWO');
+}
+function paperCurrencyOf(ticker: string): PaperCurrency {
+  return isTwTicker(ticker) ? 'TWD' : 'USD';
+}
+// 統一比對鍵：去掉 .TW/.TWO 後綴（持股健檢回傳常為正規化後代號，如 2330 → 2330.TW）。
+function paperBaseKey(ticker: string): string {
+  return ticker.trim().toUpperCase().replace(/\.(TW|TWO)$/, '');
+}
+// quotes['TWD=X'] = 1 美金可換多少台幣（≈32）；回傳「1 台幣 = 多少美金」。
+function usdPerTwd(quotes: Record<string, number>): number | null {
+  const r = quotes['TWD=X'];
+  return r && r > 0 ? 1 / r : null;
+}
+// 把原幣每股價格換算成美金；台股需要匯率，缺匯率回 null。
+function toUsdPrice(priceNative: number, currency: PaperCurrency, quotes: Record<string, number>): number | null {
+  if (currency === 'USD') return priceNative;
+  const fx = usdPerTwd(quotes);
+  return fx == null ? null : priceNative * fx;
+}
+// 原幣金額顯示（台股加 NT$ 與 TWD 標記）。
+function paperNative(value: number | null | undefined, currency: PaperCurrency): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  const n = Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return currency === 'TWD' ? `NT$${n}` : `$${n}`;
 }
 function paperPct(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '-';
@@ -1287,27 +1321,53 @@ function loadPaperAccount(): PaperAccount {
     const raw = localStorage.getItem(PORTFOLIO_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PaperAccount;
-      if (parsed && parsed.positions && Array.isArray(parsed.trades)) return parsed;
+      if (parsed && parsed.positions && Array.isArray(parsed.trades)) {
+        // 舊資料相容：先前版本只有美股(USD)、未存 currency/avgCostUsd/priceUsd → 補上（USD: priceUsd=price）。
+        for (const t of Object.keys(parsed.positions)) {
+          const p = parsed.positions[t] as PaperPosition;
+          if (p.currency == null) p.currency = paperCurrencyOf(t);
+          if (p.avgCostUsd == null) p.avgCostUsd = p.avgCost;
+        }
+        parsed.trades = parsed.trades.map((t) => ({
+          ...t,
+          currency: t.currency ?? paperCurrencyOf(t.ticker),
+          priceUsd: t.priceUsd ?? t.price,
+        }));
+        return parsed;
+      }
     }
   } catch {
     /* ignore corrupt storage */
   }
   return blankPaperAccount();
 }
-function paperPriceOf(account: PaperAccount, quotes: Record<string, number>, ticker: string): number | null {
+// 原幣現價（無報價時回退原幣均價）。
+function paperPriceNative(account: PaperAccount, quotes: Record<string, number>, ticker: string): number | null {
   if (quotes[ticker] != null) return quotes[ticker];
   const pos = account.positions[ticker];
   return pos ? pos.avgCost : null;
 }
+// 美金現價（台股以即時匯率換算；缺報價/匯率時回退美金成本）。
+function paperPriceUsdOf(account: PaperAccount, quotes: Record<string, number>, ticker: string): number | null {
+  const pos = account.positions[ticker];
+  const native = paperPriceNative(account, quotes, ticker);
+  const currency = pos ? pos.currency : paperCurrencyOf(ticker);
+  if (native != null) {
+    const usd = toUsdPrice(native, currency, quotes);
+    if (usd != null) return usd;
+  }
+  return pos ? pos.avgCostUsd : null;
+}
 function paperMarketValue(account: PaperAccount, quotes: Record<string, number>): number {
   return Object.keys(account.positions).reduce((sum, t) => {
-    const p = paperPriceOf(account, quotes, t);
+    const p = paperPriceUsdOf(account, quotes, t);
     return sum + (p ?? 0) * account.positions[t].shares;
   }, 0);
 }
 function paperEquity(account: PaperAccount, quotes: Record<string, number>): number {
   return account.cash + paperMarketValue(account, quotes);
 }
+// 以美金重放所有交易（用每筆成交當下的 priceUsd 結算，故重放具決定性）。
 function rebuildPaperAccount(trades: PaperTrade[], startCapital: number): Pick<PaperAccount, 'cash' | 'positions' | 'realized' | 'trades'> {
   let cash = startCapital;
   let realized = 0;
@@ -1315,19 +1375,24 @@ function rebuildPaperAccount(trades: PaperTrade[], startCapital: number): Pick<P
   const ordered = [...trades].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const rebuilt: PaperTrade[] = [];
   for (const t of ordered) {
+    const currency = t.currency ?? paperCurrencyOf(t.ticker);
+    const usdAmount = t.shares * t.priceUsd;
     if (t.type === 'buy') {
-      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0 };
+      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0, avgCostUsd: 0, currency, name: t.name };
       const ns = pos.shares + t.shares;
       pos.avgCost = ns > 0 ? (pos.avgCost * pos.shares + t.shares * t.price) / ns : 0;
+      pos.avgCostUsd = ns > 0 ? (pos.avgCostUsd * pos.shares + usdAmount) / ns : 0;
       pos.shares = ns;
+      pos.currency = currency;
+      if (t.name) pos.name = t.name;
       positions[t.ticker] = pos;
-      cash -= t.shares * t.price;
+      cash -= usdAmount;
       rebuilt.push({ ...t, realized: null });
     } else {
-      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0 };
-      const realizedTrade = (t.price - pos.avgCost) * t.shares;
+      const pos = positions[t.ticker] ?? { shares: 0, avgCost: 0, avgCostUsd: 0, currency, name: t.name };
+      const realizedTrade = (t.priceUsd - pos.avgCostUsd) * t.shares;
       pos.shares -= t.shares;
-      cash += t.shares * t.price;
+      cash += usdAmount;
       realized += realizedTrade;
       if (pos.shares <= 1e-6) delete positions[t.ticker];
       else positions[t.ticker] = pos;
@@ -1349,6 +1414,7 @@ function PortfolioTab({
   const [account, setAccount] = useState<PaperAccount>(() => loadPaperAccount());
   const accountRef = useRef(account);
   const [quotes, setQuotes] = useState<Record<string, number>>({});
+  const [quoteMeta, setQuoteMeta] = useState<Record<string, { name?: string; currency?: string }>>({});
   const [quotesOk, setQuotesOk] = useState(false);
   const [quoteMsg, setQuoteMsg] = useState('');
   const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
@@ -1376,15 +1442,21 @@ function PortfolioTab({
 
   const refreshQuotes = useCallback(async () => {
     const acc = accountRef.current;
-    const syms = Array.from(new Set<string>([...Object.keys(acc.positions), 'SPY']));
+    // 一律帶 SPY（大盤對照）與 TWD=X（美金/台幣匯率，台股換算用）。
+    const syms = Array.from(new Set<string>([...Object.keys(acc.positions), 'SPY', 'TWD=X']));
     try {
       const items = await fetchQuotes(syms);
       const q: Record<string, number> = {};
+      const meta: Record<string, { name?: string; currency?: string }> = {};
       items.forEach((it) => {
-        if (it.ok && typeof it.price === 'number') q[it.symbol] = it.price;
+        if (it.ok && typeof it.price === 'number') {
+          q[it.symbol] = it.price;
+          meta[it.symbol] = { name: it.name, currency: it.currency };
+        }
       });
       const ok = items.some((it) => it.ok);
       setQuotes(q);
+      setQuoteMeta(meta);
       setQuotesOk(ok);
       setQuoteMsg(ok ? '' : '目前取不到即時報價，未實現損益暫以成本價估算。');
       setAccount((prev) => {
@@ -1394,6 +1466,16 @@ function PortfolioTab({
             ...next,
             startBenchmark: { symbol: 'SPY', price: q.SPY, date: paperToday(), shares: prev.startCapital / q.SPY },
           };
+        }
+        // 報價回來後，補上持倉缺少的中文名（例：手動買入台股時尚未有報價）。
+        const needName = Object.keys(next.positions).some((t) => !next.positions[t].name && meta[t]?.name && meta[t]?.name !== t);
+        if (needName) {
+          const patched: Record<string, PaperPosition> = {};
+          for (const t of Object.keys(next.positions)) {
+            const p = next.positions[t];
+            patched[t] = !p.name && meta[t]?.name && meta[t]?.name !== t ? { ...p, name: meta[t]!.name } : p;
+          }
+          next = { ...next, positions: patched };
         }
         if (ok) {
           const eq = paperEquity(next, q);
@@ -1432,7 +1514,7 @@ function PortfolioTab({
       });
       const map: Record<string, HoldingReviewResult> = {};
       res.forEach((r) => {
-        if (r && r.symbol) map[r.symbol.toUpperCase()] = r;
+        if (r && r.symbol) map[paperBaseKey(r.symbol)] = r;
       });
       setReviews(map);
       setReviewMsg(`策略評估更新：${paperToday()}`);
@@ -1453,41 +1535,57 @@ function PortfolioTab({
   function submitTrade() {
     const ticker = fTicker.trim().toUpperCase();
     const shares = parseFloat(fShares);
-    const price = parseFloat(fPrice);
+    const price = parseFloat(fPrice); // 原幣每股
     const date = fDate || paperToday();
     const note = fNote.trim();
     setFormError('');
     if (!ticker) return setFormError('請輸入標的代號。');
     if (!(shares > 0)) return setFormError('股數需大於 0。');
     if (!(price > 0)) return setFormError('價格需大於 0。');
-    const amount = shares * price;
+
+    const currency = paperCurrencyOf(ticker);
+    const priceUsd = toUsdPrice(price, currency, quotes);
+    if (priceUsd == null) {
+      return setFormError('尚未取得美金/台幣匯率，無法換算台股。請先按「重新整理報價」後再記錄。');
+    }
+    const usdAmount = shares * priceUsd; // 帳戶以美金結算
+    const name = quoteMeta[ticker]?.name && quoteMeta[ticker]?.name !== ticker ? quoteMeta[ticker]?.name : accountRef.current.positions[ticker]?.name;
     const acc = accountRef.current;
 
     if (tradeType === 'buy') {
-      if (amount > acc.cash + 1e-6) return setFormError(`現金不足：需 ${paperUsd(amount)}，可用 ${paperUsd(acc.cash)}。`);
-      const pos = acc.positions[ticker] ?? { shares: 0, avgCost: 0 };
+      if (usdAmount > acc.cash + 1e-6) return setFormError(`現金不足：需 ${paperUsd(usdAmount)}，可用 ${paperUsd(acc.cash)}。`);
+      const pos = acc.positions[ticker] ?? { shares: 0, avgCost: 0, avgCostUsd: 0, currency, name };
       const ns = pos.shares + shares;
       const next: PaperAccount = {
         ...acc,
-        cash: acc.cash - amount,
-        positions: { ...acc.positions, [ticker]: { shares: ns, avgCost: (pos.avgCost * pos.shares + amount) / ns } },
-        trades: [...acc.trades, { id: paperUid(), date, type: 'buy', ticker, shares, price, amount, realized: null, note }],
+        cash: acc.cash - usdAmount,
+        positions: {
+          ...acc.positions,
+          [ticker]: {
+            shares: ns,
+            avgCost: (pos.avgCost * pos.shares + shares * price) / ns,
+            avgCostUsd: (pos.avgCostUsd * pos.shares + usdAmount) / ns,
+            currency,
+            name: name ?? pos.name,
+          },
+        },
+        trades: [...acc.trades, { id: paperUid(), date, type: 'buy', ticker, shares, price, priceUsd, currency, name, amount: usdAmount, realized: null, note }],
       };
       commit(next);
     } else {
       const pos = acc.positions[ticker];
       if (!pos || pos.shares < shares - 1e-6) return setFormError(`持股不足：目前持有 ${pos ? pos.shares : 0} 股。`);
-      const realizedTrade = (price - pos.avgCost) * shares;
+      const realizedTrade = (priceUsd - pos.avgCostUsd) * shares; // 美金已實現
       const positions = { ...acc.positions };
       const remaining = pos.shares - shares;
       if (remaining <= 1e-6) delete positions[ticker];
       else positions[ticker] = { ...pos, shares: remaining };
       const next: PaperAccount = {
         ...acc,
-        cash: acc.cash + amount,
+        cash: acc.cash + usdAmount,
         realized: acc.realized + realizedTrade,
         positions,
-        trades: [...acc.trades, { id: paperUid(), date, type: 'sell', ticker, shares, price, amount, realized: realizedTrade, note }],
+        trades: [...acc.trades, { id: paperUid(), date, type: 'sell', ticker, shares, price, priceUsd, currency, name: name ?? pos.name, amount: usdAmount, realized: realizedTrade, note }],
       };
       commit(next);
     }
@@ -1557,11 +1655,13 @@ function PortfolioTab({
   const vsDeltaPct = benchmarkReturnPct != null ? totalReturnPct - benchmarkReturnPct : null;
 
   const sellSignals = Object.keys(account.positions)
-    .map((t) => ({ ticker: t, rv: reviews[t] }))
+    .map((t) => ({ ticker: t, rv: reviews[paperBaseKey(t)] }))
     .filter((x): x is { ticker: string; rv: HoldingReviewResult } => Boolean(x.rv) && paperTrimNum(x.rv!.trim_ratio) > 0);
 
   const positionTickers = Object.keys(account.positions);
-  const usRecs = recommendations.slice(0, 20);
+  const recList = recommendations.slice(0, 20);
+  const fxTwdPerUsd = quotes['TWD=X']; // 1 美金 = ? 台幣
+  const formCurrency = paperCurrencyOf(fTicker || 'US');
 
   return (
     <div className="space-y-5">
@@ -1572,6 +1672,7 @@ function PortfolioTab({
             <div className="text-sm font-semibold text-slate-900">跟單對帳本</div>
             <div className="text-xs text-slate-500">
               起始本金 {paperUsd(account.startCapital)} ・ 開帳日 {account.startDate} ・ 依推薦自行操作，驗證能否贏過大盤(SPY)。資料只存在本機瀏覽器。
+              {fxTwdPerUsd ? <>　匯率 1 USD ≈ {fxTwdPerUsd.toFixed(2)} TWD（台股自動換算為美金）。</> : null}
             </div>
           </div>
         </div>
@@ -1650,10 +1751,10 @@ function PortfolioTab({
           <div className="grid gap-3 md:grid-cols-[1fr_110px_130px_150px_1fr_auto] md:items-end">
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-slate-600">標的代號</span>
-              <Input list="paper-rec-tickers" value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / MU" className="h-10 bg-white" />
+              <Input list="paper-rec-tickers" value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / 2330" className="h-10 bg-white" />
               <datalist id="paper-rec-tickers">
-                {usRecs.map((r) => (
-                  <option key={r.symbol} value={r.symbol} />
+                {recList.map((r) => (
+                  <option key={r.symbol} value={r.symbol} label={r.company_name && r.company_name !== r.symbol ? r.company_name : undefined} />
                 ))}
               </datalist>
             </label>
@@ -1662,7 +1763,7 @@ function PortfolioTab({
               <Input type="number" min="0" step="any" value={fShares} onChange={(e) => setFShares(e.target.value)} className="h-10 bg-white" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-slate-600">價格(USD)</span>
+              <span className="mb-1 block text-xs font-semibold text-slate-600">價格({formCurrency === 'TWD' ? 'TWD' : 'USD'})</span>
               <Input type="number" min="0" step="any" value={fPrice} onChange={(e) => setFPrice(e.target.value)} className="h-10 bg-white" />
             </label>
             <label className="block">
@@ -1691,9 +1792,9 @@ function PortfolioTab({
           <CardDescription>來自「每日掃描」分頁的結果。請先到該分頁掃出 Top 50，這裡才會帶出可跟單的清單。</CardDescription>
         </CardHeader>
         <CardContent>
-          {usRecs.length ? (
+          {recList.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[560px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="text-slate-500">
                     <th className="py-1.5 pr-2 font-medium">標的</th>
@@ -1704,24 +1805,32 @@ function PortfolioTab({
                   </tr>
                 </thead>
                 <tbody>
-                  {usRecs.map((r) => (
-                    <tr key={r.symbol} className="border-t border-slate-100">
-                      <td className="py-1.5 pr-2 font-semibold text-slate-900">{r.symbol}</td>
-                      <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
-                      <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>{r.action_label ?? r.today_action}</td>
-                      <td className="py-1.5 pr-2 text-slate-700">{safeFixed(r.latest_close, 2)}</td>
-                      <td className="py-1.5 pr-2">
-                        <Button type="button" onClick={() => prefillBuy(r.symbol, r.latest_close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">
-                          買入
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {recList.map((r) => {
+                    const ccy = paperCurrencyOf(r.symbol);
+                    return (
+                      <tr key={r.symbol} className="border-t border-slate-100">
+                        <td className="py-1.5 pr-2 font-semibold text-slate-900">
+                          {r.symbol}
+                          {r.company_name && r.company_name !== r.symbol ? (
+                            <span className="ml-1 font-normal text-slate-500">{r.company_name}</span>
+                          ) : null}
+                        </td>
+                        <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
+                        <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>{r.action_label ?? r.today_action}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{paperNative(r.latest_close, ccy)}</td>
+                        <td className="py-1.5 pr-2">
+                          <Button type="button" onClick={() => prefillBuy(r.symbol, r.latest_close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">
+                            買入
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="text-sm text-slate-500">尚無推薦。請先到「每日掃描」分頁按「掃描 Top 50」。</div>
+            <div className="text-sm text-slate-500">尚無推薦。請先到「每日掃描」分頁按「掃描 Top 50」（可切美股 / 台股）。</div>
           )}
         </CardContent>
       </Card>
@@ -1749,9 +1858,10 @@ function PortfolioTab({
                   <tr className="text-slate-500">
                     <th className="py-1.5 pr-2 font-medium">標的</th>
                     <th className="py-1.5 pr-2 font-medium">股數</th>
-                    <th className="py-1.5 pr-2 font-medium">均價</th>
-                    <th className="py-1.5 pr-2 font-medium">現價</th>
-                    <th className="py-1.5 pr-2 font-medium">未實現損益</th>
+                    <th className="py-1.5 pr-2 font-medium">均價(原幣)</th>
+                    <th className="py-1.5 pr-2 font-medium">現價(原幣)</th>
+                    <th className="py-1.5 pr-2 font-medium">市值(USD)</th>
+                    <th className="py-1.5 pr-2 font-medium">未實現(USD)</th>
                     <th className="py-1.5 pr-2 font-medium">報酬率</th>
                     <th className="py-1.5 pr-2 font-medium">策略訊號</th>
                   </tr>
@@ -1759,21 +1869,27 @@ function PortfolioTab({
                 <tbody>
                   {positionTickers.map((t) => {
                     const pos = account.positions[t];
-                    const cur = paperPriceOf(account, quotes, t);
-                    const upl = cur != null ? (cur - pos.avgCost) * pos.shares : null;
-                    const uplPct = cur != null ? ((cur - pos.avgCost) / pos.avgCost) * 100 : null;
-                    const rv = reviews[t];
+                    const curNative = paperPriceNative(account, quotes, t);
+                    const curUsd = paperPriceUsdOf(account, quotes, t);
+                    const mvUsd = curUsd != null ? curUsd * pos.shares : null;
+                    const upl = curUsd != null ? (curUsd - pos.avgCostUsd) * pos.shares : null;
+                    const uplPct = curUsd != null && pos.avgCostUsd > 0 ? ((curUsd - pos.avgCostUsd) / pos.avgCostUsd) * 100 : null;
+                    const rv = reviews[paperBaseKey(t)];
                     const open = openRows[t];
                     return (
                       <Fragment key={t}>
                         <tr className="cursor-pointer border-t border-slate-100 hover:bg-slate-50" onClick={() => setOpenRows((prev) => ({ ...prev, [t]: !prev[t] }))}>
-                          <td className="py-1.5 pr-2 font-semibold text-slate-900">{t}</td>
+                          <td className="py-1.5 pr-2 font-semibold text-slate-900">
+                            {t}
+                            {pos.name && pos.name !== t ? <span className="ml-1 font-normal text-slate-500">{pos.name}</span> : null}
+                          </td>
                           <td className="py-1.5 pr-2 text-slate-700">{pos.shares}</td>
-                          <td className="py-1.5 pr-2 text-slate-700">{paperUsd(pos.avgCost)}</td>
+                          <td className="py-1.5 pr-2 text-slate-700">{paperNative(pos.avgCost, pos.currency)}</td>
                           <td className="py-1.5 pr-2 text-slate-700">
-                            {cur != null ? paperUsd(cur) : '-'}
+                            {curNative != null ? paperNative(curNative, pos.currency) : '-'}
                             {quotes[t] == null ? <span className="ml-1 text-xs text-slate-400">(成本估)</span> : null}
                           </td>
+                          <td className="py-1.5 pr-2 text-slate-700">{mvUsd != null ? paperUsd(mvUsd) : '-'}</td>
                           <td className={`py-1.5 pr-2 font-medium ${toneOf(upl)}`}>{upl != null ? paperUsd(upl) : '-'}</td>
                           <td className={`py-1.5 pr-2 font-medium ${toneOf(uplPct)}`}>{uplPct != null ? paperPct(uplPct) : '-'}</td>
                           <td className="py-1.5 pr-2">
@@ -1789,7 +1905,7 @@ function PortfolioTab({
                         </tr>
                         {open ? (
                           <tr className="border-t border-slate-100 bg-slate-50">
-                            <td colSpan={7} className="px-2 py-3 text-xs leading-5 text-slate-600">
+                            <td colSpan={8} className="px-2 py-3 text-xs leading-5 text-slate-600">
                               {rv ? (
                                 <div className="space-y-1">
                                   <div>
@@ -1849,9 +1965,9 @@ function PortfolioTab({
                     <th className="py-1.5 pr-2 font-medium">動作</th>
                     <th className="py-1.5 pr-2 font-medium">標的</th>
                     <th className="py-1.5 pr-2 font-medium">股數</th>
-                    <th className="py-1.5 pr-2 font-medium">價格</th>
-                    <th className="py-1.5 pr-2 font-medium">金額</th>
-                    <th className="py-1.5 pr-2 font-medium">已實現</th>
+                    <th className="py-1.5 pr-2 font-medium">價格(原幣)</th>
+                    <th className="py-1.5 pr-2 font-medium">金額(USD)</th>
+                    <th className="py-1.5 pr-2 font-medium">已實現(USD)</th>
                     <th className="py-1.5 pr-2 font-medium">備註</th>
                     <th className="py-1.5 pr-2 font-medium" />
                   </tr>
@@ -1859,7 +1975,9 @@ function PortfolioTab({
                 <tbody>
                   {[...account.trades]
                     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-                    .map((t) => (
+                    .map((t) => {
+                      const ccy = t.currency ?? paperCurrencyOf(t.ticker);
+                      return (
                       <tr key={t.id} className="border-t border-slate-100">
                         <td className="py-1.5 pr-2 text-slate-600">{t.date}</td>
                         <td className="py-1.5 pr-2">
@@ -1867,9 +1985,12 @@ function PortfolioTab({
                             {t.type === 'buy' ? '買入' : '賣出'}
                           </span>
                         </td>
-                        <td className="py-1.5 pr-2 font-semibold text-slate-900">{t.ticker}</td>
+                        <td className="py-1.5 pr-2 font-semibold text-slate-900">
+                          {t.ticker}
+                          {t.name && t.name !== t.ticker ? <span className="ml-1 font-normal text-slate-500">{t.name}</span> : null}
+                        </td>
                         <td className="py-1.5 pr-2 text-slate-700">{t.shares}</td>
-                        <td className="py-1.5 pr-2 text-slate-700">{paperUsd(t.price)}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{paperNative(t.price, ccy)}</td>
                         <td className="py-1.5 pr-2 text-slate-700">{paperUsd(t.amount)}</td>
                         <td className={`py-1.5 pr-2 font-medium ${toneOf(t.realized)}`}>{t.realized != null ? paperUsd(t.realized) : '-'}</td>
                         <td className="py-1.5 pr-2 text-slate-500">{t.note}</td>
@@ -1879,7 +2000,8 @@ function PortfolioTab({
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

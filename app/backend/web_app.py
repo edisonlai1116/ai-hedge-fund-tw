@@ -150,6 +150,19 @@ def system_status():
 # 走 yfinance 最近收盤，免 API key；做 60 秒記憶體快取避免被頁面反覆打爆。
 _QUOTE_CACHE: dict[str, dict] = {}  # symbol -> {"price","name","currency","ts"}
 _QUOTE_TTL = 60.0
+_TW_NAMES_CACHE: dict | None = None
+
+
+def _tw_names() -> dict:
+    """惰性載入台股中文名對照（來自 daily_report 的 TW_NAMES）；失敗回空 dict。"""
+    global _TW_NAMES_CACHE
+    if _TW_NAMES_CACHE is None:
+        try:
+            from src.pipeline.daily_report import TW_NAMES
+            _TW_NAMES_CACHE = dict(TW_NAMES)
+        except Exception:
+            _TW_NAMES_CACHE = {}
+    return _TW_NAMES_CACHE
 
 
 @app.get("/quotes")
@@ -192,15 +205,21 @@ def quotes(symbols: str = ""):
                 info = tk.fast_info or {}
             except Exception:
                 info = {}
+            is_tw = resolved.endswith((".TW", ".TWO"))
             currency = (info.get("currency") if isinstance(info, dict) else None) or (
-                "TWD" if resolved.endswith((".TW", ".TWO")) else "USD"
+                "TWD" if is_tw else "USD"
             )
+            # 台股優先用中文名對照；查不到才回退代號。
+            name = sym
+            if is_tw:
+                base = resolved.split(".")[0]
+                name = _tw_names().get(base) or _tw_names().get(resolved) or sym
             rec = {
                 "symbol": sym,
                 "resolved": resolved,
                 "price": round(price, 4),
                 "currency": currency,
-                "name": sym,
+                "name": name,
                 "ts": now,
             }
             _QUOTE_CACHE[sym] = rec
