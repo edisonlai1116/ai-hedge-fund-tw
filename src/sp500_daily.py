@@ -1349,6 +1349,13 @@ def get_sp500_daily_top_picks(
         _scan_workers = 12
     _scan_workers = max(2, _scan_workers)
 
+    # 免費雲端最大的時間殺手是逐檔 ticker.info / ticker.news 抓取（每檔都要爬 Yahoo）。
+    # 設 SP500_EXTERNAL_ENRICH_LIMIT 可把「需外抓基本面/新聞」的檔數再夾低（<=0 不額外限制）。
+    try:
+        _external_enrich_cap = int(os.environ.get("SP500_EXTERNAL_ENRICH_LIMIT", "0"))
+    except ValueError:
+        _external_enrich_cap = 0
+
     try:
         regime = compute_market_regime(market_hint=market)
     except Exception as e:
@@ -1544,6 +1551,8 @@ def get_sp500_daily_top_picks(
     shortlist_size = min(len(candidates), max(limit, min(prefilter_limit, FAST_SHORTLIST_LIMIT)))
     shortlisted = candidates[:shortlist_size]
     external_enrich_limit = min(len(shortlisted), max(min(limit, FAST_EXTERNAL_ENRICH_LIMIT), 16))
+    if _external_enrich_cap > 0:
+        external_enrich_limit = min(external_enrich_limit, _external_enrich_cap)
     ai_enrich_limit = min(external_enrich_limit, FAST_AI_ENRICH_LIMIT if use_ai_committee else 0)
 
     picks: list[SP500DailyPick] = []

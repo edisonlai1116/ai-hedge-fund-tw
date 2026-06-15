@@ -483,8 +483,12 @@ def _build_holding_verdict(
     )
 
 
+# 注意：以下重活全部宣告為「同步 def」而非「async def」。
+# FastAPI 會把同步 path operation 丟到外部 threadpool 執行，事件迴圈保持空閒，
+# /healthz 才答得出來；否則單一 worker 的事件迴圈會被 yfinance 下載/回測卡死，
+# Render 健康檢查逾時 → 重啟容器 → 進行中的請求收到 502。
 @router.post("/analyze", response_model=SimpleSignalResponse)
-async def analyze_simple_signal(request: SimpleSignalRequest) -> SimpleSignalResponse:
+def analyze_simple_signal(request: SimpleSignalRequest) -> SimpleSignalResponse:
     try:
         report, frame = analyze_symbol_with_data(
             request.ticker,
@@ -502,7 +506,7 @@ async def analyze_simple_signal(request: SimpleSignalRequest) -> SimpleSignalRes
 
 
 @router.post("/analyze-batch", response_model=list[SimpleSignalResponse])
-async def analyze_simple_signal_batch(request: SimpleSignalBatchRequest) -> list[SimpleSignalResponse]:
+def analyze_simple_signal_batch(request: SimpleSignalBatchRequest) -> list[SimpleSignalResponse]:
     try:
         reports_with_frames, errors = analyze_symbols_batch_with_data(
             request.tickers,
@@ -527,7 +531,7 @@ async def analyze_simple_signal_batch(request: SimpleSignalBatchRequest) -> list
 
 
 @router.post("/review-holdings", response_model=list[HoldingReviewResponse])
-async def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewResponse]:
+def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewResponse]:
     try:
         if not request.holdings:
             raise ValueError("請至少提供一筆持股。")
@@ -594,7 +598,7 @@ async def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewRe
 
 
 @router.post("/sp500-daily-top", response_model=SP500DailyScanResponse)
-async def scan_sp500_daily_top(request: SP500DailyScanRequest) -> SP500DailyScanResponse:
+def scan_sp500_daily_top(request: SP500DailyScanRequest) -> SP500DailyScanResponse:
     try:
         payload = get_sp500_daily_top_picks(
             period=request.period,
@@ -618,7 +622,7 @@ async def ai_mainline_universe() -> dict[str, list[str]]:
 
 
 @router.post("/ai-mainline-backtest", response_model=AiMainlineBacktestResponse)
-async def ai_mainline_backtest(request: AiMainlineBacktestRequest) -> AiMainlineBacktestResponse:
+def ai_mainline_backtest(request: AiMainlineBacktestRequest) -> AiMainlineBacktestResponse:
     try:
         payload = run_ai_mainline_backtest(
             symbols=request.tickers,
