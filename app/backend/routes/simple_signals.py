@@ -351,32 +351,41 @@ def _attach_backtest(report, frame) -> None:
     pass
 
 
+def _to_float(value) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _build_holding_verdict(
     report, cost_basis: float | None
 ) -> tuple[str, str, str, str]:
-    # 賣出與否「看股票實際狀況」決定（趨勢結構、動能、過熱、壓力、中長線預測、長線風險、引擎當日出場訊號），
-    # 不以獲利%為觸發。獲利%僅用來把「全出」標成 停損(虧損) 或 獲利了結(獲利)。
+    # 依「未來半年（6 個月）統計期望報酬」決定 續抱 / 減碼 / 出場——以「半年內報酬最好」為準：
+    #   1) 風險閘門（跌破硬性保護停損 / 長線虧損閘門 / 半年期望報酬明顯為負）→ 賣出期望優於續抱 → 全數出場。
+    #   2) 半年上檔有限又短線過熱 → 分批鎖利（減碼比例看過熱程度）。
+    #   3) 半年期望報酬仍正向 → 續抱（續抱期望優於賣出）。
+    # 不再用均線幾何（MA20<MA50）或帳面獲利% 單獨觸發賣出，避免與「個股分析」結論互相矛盾。
     close = report.latest_close
-    ma20 = report.ma20
-    ma50 = report.ma50
-    ma120 = getattr(report, "ma120", 0.0) or ma50
+    ma120 = getattr(report, "ma120", 0.0) or 0.0
     rsi = report.rsi14
     bias = report.bias
-    macd_val = getattr(report, "macd_value", 0.0) or 0.0
-    macd_sig = getattr(report, "macd_signal", 0.0) or 0.0
-    macd_hist = getattr(report, "macd_hist", 0.0) or 0.0
-    resistance = getattr(report, "resistance", 0.0) or 0.0
     exit_action = getattr(report, "today_exit_action", "") or ""
     pnl_pct = None if cost_basis in (None, 0) else ((close / cost_basis) - 1) * 100
 
+    # 未來半年（126 個交易日）統計期望報酬 %
     pf = report.price_forecast if isinstance(getattr(report, "price_forecast", None), dict) else {}
-    forecast_verdict = str(pf.get("verdict", "") or "")
-    forecast_bearish = any(k in forecast_verdict for k in ("減碼", "偏空", "偏弱", "不建議", "恐虧損"))
+    exp6: float | None = None
+    for h in pf.get("horizons", []) or []:
+        if h.get("days") == 126:
+            exp6 = _to_float(h.get("expected_return_pct"))
+            break
+
     ltr = report.long_term_risk if isinstance(getattr(report, "long_term_risk", None), dict) else {}
     ltr_blocked = bool(ltr.get("blocked"))
-    ltr_severity = str(ltr.get("severity", "low") or "low")
+    exp12 = _to_float(ltr.get("expected_return_12m_pct"))
 
-    # 解析停損價
+    # 解析硬性保護停損價（防守底線；跌破代表下檔風險已吃掉半年期望報酬）。
     stop_val = None
     try:
         if report.stop_loss and isinstance(report.stop_loss, str):
@@ -384,103 +393,68 @@ def _build_holding_verdict(
         elif report.stop_loss:
             stop_val = float(report.stop_loss)
     except Exception:
-        pass
+        stop_val = None
+    stop_broken = stop_val is not None and close < stop_val
 
-    # ---- 1) 趨勢「確認」轉壞 → 防守性全數出場（依股況，與獲利無關）----
-    #     僅在真正跌破中期生命線 MA50 / 均線轉空 / 觸停損 / 引擎判賣 時才全出；
-    #     只是低於長線 MA120（但仍守在 MA50 上）不算破位，留到下方當「減碼警訊」。
-    is_structural_break = (close < ma50) and (ma20 < ma50)    # 均線空頭排列
-    is_price_broken = close < ma50 * 0.965                     # 明確跌破 MA50（>3.5%）
-    is_stop_broken = stop_val is not None and close < stop_val
-    is_bearish_break = (bias == "偏空") and (close < ma50)
-    is_sell_today = exit_action == "今天賣出"                  # 引擎：偏空且跌破 MA50
+    overbought = rsi >= 75
+    extreme_ob = rsi >= 82
 
-    if is_structural_break or is_price_broken or is_stop_broken or is_bearish_break or is_sell_today:
-        stop_info = f"並觸及防守價（{stop_val:.2f} 元）" if is_stop_broken else ""
+    def _exit(reason_core: str) -> tuple[str, str, str, str]:
         if pnl_pct is not None and pnl_pct < 0:
-            return (
-                "停損出場",
-                "高",
-                "100%",
-                f"股價已確認跌破中期生命線 MA50（{ma50:.2f} 元）{stop_info}、均線轉空（趨勢 {bias}）。"
-                f"股況惡化且為虧損，依紀律全數停損、保存實力。",
-            )
+            return ("停損出場", "高", "100%", "停損出場：" + reason_core)
+        return ("獲利了結", "高", "100%", "獲利了結：" + reason_core)
+
+    # ---- 1) 風險閘門 → 全數出場（賣出的期望報酬優於續抱）----
+    if stop_broken:
+        return _exit(
+            f"股價已跌破保護性停損價（{stop_val:.2f} 元），下檔風險已吃掉未來半年的期望報酬，先全數出場保存實力。"
+        )
+    if ltr_blocked:
+        return _exit(
+            f"長線虧損閘門觸發（{ltr.get('note', '12 個月統計期望報酬偏負')}），長抱半年以上仍難轉正，建議全數出場。"
+        )
+    if exp6 is not None and (exp6 <= -5 or (exp6 < 0 and exp12 is not None and exp12 < 0)):
+        return _exit(
+            f"未來半年統計期望報酬為 {exp6:.1f}%（偏負），續抱期望報酬低於賣出，建議全數出場、資金轉進更強標的。"
+        )
+
+    # ---- 2) 半年上檔有限又短線過熱 → 分批鎖利 ----
+    weak6 = exp6 is not None and exp6 < 4
+    if extreme_ob:
+        upside = f"、未來半年期望報酬僅 {exp6:.1f}% 上檔有限" if exp6 is not None else ""
         return (
-            "獲利了結",
-            "高",
-            "100%",
-            f"股價已確認跌破中期生命線 MA50（{ma50:.2f} 元）{stop_info}、多頭結構破壞（趨勢 {bias}）。"
-            f"此為股況轉弱（非單看獲利），建議全數獲利了結、落袋為安。",
+            "分批減碼", "中", "50%",
+            f"RSI {rsi:.0f} 嚴重超買、短線過熱{upside}；先了結一半鎖利、降低急回風險，其餘隨趨勢續抱。",
         )
-
-    # ---- 2) 仍守在 MA50 之上，但出現實際的「價格面」轉弱/過熱 → 依嚴重度分批減碼（比例看股況，不看獲利）----
-    long_line_warn = ma120 > 0 and close < ma120                 # 跌破長線 MA120（仍守 MA50）= 長線轉弱警訊
-    momentum_fading = (macd_val < macd_sig) or (macd_hist < 0)   # MACD 死叉或柱狀轉負 → 動能轉弱
-    overbought = rsi >= 72
-    extreme_ob = rsi >= 80
-    near_resistance = resistance > 0 and close >= resistance * 0.985
-    trim_today = exit_action == "今天可小量賣"                   # 引擎：RSI 過熱可小量賣
-    risk_flag = ltr_blocked or ltr_severity in ("medium", "high")
-
-    # 「實際價格面」轉弱訊號（純統計預測 / 長線風險不單獨觸發賣出，只作加重或提示）。
-    weak_price_action = trim_today or overbought or long_line_warn
-    if weak_price_action:
-        reasons: list[str] = []
-        if extreme_ob:
-            reasons.append(f"RSI {rsi:.0f} 嚴重超買")
-        elif overbought:
-            reasons.append(f"RSI {rsi:.0f} 偏熱")
-        if long_line_warn:
-            reasons.append(f"跌破長線 MA120（{ma120:.2f} 元）")
-        if momentum_fading:
-            reasons.append("MACD 動能轉弱")
-        if near_resistance:
-            reasons.append("逼近壓力區")
-        if forecast_bearish:
-            reasons.append(f"中長線預測偏空（{forecast_verdict}）")
-        if risk_flag:
-            reasons.append("長線虧損風險偏高" if (ltr_blocked or ltr_severity == "high") else "長線風險升高")
-
-        severe = (
-            extreme_ob
-            or (long_line_warn and momentum_fading)
-            or (overbought and momentum_fading and near_resistance)
-            or ((forecast_bearish or risk_flag) and (long_line_warn or overbought))
-        )
-        if severe:
-            return (
-                "分批減碼",
-                "中",
-                "50%",
-                f"趨勢尚未跌破 MA50（{ma50:.2f} 元），但{'、'.join(reasons)}。"
-                f"依股況建議減碼約一半鎖利，其餘守 MA50 續抱，轉弱再全出。",
-            )
+    if overbought and weak6:
         return (
-            "觀察減碼",
-            "中",
-            "30%",
-            f"多頭趨勢仍在，惟{'、'.join(reasons)}。"
-            f"依股況建議小幅減碼約三成，核心部位守 MA50（{ma50:.2f} 元）續抱。",
+            "觀察減碼", "中", "30%",
+            f"RSI {rsi:.0f} 偏熱且未來半年期望報酬僅 {exp6:.1f}%、上檔空間有限，"
+            f"小幅減碼約三成鎖利，核心部位續抱觀察。",
         )
 
-    # ---- 3) 股況健康 → 續抱（不因帳面獲利多就賣）----
+    # ---- 3) 半年期望報酬仍正向 → 續抱（續抱期望優於賣出）----
     caution = ""
-    if forecast_bearish or risk_flag:
-        caution = "　註：中長線預測/風險偏保守，但價格面尚無轉弱訊號，續抱並留意即可。"
-    if (close < ma20) and (close >= ma50 * 0.97):
+    if ma120 > 0 and close < ma120:
+        caution = f"　註：股價仍在長線 MA120（{ma120:.2f} 元）之下，屬中段整理，留意而非賣出訊號。"
+    if exp6 is not None and exp6 >= 15 and bias != "偏空":
         return (
-            "強勢續抱",
-            "低",
-            "0%",
-            f"短線回檔至 MA20 下方，但守穩生命線 MA50（{ma50:.2f} 元）、動能未轉弱，趨勢健康，續抱即可。{caution}",
+            "強勢續抱", "低", "0%",
+            f"未來半年統計期望報酬高達 {exp6:.1f}%、趨勢未轉空，續抱期望報酬明顯優於賣出，抱牢即可。{caution}",
         )
-    return (
-        "續抱觀察",
-        "低",
-        "0%",
-        f"中期上升軌道未破、無實際賣出訊號（趨勢 {bias}、RSI {rsi:.0f}）。"
-        f"守 MA50（{ma50:.2f} 元）續抱，待出現實際賣出訊號再處理，不因帳面獲利多寡而賣。{caution}",
-    )
+    if exp6 is not None:
+        return (
+            "續抱觀察", "低", "0%",
+            f"未來半年統計期望報酬為 {exp6:.1f}%（仍正向或持平），續抱期望報酬優於賣出；"
+            f"無跌破停損、無長線虧損風險，續抱觀察、跌破保護價再處理。{caution}",
+        )
+
+    # ---- 4) 半年預測資料不足 → 回退引擎當日訊號，維持與個股分析一致 ----
+    if exit_action == "今天賣出":
+        return _exit("引擎當日訊號為『今天賣出』（趨勢偏空且跌破生命線），且無半年預測可佐證續抱。")
+    if exit_action == "今天可小量賣":
+        return ("觀察減碼", "中", "30%", "引擎當日訊號為『今天可小量賣』（短線偏熱），小幅減碼鎖利、其餘續抱。")
+    return ("續抱觀察", "低", "0%", f"無明確賣出訊號（趨勢 {bias}、RSI {rsi:.0f}），續抱觀察、守住保護停損即可。")
 
 
 # 注意：以下重活全部宣告為「同步 def」而非「async def」。
@@ -583,9 +557,20 @@ def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewResponse
         if not results and request.holdings:
             raise ValueError("所有持股的健檢分析均失敗，請確認網路連線或輸入代碼是否正確。")
 
+        # 排序優先級需與 _build_holding_verdict 實際輸出的判語一致：
+        #   出場(3) > 減碼(2) > 續抱(1)；同級再依帳面損益絕對值大小排。
+        def _verdict_rank(verdict: str) -> int:
+            if verdict in {"停損出場", "獲利了結"}:
+                return 3
+            if verdict in {"分批減碼", "觀察減碼"}:
+                return 2
+            if verdict in {"強勢續抱", "續抱觀察"}:
+                return 1
+            return 0
+
         results.sort(
             key=lambda item: (
-                3 if item.verdict in {"停損賣出", "獲利落袋", "今天賣出"} else 2 if item.verdict in {"先賣一半", "先賣三成", "分批鎖利", "拉高減碼"} else 1 if item.verdict in {"強勢續抱", "續抱觀察"} else 0,
+                _verdict_rank(item.verdict),
                 0 if item.pnl_pct is None else abs(item.pnl_pct),
             ),
             reverse=True,
