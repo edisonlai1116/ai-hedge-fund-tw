@@ -969,7 +969,14 @@ function SignalList({
                 <div className="text-xs text-slate-500">{'company_name' in item ? item.company_name : finalVerdict(item)}</div>
                 {op ? <div className="mt-0.5 text-[11px] leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
               </div>
-              <div className={`font-medium ${actionTone(item.today_action)}`}>{item.today_action}</div>
+              <div>
+                <div className={`font-medium ${actionTone('action_label' in item ? item.action_label : item.today_action)}`}>
+                  {'action_label' in item ? item.action_label : item.today_action}
+                </div>
+                {'action_label' in item ? (
+                  <div className="text-[11px] leading-4 text-slate-400">今日時機：{item.today_action}</div>
+                ) : null}
+              </div>
               <div className={`font-medium ${actionTone(item.today_exit_action)}`}>{item.today_exit_action}</div>
               <div className="text-slate-700">{'daily_score' in item ? item.daily_score : item.composite_score}</div>
             </button>
