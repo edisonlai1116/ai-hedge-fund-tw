@@ -32,7 +32,13 @@ HOLDINGS_TXT = os.path.join(REPO_ROOT, "股票成本.txt")
 GOOAYE_FEED = "https://feeds.soundon.fm/podcasts/954689a5-3096-43a4-a80b-7810b219cef3.xml"
 
 # --- 綜合買進分數權重 -------------------------------------------------------
-WEIGHTS = {"technical": 0.50, "gooaye": 0.25, "ticker_news": 0.10, "macro": 0.15}
+# 2026-06-19 調整：原本只有 technical(50%) 主導，但實證發現 technical 偏「價值／均值回歸」
+# （懲罰高 RSI、加分低本益比與超跌），導致排名最前的多是漲不動的大型權值半導體與防禦股
+# （如 JNJ、LIN、2330、TSM），真正會漲的中小型強勢股（2379、3008、WDC、CIFR）反被排到 40 名後。
+# 用 06-13~06-15 三天 Top 50 實測：buy_score 與未來報酬的 Spearman 僅 +0.29/+0.17/-0.03（近乎無預測力），
+# 但「近一個月相對強度(動能)」達 +0.31/+0.38/+0.41。故新增 relative_strength 因子並降低 technical 權重，
+# 新公式回測 Spearman 提升為 +0.43/+0.45/+0.33。relative_strength 缺值時以中性 50 代入（與其他因子一致）。
+WEIGHTS = {"technical": 0.35, "relative_strength": 0.30, "gooaye": 0.20, "ticker_news": 0.05, "macro": 0.10}
 _NUM = re.compile(r"^-?\d[\d,]*(?:\.\d+)?$")
 
 # 最終排序輸出的檔數（台美股合併取前 N）
@@ -72,11 +78,21 @@ TW_NAMES = {
 
 
 # ===== 純函式（可離線單元測試） ============================================
+def relative_strength_score(mom_20d: Optional[float]) -> Optional[float]:
+    """把「近一個月（約 20 交易日）報酬率 %」映射成 0–100 相對強度分數。
+    +20% → 100、0% → 50、-20% → 0（線性夾擠）。缺值回 None（後續以中性 50 代入）。"""
+    if mom_20d is None:
+        return None
+    return max(0.0, min(100.0, 50.0 + 2.5 * float(mom_20d)))
+
+
 def compute_buy_score(technical: Optional[float], gooaye: Optional[float],
-                      ticker_news: Optional[float], macro: Optional[float]) -> Dict:
+                      ticker_news: Optional[float], macro: Optional[float],
+                      relative_strength: Optional[float] = None) -> Dict:
     """把各面向分數（0–100，缺項以 50 中性代入）加權成買進分數。"""
     parts = {
         "technical": 50 if technical is None else float(technical),
+        "relative_strength": 50 if relative_strength is None else float(relative_strength),
         "gooaye": 50 if gooaye is None else float(gooaye),
         "ticker_news": 50 if ticker_news is None else float(ticker_news),
         "macro": 50 if macro is None else float(macro),
@@ -222,8 +238,17 @@ def _technical(symbol: str) -> Optional[Dict]:
         if df is None or df.empty:
             return None
         r = build_report(symbol, df, fetch_fundamentals=False, lightweight=True)
+        # 近一個月（約 20 交易日）報酬率 → 相對強度／動能因子。免額外下載，沿用同一份報價。
+        mom_20d = None
+        try:
+            closes = df["Close"].dropna()
+            if len(closes) > 21:
+                mom_20d = (float(closes.iloc[-1]) / float(closes.iloc[-21]) - 1.0) * 100.0
+        except Exception:
+            mom_20d = None
         return {
             "composite_score": getattr(r, "composite_score", 50),
+            "mom_20d": mom_20d,
             "bias": getattr(r, "bias", ""),
             "today_action": getattr(r, "today_action", ""),
             "buy_zone": getattr(r, "buy_zone", ""),
@@ -320,10 +345,12 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, m
     cons = _gooaye_consensus(raw_ticker)
 
     technical_score = tech["composite_score"] if tech else None
+    rs_score = relative_strength_score(tech.get("mom_20d")) if tech else None
     gooaye_score = cons["consensus_score"] if cons.get("opinions") else None
     news_score = news["score"] if news else None
 
-    scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score)
+    scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score,
+                               relative_strength=rs_score)
     top_op = cons["opinions"][0] if cons.get("opinions") else None
     market = "tw" if symbol.endswith(".TW") or symbol.endswith(".TWO") else "us"
     base = raw_ticker.split(".")[0].upper()

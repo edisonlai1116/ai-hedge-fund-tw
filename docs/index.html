@@ -152,7 +152,7 @@ function detailHtml(p){
   } else if(!d.agents || !d.agents.length){
     h += `<div class="hl muted">完整分析（各 agent、3/6/9/12 月預測）將於每日排程在雲端產生後顯示。</div>`;
   }
-  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
+  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 相對強度 ${p.components?.relative_strength ?? '—'} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
   return h;
 }
 

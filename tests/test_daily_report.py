@@ -9,15 +9,19 @@ def test_weights_sum_to_one():
 
 
 def test_compute_buy_score_full():
-    out = compute_buy_score(80, 85, 60, 55)
-    # 80*.5 + 85*.25 + 60*.1 + 55*.15 = 75.5 → 76
-    assert out["buy_score"] == 76
-    assert out["components"] == {"technical": 80, "gooaye": 85, "ticker_news": 60, "macro": 55}
+    out = compute_buy_score(80, 85, 60, 55, relative_strength=90)
+    # 80*.35 + 90*.30 + 85*.20 + 60*.05 + 55*.10 = 28+27+17+3+5.5 = 80.5 → 80
+    assert out["buy_score"] == 80
+    assert out["components"] == {
+        "technical": 80, "relative_strength": 90, "gooaye": 85, "ticker_news": 60, "macro": 55,
+    }
 
 
 def test_compute_buy_score_missing_defaults_to_neutral():
     out = compute_buy_score(None, None, None, None)
     assert out["buy_score"] == 50
+    # 缺相對強度時以中性 50 代入，不影響全中性結果
+    assert out["components"]["relative_strength"] == 50
 
 
 def test_recommendation_bands():
