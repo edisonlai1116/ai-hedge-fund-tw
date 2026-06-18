@@ -1206,14 +1206,16 @@ def enrich_candidate(
             value_notes.append(f"短線已高(RSI: {rsi:.1f})")
 
     if scan_type == "lagging_value":
-        # 低估補漲：仍以基本面為主，但加入相對強度確認「真的開始補漲」，避免接落下的刀。
+        # 低估補漲：基本面/估值仍是主角(0.32，保留價值個性)，但加入相對強度確認「真的開始補漲」、
+        # 並加入未來半年上漲空間，讓選出的是「被低估且看好會補漲」而非單純便宜卻沒戲的價值陷阱。
         daily_score = _clamp_int(
-            technical_score * 0.20
-            + rs_score * 0.12
-            + news_score * 0.08
+            technical_score * 0.18
+            + rs_score * 0.10
+            + upside_score * 0.14
+            + news_score * 0.06
             + fundamental_score * 0.32
-            + regime.regime_score * 0.08
-            + backtest_score * 0.20
+            + regime.regime_score * 0.05
+            + backtest_score * 0.15
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + value_boost)
     else:
