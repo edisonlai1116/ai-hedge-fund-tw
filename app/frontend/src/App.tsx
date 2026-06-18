@@ -1903,7 +1903,12 @@ function PortfolioTab({
                           {op ? <div className="mt-0.5 max-w-[260px] text-[11px] font-normal leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
                         </td>
                         <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
-                        <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>{r.action_label ?? r.today_action}</td>
+                        <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>
+                          <div>{r.action_label ?? r.today_action}</div>
+                          {r.action_label && r.today_action ? (
+                            <div className="text-[11px] font-normal leading-4 text-slate-400">今日時機：{r.today_action}</div>
+                          ) : null}
+                        </td>
                         <td className="py-1.5 pr-2 text-slate-700">{paperNative(r.latest_close, ccy)}</td>
                         <td className="py-1.5 pr-2">
                           <Button type="button" onClick={() => prefillBuy(r.symbol, r.latest_close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">

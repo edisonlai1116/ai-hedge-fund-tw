@@ -851,19 +851,33 @@ def build_signal_backtest(frame: pd.DataFrame, report: SignalReport, regime: Mar
 
 
 def decide_action_label(daily_score: int, regime: MarketRegime, backtest: SignalBacktest, bias: str, is_strong_value: bool = False) -> tuple[str, str, str]:
-    if regime.action == "全力偏多" and daily_score >= 80 and backtest.confidence_score >= 70:
-        return "全力買進", "非常高", "可提高部位"
-        
-    # Value investor allowance: if it is strong value, bypass bias == "偏空" restriction
+    """建議強度與綜合分數(daily_score)**單調對應** —— 分數越高建議越積極，不會出現
+    「100 分卻先觀察」的矛盾。回測信心(confidence_score)只用來決定是否升到最高一級
+    「全力買進」與部位大小，不再把高分股壓成先觀察。風險閘門(明顯偏空、大盤要減碼)優先。
+
+    2026-06-19 重寫：原本以 backtest.confidence_score 當硬性門檻，導致慢牛股(如 BRK-B)
+    daily_score=100 仍落到「先觀察」，與排名(分數)和對帳本建議互相矛盾。"""
+    conf = getattr(backtest, "confidence_score", 50)
     is_bearish_blocked = (bias == "偏空" and not is_strong_value)
-    
-    if daily_score >= 68 and backtest.confidence_score >= 55 and not is_bearish_blocked:
-        return "分批買進", "高", "中等偏高部位"
-    if daily_score >= 55 and backtest.confidence_score >= 45 and not is_bearish_blocked:
-        return "小量試單", "中", "小部位"
-    if regime.action == "減碼 / 不追價" or daily_score < 45 or is_bearish_blocked:
+
+    # 風險閘門：明顯偏空且非強勢價值 → 不追空頭
+    if is_bearish_blocked:
         return "觀望 / 減碼", "低", "低風險部位"
-    return "先觀察", "低", "等待更好位置"
+    # 大盤明確要減碼，且分數未到高檔 → 保守
+    if regime.action == "減碼 / 不追價" and daily_score < 72:
+        return "觀望 / 減碼", "低", "低風險部位"
+
+    if daily_score >= 80:
+        if regime.action == "全力偏多" and conf >= 60:
+            return "全力買進", "非常高", "可提高部位"
+        return "分批買進", "高", "中等偏高部位"
+    if daily_score >= 66:
+        return "分批買進", "高", "中等偏高部位"
+    if daily_score >= 56:
+        return "小量試單", "中", "小部位"
+    if daily_score >= 46:
+        return "先觀察", "低", "等待更好位置"
+    return "觀望 / 減碼", "低", "低風險部位"
 
 
 
