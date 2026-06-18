@@ -215,6 +215,19 @@ def _clamp_int(value: float, low: int = 0, high: int = 100) -> int:
     return max(low, min(high, int(round(value))))
 
 
+def _relative_strength_from_frame(frame) -> float:
+    """近一個月(約20交易日)報酬率 → 0-100 相對強度(動能)分數（+20%→100、0%→50、-20%→0）。
+    用於把排名拉向「真正在漲」的標的，修正 composite_score 對價值/防禦股的偏誤。缺資料回中性 50。"""
+    try:
+        closes = frame["Close"].dropna()
+        if len(closes) > 21:
+            mom_20d = (float(closes.iloc[-1]) / float(closes.iloc[-21]) - 1.0) * 100.0
+            return max(0.0, min(100.0, 50.0 + 2.5 * mom_20d))
+    except Exception:
+        pass
+    return 50.0
+
+
 def _normalize_sp500_symbol(symbol: str) -> str:
     return symbol.replace(".", "-").strip().upper()
 
@@ -1096,6 +1109,11 @@ def enrich_candidate(
     backtest = build_signal_backtest(frame, enriched_report, regime)
     backtest_score = backtest.confidence_score
 
+    # 相對強度(動能)因子：近一個月(約20交易日)報酬率 → 0-100。
+    # 2026-06-19 新增：原 daily_score 靠 composite_score(帶價值/均值回歸偏誤)主導，排名最前永遠是
+    # 漲不動的大型半導體與防禦股(JNJ/LIN)，真正會漲的強勢股被排到後面。加入動能因子拉正排名與漲跌的相關性。
+    rs_score = _relative_strength_from_frame(frame)
+
     # Evaluate 1-3 Month Explosive Breakout / Dark Horse Potential
     is_dark_horse = (
         (backtest.avg_return_20d >= 2.5 or backtest.avg_return_60d >= 6.0)
@@ -1169,21 +1187,25 @@ def enrich_candidate(
             value_notes.append(f"短線已高(RSI: {rsi:.1f})")
 
     if scan_type == "lagging_value":
+        # 低估補漲：仍以基本面為主，但加入相對強度確認「真的開始補漲」，避免接落下的刀。
         daily_score = _clamp_int(
-            technical_score * 0.22
-            + news_score * 0.10
-            + fundamental_score * 0.36
+            technical_score * 0.20
+            + rs_score * 0.12
+            + news_score * 0.08
+            + fundamental_score * 0.32
             + regime.regime_score * 0.08
-            + backtest_score * 0.24
+            + backtest_score * 0.20
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + value_boost)
     else:
+        # 最佳買點：降低 technical 主導，提高相對強度(動能)權重，讓真正強勢的標的排到前面。
         daily_score = _clamp_int(
-            technical_score * 0.42
-            + news_score * 0.12
-            + fundamental_score * 0.16
-            + regime.regime_score * 0.08
-            + backtest_score * 0.22
+            technical_score * 0.30
+            + rs_score * 0.25
+            + news_score * 0.10
+            + fundamental_score * 0.13
+            + regime.regime_score * 0.07
+            + backtest_score * 0.15
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost)
 
@@ -1539,9 +1561,13 @@ def get_sp500_daily_top_picks(
             reverse=True,
         )
     else:
+        # 初篩排序也納入相對強度，避免強勢股在進入完整評分前就被 composite_score 偏誤砍掉
+        # （Render 上 universe≤40 一律全評分，此排序主要影響本機掃全宇宙時的入圍名單）。
         candidates.sort(
             key=lambda item: (
-                item[2].composite_score + symbol_to_sector_data.get(item[0].symbol, {}).get("sector_boost", 0),
+                item[2].composite_score
+                + symbol_to_sector_data.get(item[0].symbol, {}).get("sector_boost", 0)
+                + 0.6 * (_relative_strength_from_frame(item[1]) - 50.0),
                 item[2].expected_return_pct,
                 item[2].risk_reward_ratio,
             ),
