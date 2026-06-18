@@ -1623,6 +1623,15 @@ def get_sp500_daily_top_picks(
     if _scan_limit > 0 and scan_type != "explosive_growth":
         constituents = constituents[:_scan_limit]
 
+    # 股癌自動併入：三種模式都跟著股癌長新標的（explosive 已在 fetch_ai_cake_universe 內含，這裡補
+    # 強勢看漲/低估補漲）。放在截斷之後 → 股癌點名一律納入掃描、不會被市值截斷砍掉。
+    if scan_type != "explosive_growth":
+        _existing = {c.yf_symbol.upper() for c in constituents}
+        for c in _gooaye_named_constituents(market):
+            if c.yf_symbol.upper() not in _existing:
+                _existing.add(c.yf_symbol.upper())
+                constituents.append(c)
+
     # 免費雲端減重：可用環境變數縮短抓取期間（少下載 = 省記憶體/時間）。本機不設則用原 period。
     _scan_period = os.environ.get("SP500_SCAN_PERIOD", "").strip()
     if _scan_period:
