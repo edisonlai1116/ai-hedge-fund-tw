@@ -1114,6 +1114,25 @@ def enrich_candidate(
     # 漲不動的大型半導體與防禦股(JNJ/LIN)，真正會漲的強勢股被排到後面。加入動能因子拉正排名與漲跌的相關性。
     rs_score = _relative_strength_from_frame(frame)
 
+    # 後續上漲空間(看好會大漲)因子：6 個月統計預測期望報酬 → 0-100（+30%→98、0%→50、-30%→2）。
+    # 2026-06-19 新增：使用者要的不只是「今天能買」，而是「近期是好買點且看好後續會大漲」。
+    # 這個因子把「未來半年漲幅期望」放進排名；缺預測時退回用歷史 60 日平均報酬當代理。
+    upside_score = 50.0
+    try:
+        f6 = None
+        pf = getattr(enriched_report, "price_forecast", None)
+        if pf and pf.get("horizons"):
+            for h in pf["horizons"]:
+                if h.get("days") == 126:
+                    f6 = float(h.get("expected_return_pct", 0.0))
+                    break
+        if f6 is not None:
+            upside_score = max(0.0, min(100.0, 50.0 + 1.6 * f6))
+        elif getattr(backtest, "avg_return_60d", None):
+            upside_score = max(0.0, min(100.0, 50.0 + 3.0 * float(backtest.avg_return_60d)))
+    except Exception:
+        upside_score = 50.0
+
     # Evaluate 1-3 Month Explosive Breakout / Dark Horse Potential
     is_dark_horse = (
         (backtest.avg_return_20d >= 2.5 or backtest.avg_return_60d >= 6.0)
@@ -1198,14 +1217,16 @@ def enrich_candidate(
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + value_boost)
     else:
-        # 最佳買點：降低 technical 主導，提高相對強度(動能)權重，讓真正強勢的標的排到前面。
+        # 近期最佳買點＋看好後續大漲：三大支柱 = technical(進場健康度) + 相對強度(近期強勢)
+        # + upside(未來半年上漲空間)，輔以歷史型態回測、新聞、基本面、大盤情緒。
         daily_score = _clamp_int(
-            technical_score * 0.30
-            + rs_score * 0.25
-            + news_score * 0.10
-            + fundamental_score * 0.13
-            + regime.regime_score * 0.07
+            technical_score * 0.25
+            + rs_score * 0.22
+            + upside_score * 0.20
             + backtest_score * 0.15
+            + news_score * 0.08
+            + fundamental_score * 0.07
+            + regime.regime_score * 0.03
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost)
 
@@ -1607,18 +1628,21 @@ def get_sp500_daily_top_picks(
             except Exception:
                 continue
 
-    def buy_priority(item: SP500DailyPick) -> tuple[int, int]:
+    def near_term_entry_adj(item: SP500DailyPick) -> int:
+        """近期(非僅限今天)進場可行性的「軟」加分：理想買點加分、已轉賣訊號扣分。
+        2026-06-19 改：不再硬性把「今天可買」整批拉到最前面 —— 改以分數(含未來上漲空間)為主，
+        讓看好後續大漲的強勢股不會只因為差一點回檔、今天不是完美買點就被埋到後面。"""
         if item.today_action == "今天可買":
-            return (5, item.daily_score)
+            return 4
         if item.today_action == "今天可小量買":
-            return (4, item.daily_score)
-        if item.today_action in {"今天等回檔", "今天不要買"}:
-            return (3, item.daily_score)
-        if item.today_exit_action == "今天可小量賣":
-            return (2, item.daily_score)
+            return 2
+        if item.today_action == "今天等回檔":
+            return 1
         if item.today_exit_action == "今天賣出":
-            return (1, item.daily_score)
-        return (0, item.daily_score)
+            return -8
+        if item.today_exit_action == "今天可小量賣":
+            return -3
+        return 0
 
     if scan_type == "lagging_value":
         picks.sort(
@@ -1633,20 +1657,18 @@ def get_sp500_daily_top_picks(
         )
         ordered_picks = picks
     else:
+        # 近期最佳買點＋後續看漲：以 daily_score(已含相對強度與半年上漲空間) 為主，
+        # 近期進場可行性只當軟加分，預期報酬為次要排序鍵；仍避免把「今天賣出」訊號排到前面。
         picks.sort(
             key=lambda item: (
-                buy_priority(item)[0],
-                buy_priority(item)[1],
+                item.daily_score + near_term_entry_adj(item),
+                item.expected_return_pct,
                 item.backtest_score,
                 item.technical_score,
-                item.fundamental_score,
-                item.news_score,
             ),
             reverse=True,
         )
-        buy_first = [item for item in picks if item.today_action in {"今天可買", "今天可小量買"}]
-        non_buy = [item for item in picks if item.today_action not in {"今天可買", "今天可小量買"}]
-        ordered_picks = buy_first + non_buy
+        ordered_picks = picks
 
     # Prepare serialized sectors list (clean up raw set objects)
     serialized_sectors = []
