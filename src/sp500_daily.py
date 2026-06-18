@@ -228,6 +228,61 @@ def _relative_strength_from_frame(frame) -> float:
     return 50.0
 
 
+def _early_stage_score(frame) -> float:
+    """偵測「早期飆股」型態：打底量縮、剛轉強、貼近突破但尚未乖離追高 → 0-100。
+    越高 = 越處在「發動前的早期最佳布局點」；已經噴出/乖離過大的會被壓低。資料不足回中性 50。
+
+    **刻意與相對強度(近月漲幅)不同** —— 早期要的是「還沒大漲、正在蓄勢」，不是「已經漲一波」。
+    使用者要的是在變飆股『之前』抓到（像當初的 ALAB/MRVL/MU），而不是追已經成長的股票。"""
+    try:
+        closes = frame["Close"].astype(float).dropna()
+        highs = frame["High"].astype(float).dropna()
+        lows = frame["Low"].astype(float).dropna()
+        vols = frame["Volume"].astype(float).dropna()
+        if len(closes) < 130:
+            return 50.0
+        c = float(closes.iloc[-1])
+        ma50_series = closes.rolling(50).mean()
+        ma50 = float(ma50_series.iloc[-1])
+        ma120 = float(closes.rolling(120).mean().iloc[-1])
+        ma50_prev = float(ma50_series.iloc[-21])           # 一個月前的 MA50（判斷季線是否翻揚）
+        ret_20 = (c / float(closes.iloc[-21]) - 1.0) * 100.0
+        ret_60 = (c / float(closes.iloc[-61]) - 1.0) * 100.0
+        hi_126 = float(highs.tail(126).max())
+        dist_to_high = (c / hi_126 - 1.0) * 100.0           # <=0；越接近 0 越貼近突破
+        ext_ma50 = (c / ma50 - 1.0) * 100.0 if ma50 > 0 else 0.0  # 乖離（離季線多遠）
+        rng = (highs - lows)
+        atr20 = float(rng.tail(20).mean()); atr120 = float(rng.tail(120).mean())
+        contraction = atr20 / atr120 if atr120 > 0 else 1.0  # <1 = 波動收斂（蓄勢）
+        v20 = float(vols.tail(20).mean()); v60 = float(vols.tail(60).mean())
+        vol_dry = v20 / v60 if v60 > 0 else 1.0              # <1 = 量縮打底
+
+        score = 50.0
+        # 1) 趨勢結構：站上季線、季線翻揚、站上年線（早期轉強）
+        if c > ma50: score += 6
+        if ma50 > ma50_prev: score += 6
+        if c > ma120: score += 4
+        # 2) 貼近突破（在 6 月高點下方 1~10% 最佳；剛突破次之；離高點太遠＝還在深跌）
+        if -10 <= dist_to_high <= -1: score += 12
+        elif -1 < dist_to_high <= 3: score += 6
+        elif dist_to_high < -25: score -= 6
+        # 3) 波動/量能收斂（蓄勢待發）
+        if contraction < 0.8: score += 8
+        elif contraction < 1.0: score += 4
+        if vol_dry < 0.9: score += 6
+        # 4) 中期方向向上、但近月尚未暴衝（早期，不是末段噴出）
+        if ret_60 > 0: score += 5
+        if 0 <= ret_20 <= 12: score += 8
+        # 5) 追高/乖離扣分（已經太晚）
+        if ret_20 > 30: score -= 18
+        elif ret_20 > 20: score -= 10
+        if ext_ma50 > 25: score -= 12
+        elif ext_ma50 > 15: score -= 6
+        return max(0.0, min(100.0, score))
+    except Exception:
+        return 50.0
+
+
 def _normalize_sp500_symbol(symbol: str) -> str:
     return symbol.replace(".", "-").strip().upper()
 
@@ -406,6 +461,103 @@ def fetch_sp500_constituents() -> list[SP500Constituent]:
             sector=sect
         ) for sym, name, sect in popular_tickers
     ]
+
+
+# ===== 黃仁勳「AI 算力蛋糕」掃描池 ============================================
+# 涵蓋 AI 產業鏈各層，重點放在「還沒大噴的中型成長股」（下一檔 ALAB/MRVL 的候選），
+# 同時保留各層龍頭做題材對照。explosive_growth(早期飆股雷達) 模式專用此池。
+# sector 欄位直接用「蛋糕層」名稱，掃描的類股分析就會依層分組。
+AI_CAKE_UNIVERSE_US: list[tuple[str, str, str]] = [
+    # L1 算力 / 加速器 / IC 設計
+    ("NVDA", "NVIDIA Corporation", "①算力核心"),
+    ("AMD", "Advanced Micro Devices", "①算力核心"),
+    ("AVGO", "Broadcom Inc.", "①算力核心"),
+    ("MRVL", "Marvell Technology", "①算力核心"),
+    ("ARM", "Arm Holdings plc", "①算力核心"),
+    ("QCOM", "QUALCOMM Incorporated", "①算力核心"),
+    ("ALAB", "Astera Labs, Inc.", "①算力核心"),
+    ("CRDO", "Credo Technology Group", "①算力核心"),
+    # L2 記憶體 / 儲存
+    ("MU", "Micron Technology", "②記憶體儲存"),
+    ("WDC", "Western Digital Corp.", "②記憶體儲存"),
+    ("STX", "Seagate Technology", "②記憶體儲存"),
+    ("SNDK", "Sandisk Corporation", "②記憶體儲存"),
+    # L3 光通訊 / 網通 / 互連
+    ("ANET", "Arista Networks", "③光通訊網通"),
+    ("COHR", "Coherent Corp.", "③光通訊網通"),
+    ("LITE", "Lumentum Holdings", "③光通訊網通"),
+    ("CIEN", "Ciena Corporation", "③光通訊網通"),
+    ("AAOI", "Applied Optoelectronics", "③光通訊網通"),
+    ("POET", "POET Technologies", "③光通訊網通"),
+    ("ALGM", "Allegro MicroSystems", "③光通訊網通"),
+    # L4 半導體製造 / 設備
+    ("TSM", "Taiwan Semiconductor", "④製造設備"),
+    ("ASML", "ASML Holding N.V.", "④製造設備"),
+    ("AMAT", "Applied Materials", "④製造設備"),
+    ("LRCX", "Lam Research Corp.", "④製造設備"),
+    ("KLAC", "KLA Corporation", "④製造設備"),
+    ("ONTO", "Onto Innovation", "④製造設備"),
+    ("ACMR", "ACM Research", "④製造設備"),
+    ("NVMI", "Nova Ltd.", "④製造設備"),
+    ("CAMT", "Camtek Ltd.", "④製造設備"),
+    ("AEIS", "Advanced Energy Industries", "④製造設備"),
+    ("FORM", "FormFactor, Inc.", "④製造設備"),
+    # L5 資料中心電力 / 散熱 / 基礎設施 / 伺服器 ODM
+    ("VRT", "Vertiv Holdings", "⑤資料中心電力散熱"),
+    ("VST", "Vistra Corp.", "⑤資料中心電力散熱"),
+    ("CEG", "Constellation Energy", "⑤資料中心電力散熱"),
+    ("GEV", "GE Vernova Inc.", "⑤資料中心電力散熱"),
+    ("ETN", "Eaton Corporation", "⑤資料中心電力散熱"),
+    ("POWL", "Powell Industries", "⑤資料中心電力散熱"),
+    ("NVT", "nVent Electric plc", "⑤資料中心電力散熱"),
+    ("MOD", "Modine Manufacturing", "⑤資料中心電力散熱"),
+    ("BE", "Bloom Energy Corp.", "⑤資料中心電力散熱"),
+    ("OKLO", "Oklo Inc.", "⑤資料中心電力散熱"),
+    ("SMR", "NuScale Power Corp.", "⑤資料中心電力散熱"),
+    ("SMCI", "Super Micro Computer", "⑤資料中心電力散熱"),
+    ("DELL", "Dell Technologies", "⑤資料中心電力散熱"),
+    ("CLS", "Celestica Inc.", "⑤資料中心電力散熱"),
+    ("NBIS", "Nebius Group N.V.", "⑤資料中心電力散熱"),
+    # L6 IP / EDA / 軟體 / 應用
+    ("SNPS", "Synopsys, Inc.", "⑥IP軟體應用"),
+    ("CDNS", "Cadence Design Systems", "⑥IP軟體應用"),
+    ("PLTR", "Palantir Technologies", "⑥IP軟體應用"),
+    ("NOW", "ServiceNow, Inc.", "⑥IP軟體應用"),
+    ("PANW", "Palo Alto Networks", "⑥IP軟體應用"),
+    ("CRWD", "CrowdStrike Holdings", "⑥IP軟體應用"),
+    ("APP", "AppLovin Corporation", "⑥IP軟體應用"),
+]
+
+# 台股 AI 蛋糕池（中文名供顯示）
+AI_CAKE_UNIVERSE_TW: list[tuple[str, str, str]] = [
+    ("2330.TW", "台積電", "④製造設備"),
+    ("2454.TW", "聯發科", "①算力核心"),
+    ("3661.TW", "世芯-KY", "①算力核心"),
+    ("3443.TW", "創意", "①算力核心"),
+    ("2379.TW", "瑞昱", "①算力核心"),
+    ("3034.TW", "聯詠", "①算力核心"),
+    ("8299.TWO", "群聯", "②記憶體儲存"),
+    ("2344.TW", "華邦電", "②記憶體儲存"),
+    ("3711.TW", "日月光投控", "④製造設備"),
+    ("6515.TW", "穎崴", "④製造設備"),
+    ("3017.TW", "奇鋐", "⑤資料中心電力散熱"),
+    ("2308.TW", "台達電", "⑤資料中心電力散熱"),
+    ("2382.TW", "廣達", "⑤資料中心電力散熱"),
+    ("2317.TW", "鴻海", "⑤資料中心電力散熱"),
+    ("3231.TW", "緯創", "⑤資料中心電力散熱"),
+    ("6669.TW", "緯穎", "⑤資料中心電力散熱"),
+    ("2376.TW", "技嘉", "⑤資料中心電力散熱"),
+    ("2357.TW", "華碩", "⑤資料中心電力散熱"),
+    ("3008.TW", "大立光", "③光通訊網通"),
+    ("4977.TW", "眾達-KY", "③光通訊網通"),
+]
+
+
+def fetch_ai_cake_universe(market: str) -> list[SP500Constituent]:
+    """黃仁勳「AI 算力蛋糕」掃描池（explosive_growth 早期飆股雷達專用）。"""
+    rows = AI_CAKE_UNIVERSE_TW if market == "tw" else AI_CAKE_UNIVERSE_US
+    return [SP500Constituent(symbol=sym, yf_symbol=sym, company_name=name, sector=sect)
+            for sym, name, sect in rows]
 
 
 def download_sp500_price_map(symbols: list[str], period: str) -> dict[str, pd.DataFrame]:
@@ -1147,6 +1299,9 @@ def enrich_candidate(
     except Exception:
         upside_score = 50.0
 
+    # 早期飆股型態分數（打底量縮、剛轉強、貼近突破但未乖離追高）。
+    early_stage_score = _early_stage_score(frame)
+
     # Evaluate 1-3 Month Explosive Breakout / Dark Horse Potential
     is_dark_horse = (
         (backtest.avg_return_20d >= 2.5 or backtest.avg_return_60d >= 6.0)
@@ -1232,6 +1387,22 @@ def enrich_candidate(
             + backtest_score * 0.15
         )
         daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + value_boost)
+    elif scan_type == "explosive_growth":
+        # 早期飆股雷達：核心是「早期型態(打底/剛轉強/貼近突破但未乖離)」，輔以未來上漲空間、
+        # 基本面成長與題材；**不做價值/超跌加分**，並對追高(RSI 過熱)扣分 —— 要在噴出『之前』抓到。
+        rsi_pen = 10 if enriched_report.rsi14 >= 78 else (5 if enriched_report.rsi14 >= 70 else 0)
+        daily_score = _clamp_int(
+            early_stage_score * 0.42
+            + upside_score * 0.22
+            + fundamental_score * 0.12
+            + backtest_score * 0.10
+            + news_score * 0.08
+            + regime.regime_score * 0.06
+            - rsi_pen
+        )
+        # AI 蛋糕題材加成：卡脖子龍頭多給一點（整池都在 AI 鏈上，差異化用瓶頸/層級）
+        theme_boost = 6 if critical_bottleneck is not None else (3 if ai_chain_layer is not None else 0)
+        daily_score = _clamp_int(daily_score + sector_boost + dark_horse_boost + theme_boost)
     else:
         # 近期最佳買點＋看好後續大漲：三大支柱 = technical(進場健康度) + 相對強度(近期強勢)
         # + upside(未來半年上漲空間)，輔以歷史型態回測、新聞、基本面、大盤情緒。
@@ -1384,18 +1555,22 @@ def get_sp500_daily_top_picks(
     if cached and now - cached[0] <= timedelta(minutes=CACHE_TTL_MINUTES):
         return cached[1]
 
-    if market == "tw":
+    if scan_type == "explosive_growth":
+        # 早期飆股雷達：掃描黃仁勳「AI 算力蛋糕」各層個股（已是策展清單，不再依市值截斷）。
+        constituents = fetch_ai_cake_universe(market)
+    elif market == "tw":
         constituents = fetch_taiwan_constituents()
     else:
         constituents = fetch_sp500_constituents()
 
     # 掃描標的數量上限（給記憶體/時間有限的免費雲端用）。設環境變數 SP500_SCAN_LIMIT 即生效；
     # 不設或<=0 則掃全部（本機）。constituents 已依市值/重要性排序，取前 N 仍具代表性。
+    # explosive_growth 的 AI 蛋糕池已策展、數量有限，不套用此截斷（否則會砍掉早期中型股）。
     try:
         _scan_limit = int(os.environ.get("SP500_SCAN_LIMIT", "0"))
     except ValueError:
         _scan_limit = 0
-    if _scan_limit > 0:
+    if _scan_limit > 0 and scan_type != "explosive_growth":
         constituents = constituents[:_scan_limit]
 
     # 免費雲端減重：可用環境變數縮短抓取期間（少下載 = 省記憶體/時間）。本機不設則用原 period。
@@ -1597,6 +1772,14 @@ def get_sp500_daily_top_picks(
             ),
             reverse=True,
         )
+    elif scan_type == "explosive_growth":
+        # 早期飆股雷達：初篩就以「早期型態分數」排序（AI 蛋糕池已策展、通常全數入圍，此排序只在
+        # 池子超過 shortlist 上限時決定取捨）。
+        candidates.sort(
+            key=lambda item: _early_stage_score(item[1])
+                + symbol_to_sector_data.get(item[0].symbol, {}).get("sector_boost", 0),
+            reverse=True,
+        )
     else:
         # 初篩排序也納入相對強度，避免強勢股在進入完整評分前就被 composite_score 偏誤砍掉
         # （Render 上 universe≤40 一律全評分，此排序主要影響本機掃全宇宙時的入圍名單）。
@@ -1660,7 +1843,8 @@ def get_sp500_daily_top_picks(
             return -3
         return 0
 
-    if scan_type == "lagging_value":
+    if scan_type in ("lagging_value", "explosive_growth"):
+        # 低估補漲 / 早期飆股雷達：純以 daily_score 排序（早期布局不該被「今天能否進場」綁住）。
         picks.sort(
             key=lambda item: (
                 item.daily_score,

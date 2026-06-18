@@ -158,7 +158,7 @@ class SP500DailyScanRequest(BaseModel):
     use_ai_committee: bool = Field(default=False, description="Enable AI committee scoring for shortlisted picks")
     committee_model: str = Field(default="gemma4:e4b", description="AI committee model name")
     market: str = Field(default="us", description="Market hint: us or tw")
-    scan_type: str = Field(default="optimal", description="Scan mode: optimal or lagging_value")
+    scan_type: str = Field(default="optimal", description="Scan mode: optimal / lagging_value / explosive_growth")
 
 
 class AiMainlineBacktestRequest(BaseModel):

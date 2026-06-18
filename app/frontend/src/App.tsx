@@ -190,7 +190,7 @@ export default function App() {
   const [holdingsLastReviewed, setHoldingsLastReviewed] = useState(() => loadRealHoldings().lastReviewed);
   const [market, setMarket] = useState<'us' | 'tw' | ''>('');
   const [scanMarket, setScanMarket] = useState<'us' | 'tw'>('us');
-  const [scanType, setScanType] = useState<'optimal' | 'lagging_value'>('optimal');
+  const [scanType, setScanType] = useState<'optimal' | 'lagging_value' | 'explosive_growth'>('optimal');
   const [useAiCommittee, setUseAiCommittee] = useState(false);
   const [committeeModel, setCommitteeModel] = useState('gemma4:e4b');
 
@@ -442,8 +442,9 @@ export default function App() {
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-600">掃描模式</span>
-                    <select value={scanType} onChange={(event) => setScanType(event.target.value as 'optimal' | 'lagging_value')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
+                    <select value={scanType} onChange={(event) => setScanType(event.target.value as 'optimal' | 'lagging_value' | 'explosive_growth')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
                       <option value="optimal">強勢看漲（近期買點＋後續大漲）</option>
+                      <option value="explosive_growth">早期飆股雷達（AI 蛋糕·發動前）</option>
                       <option value="lagging_value">低估補漲（價值落後股）</option>
                     </select>
                   </label>
@@ -454,6 +455,8 @@ export default function App() {
                 <p className="mt-2 text-xs text-slate-500">
                   {scanType === 'optimal'
                     ? '強勢看漲：找「近期就是好買點、且看好未來半年會大漲」的股票。綜合進場健康度＋近一個月相對強度＋6 個月上漲空間排序，不再只看今天能不能進場（差一點回檔的強勢股也會入選）。'
+                    : scanType === 'explosive_growth'
+                    ? '早期飆股雷達：鎖定黃仁勳「AI 算力蛋糕」各層（算力／記憶體／光通訊／製造設備／資料中心電力散熱／IP軟體），找「打底量縮、剛轉強、貼近突破但還沒乖離追高」的早期標的——目標是在它變飆股『之前』抓到（如當初的 ALAB／MRVL），並對已經噴一波的扣分。⚠️候選非保證，僅供研究、務必設停損。'
                     : '低估補漲：找「基本面好但股價暫時落後、被低估」的價值股，等待它補漲。以 F-Score／葛拉漢價／本益比為主，並用相對強度確認已開始落底回升、避免接落下的刀。'}
                 </p>
                 {dailyError ? <p className="mt-2 text-sm text-rose-600">{dailyError}</p> : null}

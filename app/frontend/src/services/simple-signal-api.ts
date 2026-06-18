@@ -401,7 +401,7 @@ export async function fetchSp500DailyTop(payload: {
   useAiCommittee?: boolean;
   committeeModel?: string;
   market?: 'us' | 'tw';
-  scanType?: 'optimal' | 'lagging_value';
+  scanType?: 'optimal' | 'lagging_value' | 'explosive_growth';
 }): Promise<SP500DailyScanResponse> {
   const response = await fetch(`${API_BASE_URL}/simple-signals/sp500-daily-top`, {
     method: 'POST',
