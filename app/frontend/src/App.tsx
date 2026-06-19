@@ -1285,6 +1285,7 @@ type PaperAccount = {
   startCapital: number;
   startDate: string;
   startBenchmark: PaperBenchmark | null;
+  startBenchmarkQQQ?: PaperBenchmark | null;
   cash: number;
   positions: Record<string, PaperPosition>;
   trades: PaperTrade[];
@@ -1490,8 +1491,8 @@ function PortfolioTab({
 
   const refreshQuotes = useCallback(async () => {
     const acc = accountRef.current;
-    // 一律帶 SPY（大盤對照）與 TWD=X（美金/台幣匯率，台股換算用）。
-    const syms = Array.from(new Set<string>([...Object.keys(acc.positions), 'SPY', 'TWD=X']));
+    // 一律帶 SPY、QQQ（大盤對照）與 TWD=X（美金/台幣匯率，台股換算用）。
+    const syms = Array.from(new Set<string>([...Object.keys(acc.positions), 'SPY', 'QQQ', 'TWD=X']));
     try {
       const items = await fetchQuotes(syms);
       const q: Record<string, number> = {};
@@ -1513,6 +1514,12 @@ function PortfolioTab({
           next = {
             ...next,
             startBenchmark: { symbol: 'SPY', price: q.SPY, date: paperToday(), shares: prev.startCapital / q.SPY },
+          };
+        }
+        if (!next.startBenchmarkQQQ && q.QQQ) {
+          next = {
+            ...next,
+            startBenchmarkQQQ: { symbol: 'QQQ', price: q.QQQ, date: paperToday(), shares: prev.startCapital / q.QQQ },
           };
         }
         // 報價回來後，補上持倉缺少的中文名（例：手動買入台股時尚未有報價）。
@@ -1704,6 +1711,32 @@ function PortfolioTab({
   const benchmarkEquity = account.startBenchmark && quotes.SPY ? account.startBenchmark.shares * quotes.SPY : null;
   const benchmarkReturnPct = benchmarkEquity != null ? ((benchmarkEquity - account.startCapital) / account.startCapital) * 100 : null;
   const vsDeltaPct = benchmarkReturnPct != null ? totalReturnPct - benchmarkReturnPct : null;
+  // 那斯達克 100（QQQ）對照——科技/AI 部位重，QQQ 是更貼切也更難贏的標竿。
+  const benchmarkQQQEquity = account.startBenchmarkQQQ && quotes.QQQ ? account.startBenchmarkQQQ.shares * quotes.QQQ : null;
+  const benchmarkQQQReturnPct = benchmarkQQQEquity != null ? ((benchmarkQQQEquity - account.startCapital) / account.startCapital) * 100 : null;
+  const vsQQQDeltaPct = benchmarkQQQReturnPct != null ? totalReturnPct - benchmarkQQQReturnPct : null;
+
+  // 持股集中度風險：每檔佔總資產比重、單一過大 / 類股(台股) 過重 / 現金未布署 警示。
+  const concentration = useMemo(() => {
+    if (equity <= 0) return null;
+    const rows = Object.keys(account.positions).map((t) => {
+      const p = account.positions[t];
+      const px = quotes[t] ?? p.avgCost;
+      const usd = toUsdPrice(px, p.currency, quotes);
+      const mv = usd != null ? usd * p.shares : p.avgCostUsd * p.shares;
+      return { ticker: t, name: p.name, currency: p.currency, mv, pct: (mv / equity) * 100 };
+    }).sort((a, b) => b.mv - a.mv);
+    const twPct = rows.filter((r) => r.currency === 'TWD').reduce((s, r) => s + r.pct, 0);
+    const cashPct = (account.cash / equity) * 100;
+    const warnings: Array<{ level: 'danger' | 'warn'; text: string }> = [];
+    const SINGLE_CAP = 15;
+    rows.filter((r) => r.pct > SINGLE_CAP).forEach((r) =>
+      warnings.push({ level: r.pct >= 25 ? 'danger' : 'warn', text: `${r.ticker}${r.name ? `（${r.name}）` : ''} 佔 ${r.pct.toFixed(0)}%，超過單一持股上限 ${SINGLE_CAP}%${r.pct >= 25 ? '——過度集中，強烈建議減碼分散' : '，考慮減碼'}` }),
+    );
+    if (twPct >= 40) warnings.push({ level: twPct >= 55 ? 'danger' : 'warn', text: `台股合計佔 ${twPct.toFixed(0)}%，單一市場過度集中` });
+    if (cashPct >= 30) warnings.push({ level: 'warn', text: `現金佔 ${cashPct.toFixed(0)}% 未布署，漲勢中會拖累相對大盤表現` });
+    return { rows, twPct, cashPct, warnings, singleCap: SINGLE_CAP };
+  }, [account.positions, account.cash, quotes, equity]);
 
   const sellSignals = Object.keys(account.positions)
     .map((t) => ({ ticker: t, rv: reviews[paperBaseKey(t)] }))
@@ -1749,22 +1782,54 @@ function PortfolioTab({
         </div>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
         <MetricCard label="總資產（現金＋持倉）" value={paperUsd(equity)} icon={<Wallet className="h-4 w-4" />} />
         <MetricCard label="總報酬" value={paperPct(totalReturnPct)} valueClassName={toneOf(totalReturnPct)} />
         <MetricCard label="vs 大盤(SPY)" value={vsDeltaPct == null ? '-' : paperPct(vsDeltaPct)} valueClassName={toneOf(vsDeltaPct)} />
+        <MetricCard label="vs 那斯達克(QQQ)" value={vsQQQDeltaPct == null ? '-' : paperPct(vsQQQDeltaPct)} valueClassName={toneOf(vsQQQDeltaPct)} />
         <MetricCard label="現金" value={paperUsd(account.cash)} />
         <MetricCard label="持倉市值" value={paperUsd(marketValue)} />
         <MetricCard label="已實現損益" value={paperUsd(account.realized)} valueClassName={toneOf(account.realized)} />
       </div>
 
+      {concentration && (concentration.warnings.length > 0 || concentration.rows.length > 0) ? (
+        <div className={`rounded-lg border p-4 ${concentration.warnings.some((w) => w.level === 'danger') ? 'border-rose-300 bg-rose-50' : concentration.warnings.length ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white'}`}>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <ShieldAlert className="h-4 w-4" />持股集中度 / 風險檢查
+          </div>
+          {concentration.warnings.length ? (
+            <div className="mt-2 space-y-1 text-xs">
+              {concentration.warnings.map((w, i) => (
+                <div key={i} className={w.level === 'danger' ? 'font-semibold text-rose-700' : 'text-amber-700'}>
+                  {w.level === 'danger' ? '🔴' : '🟠'} {w.text}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-2 text-xs text-emerald-700">🟢 配置分散度健康：無單一持股超過 {concentration.singleCap}%、無單一市場過度集中。</div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {concentration.rows.map((r) => (
+              <span key={r.ticker} className={`rounded-full border px-2 py-0.5 text-[11px] ${r.pct >= 25 ? 'border-rose-200 bg-rose-100 text-rose-700' : r.pct > concentration.singleCap ? 'border-amber-200 bg-amber-100 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                {r.ticker} {r.pct.toFixed(0)}%
+              </span>
+            ))}
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-500">現金 {concentration.cashPct.toFixed(0)}%</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500">原則：單一持股 ≤ {concentration.singleCap}%、單一市場不過半、現金別長期閒置。集中度是賺賠的最大變數之一，賺到的獲利記得分散保護。</div>
+        </div>
+      ) : null}
+
       {benchmarkReturnPct != null ? (
         <div className="text-xs text-slate-500">
-          大盤(SPY)同期報酬 {paperPct(benchmarkReturnPct)}（基準價 {paperUsd(account.startBenchmark?.price)} @ {account.startBenchmark?.date}）。
-          {vsDeltaPct != null && vsDeltaPct >= 0 ? '　🎉 目前贏過大盤。' : '　目前落後大盤。'}
+          SPY 同期 {paperPct(benchmarkReturnPct)}（基準 @ {account.startBenchmark?.date}）
+          {benchmarkQQQReturnPct != null ? <>　·　QQQ 同期 {paperPct(benchmarkQQQReturnPct)}（基準 @ {account.startBenchmarkQQQ?.date}）</> : null}
+          。{vsDeltaPct != null && vsDeltaPct >= 0 ? '🎉 贏 SPY' : '落後 SPY'}
+          {vsQQQDeltaPct != null ? (vsQQQDeltaPct >= 0 ? '、贏 QQQ。' : '、落後 QQQ。') : '。'}
+          {account.startBenchmarkQQQ && account.startBenchmark && account.startBenchmarkQQQ.date !== account.startBenchmark.date ? '　（QQQ 對照較晚啟用，基準日不同、僅供參考）' : ''}
         </div>
       ) : (
-        <div className="text-xs text-slate-500">等取得 SPY 報價後鎖定大盤對照基準。</div>
+        <div className="text-xs text-slate-500">等取得 SPY／QQQ 報價後鎖定大盤對照基準。</div>
       )}
 
       {regime ? (

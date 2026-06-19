@@ -399,6 +399,11 @@ def _build_holding_verdict(
     overbought = rsi >= 75
     extreme_ob = rsi >= 82
 
+    # 防抖動：股價仍站穩長線 MA120 且趨勢未轉空 → 結構健康。此時「軟性賣出訊號」(半年預測轉弱、
+    # 引擎當日偏空) 不應觸發全數出場，避免剛買進的部位因短線雜訊就被叫賣、用一堆小虧失血。
+    # 硬性風險(跌破保護停損、長線虧損閘門)仍照常全數出場——那是真正的防守底線。
+    structurally_intact = ma120 > 0 and close >= ma120 and bias != "偏空"
+
     def _exit(reason_core: str) -> tuple[str, str, str, str]:
         if pnl_pct is not None and pnl_pct < 0:
             return ("停損出場", "高", "100%", "停損出場：" + reason_core)
@@ -414,8 +419,14 @@ def _build_holding_verdict(
             f"長線虧損閘門觸發（{ltr.get('note', '12 個月統計期望報酬偏負')}），長抱半年以上仍難轉正，建議全數出場。"
         )
     if exp6 is not None and (exp6 <= -5 or (exp6 < 0 and exp12 is not None and exp12 < 0)):
+        if structurally_intact:
+            return (
+                "觀察減碼", "中", "30%",
+                f"未來半年統計期望報酬轉弱（{exp6:.1f}%），但股價仍站穩長線 MA120（{ma120:.2f} 元）、趨勢未轉空——"
+                f"先減碼約三成鎖風險、核心部位續抱，不必全數砍在可能只是短線雜訊的位置。",
+            )
         return _exit(
-            f"未來半年統計期望報酬為 {exp6:.1f}%（偏負），續抱期望報酬低於賣出，建議全數出場、資金轉進更強標的。"
+            f"未來半年統計期望報酬為 {exp6:.1f}%（偏負）、且已跌破長線生命線，續抱期望報酬低於賣出，建議全數出場、資金轉進更強標的。"
         )
 
     # ---- 2) 半年上檔有限又短線過熱 → 分批鎖利 ----
@@ -451,6 +462,12 @@ def _build_holding_verdict(
 
     # ---- 4) 半年預測資料不足 → 回退引擎當日訊號，維持與個股分析一致 ----
     if exit_action == "今天賣出":
+        if structurally_intact:
+            return (
+                "續抱觀察", "低", "0%",
+                "引擎當日訊號偏空，但股價仍站穩長線 MA120、趨勢未轉空，視為短線波動；續抱觀察、跌破保護停損再處理，"
+                "不在僅短線雜訊時砍出場。",
+            )
         return _exit("引擎當日訊號為『今天賣出』（趨勢偏空且跌破生命線），且無半年預測可佐證續抱。")
     if exit_action == "今天可小量賣":
         return ("觀察減碼", "中", "30%", "引擎當日訊號為『今天可小量賣』（短線偏熱），小幅減碼鎖利、其餘續抱。")
