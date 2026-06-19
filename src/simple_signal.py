@@ -1045,8 +1045,12 @@ def build_price_forecast(
     sigma_daily = float(window.std())
 
     # 年化漂移設上下限，避免將短期強勢線性外推成不合理的預測。
+    # 2026-06-19：負向漂移額外收斂(×0.55) 並把下限收到 -22% —— 近期回檔不該被線性外推成「長線必跌」，
+    # 權益長期有上升偏誤，過度悲觀的外推正是品質股被誤標長線虧損的根源。正向不變(動能外推較合理)。
     raw_annual_drift = mu_daily * 252.0
-    capped_annual = max(min(raw_annual_drift, 0.45), -0.45)
+    if raw_annual_drift < 0:
+        raw_annual_drift *= 0.55
+    capped_annual = max(min(raw_annual_drift, 0.45), -0.22)
     mu_capped = capped_annual / 252.0
 
     horizons = [("3個月", 63), ("6個月", 126), ("9個月", 189), ("12個月", 252)]
@@ -1207,9 +1211,21 @@ def compute_agent_edges(frame: pd.DataFrame, forward_days: int = 20) -> dict:
     return edges
 
 
-def evaluate_long_term_risk(price_forecast: dict | None, timeline_bt: dict | None) -> dict:
-    """綜合「12 個月統計預測」與「個股自身波段策略歷史回測」判斷長線是否仍會虧損。
-    使用者可長抱，但不能接受長線仍虧損 → blocked=True 時不建議買進。"""
+def evaluate_long_term_risk(
+    price_forecast: dict | None,
+    timeline_bt: dict | None,
+    *,
+    latest_close: float | None = None,
+    ma_long: float | None = None,
+    fundamental_score: int | None = None,
+    bias: str | None = None,
+) -> dict:
+    """判斷長線是否「真的」會虧損 → blocked=True 才不建議買進。
+
+    2026-06-19 重寫（修 MSFT/AVGO 這類品質股在正常回檔被誤標「長線恐虧損」）：
+    原本只靠「12 個月統計預測」(本質是把近期價格漂移線性外推，對 1 年後預測力低、且會把暫時回檔
+    當成長期下跌) 就能硬否決，過度誤殺優質龍頭。新版要求**多重證據同時成立**，並對「長期多頭結構
+    (站上長均線) 或基本面強健」的股票給予保護，不再單憑悲觀外推否決。"""
     exp12 = base12 = high12 = None
     if price_forecast and price_forecast.get("horizons"):
         for h in price_forecast["horizons"]:
@@ -1227,37 +1243,57 @@ def evaluate_long_term_risk(price_forecast: dict | None, timeline_bt: dict | Non
         hist_avg = float(timeline_bt.get("avg_return", 0.0))
         hist_trades = int(timeline_bt.get("total_trades", 0))
 
+    # 結構/品質保護：站上長期均線(多頭結構) 或 基本面強健 → 視為品質股，正常回檔不該被當長線必虧。
+    long_uptrend = (latest_close is not None and ma_long is not None and ma_long > 0
+                    and latest_close >= ma_long)
+    quality = fundamental_score is not None and fundamental_score >= 6
+    protected = long_uptrend or quality
+    bearish_structure = bias == "偏空" or (
+        latest_close is not None and ma_long is not None and ma_long > 0 and latest_close < ma_long * 0.92
+    )
+
     reasons: list[str] = []
     blocked = False
     severity = "low"
 
     forecast_negative = exp12 is not None and exp12 < 0
+    forecast_very_negative = exp12 is not None and exp12 <= -15   # 硬門檻由 -8 提高到 -15
     hist_negative = hist_cum is not None and hist_trades >= 3 and hist_cum < 0
     hist_weak = (
         hist_avg is not None and hist_trades >= 3
         and hist_avg < 0 and (hist_win is None or hist_win < 45)
     )
 
-    if forecast_negative and hist_negative:
-        blocked = True
-        severity = "high"
-        reasons.append(
-            f"12 個月統計預測為 {exp12:.1f}%（偏負），且個股自身波段策略歷史累積報酬 {hist_cum:.1f}% 同步虧損，長抱仍難轉正。"
-        )
-    elif forecast_negative and exp12 is not None and exp12 <= -8:
-        blocked = True
-        severity = "high"
-        reasons.append(f"12 個月統計預測達 {exp12:.1f}%，長線期望值明顯為負。")
-    elif hist_negative and hist_weak:
-        blocked = True
-        severity = "medium"
-        reasons.append(
-            f"個股自身波段策略歷史累積 {hist_cum:.1f}%、勝率僅 {hist_win:.0f}%，長抱賺錢機率偏低。"
-        )
-
-    if not blocked and forecast_negative:
-        severity = "medium"
-        reasons.append(f"12 個月預測小幅為負 ({exp12:.1f}%)，僅供觀望、不宜重押。")
+    if protected:
+        # 品質/多頭結構股：不硬否決。若預測偏負，僅提示審慎。
+        if forecast_negative:
+            severity = "medium"
+            reasons.append(
+                f"12 個月統計預測偏負 ({exp12:.1f}%)，但個股仍處長期多頭結構或基本面強健，"
+                f"視為短期逆風而非長線虧損，宜分批、不宜重押。"
+            )
+    else:
+        # 非品質股才考慮硬否決，且需多重證據同時成立。
+        if forecast_negative and hist_negative and (bearish_structure or hist_weak):
+            blocked = True
+            severity = "high"
+            reasons.append(
+                f"12 個月統計預測 {exp12:.1f}%（偏負）、個股波段歷史累積 {hist_cum:.1f}% 同步虧損，"
+                f"且趨勢結構同步轉弱，長抱仍難轉正。"
+            )
+        elif forecast_very_negative and bearish_structure:
+            blocked = True
+            severity = "high"
+            reasons.append(f"12 個月統計預測達 {exp12:.1f}%、且已跌破長期均線轉空，長線期望值明顯為負。")
+        elif hist_negative and hist_weak and bearish_structure:
+            blocked = True
+            severity = "medium"
+            reasons.append(
+                f"個股波段歷史累積 {hist_cum:.1f}%、勝率僅 {hist_win:.0f}%，且趨勢轉弱，長抱賺錢機率偏低。"
+            )
+        elif forecast_negative:
+            severity = "medium"
+            reasons.append(f"12 個月預測小幅為負 ({exp12:.1f}%)，僅供觀望、不宜重押。")
 
     note = " ".join(reasons) if reasons else "長線預測與個股歷史回測未顯示長抱虧損風險。"
     return {
@@ -1855,7 +1891,11 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             composite_score=rule_score,
             analyst_target_price=analyst_target_price,
         )
-        long_term_risk = evaluate_long_term_risk(price_forecast or None, timeline_bt)
+        long_term_risk = evaluate_long_term_risk(
+            price_forecast or None, timeline_bt,
+            latest_close=latest_close, ma_long=ma120,
+            fundamental_score=fundamental_score, bias=bias,
+        )
         if long_term_risk.get("blocked"):
             buy_strength = "不建議進場"
             reason = f"{reason} ⚠️ 長線虧損風險：{long_term_risk.get('note', '')}"
