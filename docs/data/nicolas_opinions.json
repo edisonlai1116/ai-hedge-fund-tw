@@ -1,17 +1,134 @@
 {
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
-  "_note": "種子資料：依尼可拉斯楊『AI 算力蛋糕 + 卡脖子瓶頸』框架建立。逐集真實觀點需以 RSS 自動追蹤＋轉錄(本機 Whisper)後更新；雲端免費機僅能偵測新集數，個股觀點為人工/種子維護。",
-  "last_episode_id": null,
+  "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
+  "last_episode_id": "yt:awVvGmwheLk",
   "opinions": [
-    {"target_ticker": "NVDA", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Strongly_Bullish", "sentiment_score": 82, "core_logic": "AI 算力核心霸主，CoWoS 先進封裝卡脖子受惠最深，算力需求未見頂。", "original_quote": "整個 AI 蛋糕的最底層算力，輝達仍是無可取代的核心。"},
-    {"target_ticker": "TSM", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 80, "core_logic": "3nm/2nm 製程 + CoWoS 封裝雙卡脖子，AI 算力蛋糕的製造地基。", "original_quote": "沒有台積電的製程，整塊蛋糕都做不出來。"},
-    {"target_ticker": "MU", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 78, "core_logic": "HBM 三巨頭之一，記憶體層是 AI 算力的關鍵瓶頸，供不應求。", "original_quote": "HBM 是這一輪最確定的瓶頸，記憶體會是大贏家。"},
-    {"target_ticker": "ALAB", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 76, "core_logic": "資料中心互連 connectivity 的早期成長股，AI 蛋糕的神經網路層。", "original_quote": "算力越強，互連越關鍵，這層還很早期。"},
-    {"target_ticker": "CRDO", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 74, "core_logic": "高速互連/光電介面，受惠 AI 資料中心頻寬升級。", "original_quote": "頻寬瓶頸打開後，互連晶片會跟著噴。"},
-    {"target_ticker": "COHR", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Mild_Bullish", "sentiment_score": 73, "core_logic": "光通訊層，AI 資料中心光模組需求拉升。", "original_quote": "光通訊是蛋糕往上長的必經之路。"},
-    {"target_ticker": "VRT", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 77, "core_logic": "資料中心電力與散熱卡脖子，AI 算力的供電/冷卻地基。", "original_quote": "電力跟散熱才是這一輪真正被低估的卡脖子。"},
-    {"target_ticker": "2330.TW", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Bullish", "sentiment_score": 80, "core_logic": "台積電：先進製程＋CoWoS 封裝雙瓶頸的全球唯一供應者。", "original_quote": "台積電就是 AI 蛋糕的地基，沒有替代品。"},
-    {"target_ticker": "3017.TW", "source_name": "尼可拉斯楊Live", "analyst_name": "Nicholas Yang", "sentiment_label": "Mild_Bullish", "sentiment_score": 74, "core_logic": "奇鋐：資料中心散熱（液冷/均熱片），電力散熱瓶頸受惠。", "original_quote": "散熱這條鏈在台股是最直接的卡脖子受惠。"}
-  ]
+    {
+      "target_ticker": "MU",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Strongly_Bullish",
+      "sentiment_score": 88,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 13 次（自動字幕擷取）。",
+      "original_quote": "刚开始 这个月还剩一个最重要的时间点 就是 6 月 24 日美光的财报 现在美光的股价已经涨得非常高了 所以很有可能 因为市场期望太高 6月24日美光的股票大跌 它一大跌 就会带着其他"
+    },
+    {
+      "target_ticker": "INTC",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 78,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 7 次（自動字幕擷取）。",
+      "original_quote": "的 大家就可以看到 规律就是这些股票就是台积电 日月光美国的英特尔 还有一个叫艾克尔 AMKR AMKR可以多看看 寻找一些合适的机会 它和英特尔一样都是美国的封装厂 这个非常重要 大家"
+    },
+    {
+      "target_ticker": "TSM",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 74,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。",
+      "original_quote": "司 这个也是非常重要的 大家就可以看到 规律就是这些股票就是台积电 日月光美国的英特尔 还有一个叫艾克尔 AMKR AMKR可以多看看 寻找一些合适的机会 它和英特尔一样都是美国的封装厂"
+    },
+    {
+      "target_ticker": "SMH",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 74,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。",
+      "original_quote": "么多股票 很多新手嫌麻烦 我认为可以关注 ETF SOXX SMH 再加 ETF DRAM 这个大家问的很多 这个也是非常好的 可以配置 台股可以配0050 再加上我说的核心 三家三星海"
+    },
+    {
+      "target_ticker": "SOXX",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 72,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 4 次（自動字幕擷取）。",
+      "original_quote": "以上讲的这么多股票 很多新手嫌麻烦 我认为可以关注 ETF SOXX SMH 再加 ETF DRAM 这个大家问的很多 这个也是非常好的 可以配置 台股可以配0050 再加上我说的核心 三"
+    },
+    {
+      "target_ticker": "2408.TW",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 68,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。",
+      "original_quote": "可以进入了 第三梯队就是台湾的 2344 华邦电 2408 南亚科 我看很多朋友都留言 什么华邦电南亚科涨了这么多 吓得都卖了 现在后悔了 这两个台股就是跟着一线的三星 海力士美光 只要"
+    },
+    {
+      "target_ticker": "AAPL",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 68,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。",
+      "original_quote": "要记住 如果成不了第一 第二也是可以的 现在就有新闻出来了 苹果就要和英特尔一起研发芯片 而且 AMKR 要接台积电的外延订单 像台积电这种技术 有一个特点 就是你不断的有厂商去找你合"
+    },
+    {
+      "target_ticker": "AVGO",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "导体 ETF 但内容差很多 SMH 前三大持股是英伟达台积电博通 集中度高 SOXX 平均化一点 moomoo 的 ETF 持仓透视 可以让你直接看到 每一只 ETF 的完整持股 权重"
+    },
+    {
+      "target_ticker": "AMAT",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "库力索法 KLIC 泰瑞达 我以前也讲过 TER 应用材料 AMAT KLA LRCX 台股的测试龙头包括力成 6239 京元电子 2449 致茂 2360 群联 8299 这个第三梯队"
+    },
+    {
+      "target_ticker": "LRCX",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "泰瑞达 我以前也讲过 TER 应用材料 AMAT KLA LRCX 台股的测试龙头包括力成 6239 京元电子 2449 致茂 2360 群联 8299 这个第三梯队 它是食物链的底部"
+    },
+    {
+      "target_ticker": "KLAC",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "KLIC 泰瑞达 我以前也讲过 TER 应用材料 AMAT KLA LRCX 台股的测试龙头包括力成 6239 京元电子 2449 致茂 2360 群联 8299 这个第三梯队 它是食物"
+    },
+    {
+      "target_ticker": "GOOGL",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "选 半导体 AI 存储器机器人 都有现成的分类 不需要自己去Google半天 比如选半导体分类 SMH SOXX 还有相关的内存主题 ETF 都会依次列出来 旁边有当天涨跌 过去一年的表现 规"
+    },
+    {
+      "target_ticker": "QQQ",
+      "source_name": "尼可拉斯楊Live",
+      "analyst_name": "Nicholas Yang",
+      "sentiment_label": "Bullish",
+      "sentiment_score": 66,
+      "core_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 1 次（自動字幕擷取）。",
+      "original_quote": "价格 是现在韩国股票的 3 倍 我认为有很大的概率 按照美国纳斯达克估值 海力士在美国上市的时候 也会带动韩国股市一起大涨 大家可以重点关注一下这个时机 提前布局 而且最近几个月 我都买了"
+    }
+  ],
+  "latest_episode": {
+    "title": "要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！",
+    "published": "2026-06-19T11:21:05+00:00",
+    "url": "https://www.youtube.com/watch?v=awVvGmwheLk",
+    "id": "yt:awVvGmwheLk",
+    "checked_at": "2026-06-21T18:11:29+08:00"
+  },
+  "_episode_for_opinions": "yt:awVvGmwheLk",
+  "_auto_extracted": true
 }

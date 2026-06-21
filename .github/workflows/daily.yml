@@ -34,7 +34,7 @@ jobs:
       - name: Install minimal deps (免 Key pipeline)
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance feedparser requests pandas numpy beautifulsoup4 lxml
+          pip install yfinance feedparser requests pandas numpy beautifulsoup4 lxml youtube-transcript-api
 
       - name: Generate daily report
         run: python -m src.pipeline.daily_report

@@ -26,7 +26,7 @@ WORKDIR /app
 # 只裝免-Key 服務需要的套件（不含 langchain，映像小、啟動快）
 RUN pip install --no-cache-dir \
     "fastapi" "uvicorn[standard]" "pydantic>=2" "sqlalchemy>=2" \
-    yfinance feedparser requests pandas numpy beautifulsoup4 lxml python-multipart
+    yfinance feedparser requests pandas numpy beautifulsoup4 lxml python-multipart youtube-transcript-api
 
 # 後端與分析引擎原始碼
 COPY src/ /app/src/

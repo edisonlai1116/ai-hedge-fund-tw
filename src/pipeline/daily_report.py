@@ -257,6 +257,94 @@ def _fetch_latest_youtube(feed_url: str) -> Dict:
     }
 
 
+# 中文（簡/繁）＋英文 公司名 → 代號對照（尼可拉斯楊常談的 AI 算力鏈／記憶體／台股）。
+# 用於從 YouTube 自動字幕逐集抽取他點名的個股（無需人工、無需 Whisper）。
+_NICOLAS_NAME_TICKER: list[tuple[str, str]] = [
+    (r"輝達|辉达|英[偉伟]達|黃仁勳|黄仁勋|NVIDIA|Nvidia", "NVDA"),
+    (r"台積電|台积电|TSMC|台積|台积", "TSM"),
+    (r"美光|Micron", "MU"),
+    (r"南亞科|南亚科", "2408.TW"),
+    (r"博通|Broadcom|AVGO", "AVGO"),
+    (r"超微|\bAMD\b", "AMD"),
+    (r"美超微|超微電腦|Supermicro|SMCI", "SMCI"),
+    (r"威[騰腾]|西部數據|西部数据|Western Digital|\bWDC\b", "WDC"),
+    (r"邁威爾|迈威尔|Marvell|MRVL", "MRVL"),
+    (r"安謀|安谋|\bArm\b|\bARM\b", "ARM"),
+    (r"艾斯摩爾|阿斯麥|ASML", "ASML"),
+    (r"應材|应材|Applied Materials|\bAMAT\b", "AMAT"),
+    (r"科林研發|科林研发|Lam Research|LRCX", "LRCX"),
+    (r"科磁|KLA|KLAC", "KLAC"),
+    (r"維諦|维谛|Vertiv|\bVRT\b", "VRT"),
+    (r"阿里斯塔|Arista|ANET", "ANET"),
+    (r"相干|高意|Coherent|COHR", "COHR"),
+    (r"美[達达]|Astera|\bALAB\b", "ALAB"),
+    (r"\bCredo\b|CRDO", "CRDO"),
+    (r"微軟|微软|Microsoft|MSFT", "MSFT"),
+    (r"谷歌|Google|Alphabet|GOOGL", "GOOGL"),
+    (r"臉書|脸书|Meta|META", "META"),
+    (r"蘋果|苹果|Apple|AAPL", "AAPL"),
+    (r"亞馬遜|亚马逊|Amazon|AMZN", "AMZN"),
+    (r"特斯拉|Tesla|TSLA", "TSLA"),
+    (r"帕蘭泰爾|帕兰泰尔|Palantir|PLTR", "PLTR"),
+    (r"英特爾|英特尔|Intel|INTC", "INTC"),
+    (r"高通|Qualcomm|QCOM", "QCOM"),
+    (r"聯發科|联发科|MediaTek", "2454.TW"),
+    (r"奇鋐|奇鸿", "3017.TW"),
+    (r"台達電|台达电", "2308.TW"),
+    (r"\bSMH\b|半導體 ?ETF|半导体 ?ETF", "SMH"),
+    (r"\bSOXX\b", "SOXX"),
+    (r"\bQQQ\b|納斯達克|纳斯达克", "QQQ"),
+]
+# 偏空關鍵字（出現在點名股票同句附近 → 視為偏空，否則尼可拉斯楊偏多風格預設偏多）。
+_BEAR_HINT = r"看空|放空|賣出|卖出|出場|出场|崩|泡沫|危險|危险|別碰|别碰|避開|避开|減碼|减码"
+
+
+def _extract_youtube_opinions(video_id: str, episode_title: str) -> list:
+    """從 YouTube 自動字幕逐集抽取尼可拉斯楊點名的個股（純自動：無人工、無 Whisper）。
+    youtube-transcript-api 不可用或無字幕 → 回 []（呼叫端保留既有觀點，安全降級）。"""
+    import re
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        api = YouTubeTranscriptApi()
+        fetched = api.fetch(video_id, languages=["zh-Hans", "zh-TW", "zh-Hant", "zh", "en"])
+        txt = " ".join(getattr(s, "text", "") for s in fetched)
+    except Exception as e:
+        print(f"[nicolas] 字幕抽取降級：{e}")
+        return []
+    if not txt or len(txt) < 200:
+        return []
+    bear_overall = len(re.findall(_BEAR_HINT, txt))
+    bull_overall = len(re.findall(r"看好|持有|布局|買入|买入|噴|喷|大漲|大涨|長期持有|长期持有|龍頭|龙头", txt))
+    opinions = []
+    seen = set()
+    for pat, ticker in _NICOLAS_NAME_TICKER:
+        hits = list(re.finditer(pat, txt, re.I))
+        n = len(hits)
+        if n < 1 or ticker in seen:
+            continue
+        seen.add(ticker)
+        # 該股鄰近文字是否偏空
+        near = " ".join(txt[max(0, m.start() - 40): m.end() + 40] for m in hits[:5])
+        bearish = len(re.findall(_BEAR_HINT, near)) > len(re.findall(r"看好|持有|布局|買入|买入|噴|喷", near))
+        score = 50 - min(n, 8) * 2 if bearish else min(90, 64 + min(n, 12) * 2)
+        label = "Bearish" if bearish else ("Strongly_Bullish" if score >= 82 else "Bullish")
+        snippet = re.sub(r"\s+", " ", txt[max(0, hits[0].start() - 30): hits[0].end() + 60]).strip()
+        opinions.append({
+            "target_ticker": ticker,
+            "source_name": "尼可拉斯楊Live",
+            "analyst_name": "Nicholas Yang",
+            "sentiment_label": label,
+            "sentiment_score": score,
+            "core_logic": f"本集「{episode_title}」提及 {n} 次（自動字幕擷取）。",
+            "original_quote": snippet[:160],
+        })
+    # 提及次數高者排前
+    opinions.sort(key=lambda o: -o["sentiment_score"])
+    if opinions:
+        print(f"[nicolas] 自動擷取 {len(opinions)} 檔（多空整體 bull={bull_overall}/bear={bear_overall}）：{[o['target_ticker'] for o in opinions]}")
+    return opinions
+
+
 def scan_nicolas(feed_url: str = NICOLAS_FEED, opinions_path: str = NICOLAS_OPINIONS_JSON) -> Dict:
     """自動追蹤『尼可拉斯楊Live』最新一集——**改用其 YouTube 頻道官方 XML feed**（他沒有公開 podcast RSS）。
 
@@ -287,7 +375,21 @@ def scan_nicolas(feed_url: str = NICOLAS_FEED, opinions_path: str = NICOLAS_OPIN
         "title": ep.get("title"), "published": ep.get("published"),
         "url": ep.get("url"), "id": ep.get("id"), "checked_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"),
     }
-    if ep["id"] != store.get("last_episode_id"):
+    is_new = ep["id"] != store.get("last_episode_id")
+    opinions_episode = store.get("_episode_for_opinions")
+    # 新集數，或這集還沒抽過觀點 → 從 YouTube 自動字幕逐集擷取他點名的個股（全自動）。
+    if is_new or opinions_episode != ep["id"]:
+        vid = ep["id"].split(":", 1)[-1]  # "yt:VIDEOID" → "VIDEOID"
+        extracted = _extract_youtube_opinions(vid, ep.get("title", ""))
+        if extracted:
+            store["opinions"] = extracted          # 以最新一集的實際點名取代（反映他「現在」的看法）
+            store["_episode_for_opinions"] = ep["id"]
+            store["_auto_extracted"] = True
+            result["total_opinions"] = len(extracted)
+            result["extracted"] = True
+        else:
+            result["note"] = "最新一集字幕尚未產生或無法擷取，沿用既有觀點（下次自動重試）。"
+    if is_new:
         store["last_episode_id"] = ep["id"]
         result["updated"] = True
     _write_json(store, opinions_path)
