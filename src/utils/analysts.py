@@ -22,6 +22,7 @@ from src.agents.news_sentiment import news_sentiment_agent
 from src.agents.growth_agent import growth_analyst_agent
 from src.agents.gooaye_sentiment import gooaye_sentiment_agent
 from src.agents.macro_news_sentiment import macro_news_sentiment_agent
+from src.agents.nicolas_sentiment import nicolas_sentiment_agent
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
@@ -176,6 +177,14 @@ ANALYST_CONFIG = {
         "agent_func": gooaye_sentiment_agent,
         "type": "analyst",
         "order": 19,
+    },
+    "nicolas_sentiment": {
+        "display_name": "尼可拉斯楊Live 檢核",
+        "description": "尼可拉斯楊 AI 算力蛋糕觀點檢核",
+        "investing_style": "以尼可拉斯楊『AI 算力蛋糕 + 卡脖子瓶頸』框架對個股做獨立多空檢核，作為其他 agent 之外的交叉確認（AI 產業鏈個股覆蓋為主，無觀點時回中性）。",
+        "agent_func": nicolas_sentiment_agent,
+        "type": "analyst",
+        "order": 21,
     },
     "macro_news_sentiment": {
         "display_name": "Macro News (總經/地緣輿情)",

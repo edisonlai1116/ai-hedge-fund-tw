@@ -317,9 +317,25 @@ async def _gooaye_updater():
         await asyncio.sleep(7200)  # 2 小時
 
 
+async def _nicolas_updater():
+    """每 2 小時自動追蹤『尼可拉斯楊Live』最新集數（需設環境變數 NICOLAS_FEED；未設則安全降級、
+    沿用種子/人工觀點）。寫進 docs/data/nicolas_opinions.json。"""
+    await asyncio.sleep(12)
+    while True:
+        try:
+            from src.pipeline.daily_report import scan_nicolas
+            status = scan_nicolas()
+            if status.get("updated"):
+                logger.info(f"🎯 自動發現尼可拉斯楊新集數：{status.get('episode_title')}")
+        except Exception as e:
+            logger.warning(f"尼可拉斯楊自動更新降級：{e}")
+        await asyncio.sleep(7200)  # 2 小時
+
+
 @app.on_event("startup")
 async def _startup():
     asyncio.create_task(_gooaye_updater())
+    asyncio.create_task(_nicolas_updater())
 
 
 # /daily：每日台美股 Top 50 靜態頁（與 GitHub Pages 同一份 docs/）。先掛，才不會被 "/" 接走。

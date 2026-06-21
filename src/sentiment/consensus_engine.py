@@ -12,9 +12,10 @@ DATABASE_PATH = os.path.join(
 
 # 來源權重（依產業動態調整）。抽成模組常數，供 DB 路徑與 JSON 路徑共用。
 DEFAULT_WEIGHTS = {
-    "Gooaye": 0.40,
-    "StatementDog": 0.30,
-    "Custom Ingestion Source": 0.20,
+    "Gooaye": 0.35,
+    "尼可拉斯楊Live": 0.30,
+    "StatementDog": 0.20,
+    "Custom Ingestion Source": 0.15,
     "Howard_Marks": 0.10,
 }
 FINANCIALS_WEIGHTS = {

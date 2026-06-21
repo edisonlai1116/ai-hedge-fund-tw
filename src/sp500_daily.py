@@ -554,17 +554,11 @@ AI_CAKE_UNIVERSE_TW: list[tuple[str, str, str]] = [
 
 
 def _gooaye_named_constituents(market: str) -> list[SP500Constituent]:
-    """讀取股癌點名清單（docs/data/gooaye_opinions.json，已由背景每 2h／每日自動更新），
-    把股癌最近講到、且符合市場別的個股動態併進飆股雷達 —— 讓掃描池跟著股癌持續長出新標的，
-    不必手動維護。明顯偏空者略過；其餘一律納入（早期型態評分會再過濾品質）。失敗回空。"""
-    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "data", "gooaye_opinions.json")
-    try:
-        import json
-        with open(path, encoding="utf-8") as f:
-            store = json.load(f)
-        ops = store.get("opinions", []) if isinstance(store, dict) else (store or [])
-    except Exception:
-        return []
+    """讀取專家點名清單（股癌 gooaye_opinions.json ＋ 尼可拉斯楊 nicolas_opinions.json，皆由背景
+    每 2h／每日自動更新），把最近講到、且符合市場別的個股動態併進掃描池 —— 讓清單跟著兩位專家持續
+    長出新標的，不必手動維護。明顯偏空者略過；去重（同檔以先出現的來源標記）。失敗回空。"""
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "data")
+    sources = [("gooaye_opinions.json", "🎙️股癌點名"), ("nicolas_opinions.json", "🎯尼可拉斯楊")]
     try:
         from src.pipeline.daily_report import TW_NAMES
     except Exception:
@@ -580,19 +574,27 @@ def _gooaye_named_constituents(market: str) -> list[SP500Constituent]:
 
     out: list[SP500Constituent] = []
     seen: set[str] = set()
-    for o in ops:
-        sym = _norm(str(o.get("target_ticker", "")))
-        if not sym or sym in seen:
+    import json
+    for fname, label in sources:
+        try:
+            with open(os.path.join(data_dir, fname), encoding="utf-8") as f:
+                store = json.load(f)
+            ops = store.get("opinions", []) if isinstance(store, dict) else (store or [])
+        except Exception:
             continue
-        is_tw = sym.endswith(".TW") or sym.endswith(".TWO")
-        if (market == "tw") != is_tw:
-            continue
-        if str(o.get("sentiment_label", "")).lower().find("bear") >= 0:
-            continue  # 略過明顯偏空點名
-        seen.add(sym)
-        base = sym.split(".")[0]
-        name = TW_NAMES.get(base, base) if is_tw else base
-        out.append(SP500Constituent(symbol=sym, yf_symbol=sym, company_name=name, sector="🎙️股癌點名"))
+        for o in ops:
+            sym = _norm(str(o.get("target_ticker", "")))
+            if not sym or sym in seen:
+                continue
+            is_tw = sym.endswith(".TW") or sym.endswith(".TWO")
+            if (market == "tw") != is_tw:
+                continue
+            if str(o.get("sentiment_label", "")).lower().find("bear") >= 0:
+                continue  # 略過明顯偏空點名
+            seen.add(sym)
+            base = sym.split(".")[0]
+            name = TW_NAMES.get(base, base) if is_tw else base
+            out.append(SP500Constituent(symbol=sym, yf_symbol=sym, company_name=name, sector=label))
     return out
 
 

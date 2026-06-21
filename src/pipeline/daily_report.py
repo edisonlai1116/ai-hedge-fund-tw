@@ -25,6 +25,10 @@ from src.sentiment.consensus_engine import consensus_from_json, score_opinions
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(REPO_ROOT, "docs", "data")
 OPINIONS_JSON = os.path.join(DATA_DIR, "gooaye_opinions.json")
+NICOLAS_OPINIONS_JSON = os.path.join(DATA_DIR, "nicolas_opinions.json")
+# 尼可拉斯楊Live RSS feed（自動追蹤最新集數用）。Apple 未公開 RSS，先以環境變數 NICOLAS_FEED 設定；
+# 未設定時 scan_nicolas 只會安全降級（沿用既有種子/人工觀點，不影響其餘流程）。
+NICOLAS_FEED = os.environ.get("NICOLAS_FEED", "").strip()
 REPORT_JSON = os.path.join(DATA_DIR, "daily_report.json")
 HISTORY_DIR = os.path.join(DATA_DIR, "history")
 HISTORY_INDEX = os.path.join(HISTORY_DIR, "index.json")
@@ -220,6 +224,47 @@ def scan_gooaye(feed_url: str = GOOAYE_FEED, opinions_path: str = OPINIONS_JSON)
     return result
 
 
+def scan_nicolas(feed_url: str = NICOLAS_FEED, opinions_path: str = NICOLAS_OPINIONS_JSON) -> Dict:
+    """自動追蹤『尼可拉斯楊Live』最新集數（同股癌機制）。
+
+    若有設定 NICOLAS_FEED 即偵測最新集數；偵測到新集數時 merge 抽取的點名（AudioFeedAdapter
+    為 mock fallback——真實逐集觀點需本機 Whisper 轉錄）。未設 feed 或失敗皆安全降級，
+    沿用既有種子/人工觀點，不影響其餘流程。回傳 {updated, episode_title, episode_id, total_opinions}。"""
+    store = _read_json(opinions_path, {"last_episode_id": None, "opinions": []})
+    if isinstance(store, list):
+        store = {"last_episode_id": None, "opinions": store}
+    result = {"updated": False, "episode_title": None, "episode_id": store.get("last_episode_id"),
+              "total_opinions": len(store.get("opinions", [])), "source": "尼可拉斯楊Live"}
+    if not feed_url:
+        result["note"] = "未設定 NICOLAS_FEED（Apple 未公開 RSS）；目前以種子/人工觀點維護。"
+        return result
+    try:
+        from src.sentiment.audio_feed_adapter import AudioFeedAdapter
+        adapter = AudioFeedAdapter(feed_url=feed_url, source_name="尼可拉斯楊Live")
+        episode = adapter.fetch_recent_data()
+        if episode and "id" in episode:
+            result["episode_title"] = episode.get("title")
+            result["episode_id"] = episode.get("id")
+            if episode["id"] != store.get("last_episode_id"):
+                opinions = adapter.extract_opinions(episode) or []
+                for o in opinions:
+                    o.setdefault("source_name", "尼可拉斯楊Live")
+                    o.setdefault("analyst_name", "Nicholas Yang")
+                store["opinions"].extend(opinions)
+                store["last_episode_id"] = episode["id"]
+                _write_json(store, opinions_path)
+                result.update({"updated": True, "total_opinions": len(store["opinions"])})
+            return result
+    except Exception as e:
+        print(f"[scan_nicolas] 降級：{e}")
+    ep = _fetch_latest_episode_stdlib(feed_url)
+    if ep:
+        result["episode_title"] = ep.get("title")
+        result["episode_id"] = ep.get("id")
+        result["episode_published"] = ep.get("published")
+    return result
+
+
 def _normalize(ticker: str) -> str:
     """轉成 Yahoo 代號。純數字 / 數字+字母（台股）→ 加 .TW；其餘原樣。"""
     t = ticker.strip().upper()
@@ -305,15 +350,23 @@ def _ticker_news(symbol: str) -> Optional[Dict]:
         return None
 
 
+def _load_opinions(path: str) -> List[Dict]:
+    store = _read_json(path, {})
+    return store.get("opinions", []) if isinstance(store, dict) else (store or [])
+
+
 def _gooaye_consensus(ticker: str) -> Dict:
-    """股癌/輿情共識：優先用 JSON（CI 持久化），再 fallback DB。"""
-    if os.path.exists(OPINIONS_JSON):
-        store = _read_json(OPINIONS_JSON, {})
-        ops = store.get("opinions", []) if isinstance(store, dict) else store
-        simple = ticker.split(".")[0].upper()
-        matched = [o for o in ops if str(o.get("target_ticker", "")).split(".")[0].upper() == simple]
-        if matched:
-            return score_opinions(matched)
+    """專家輿情共識：合併股癌 + 尼可拉斯楊Live（多來源加權），再 fallback DB。
+    兩個來源的觀點一起餵進 score_opinions（依 source 權重加權），讓買進分數的『輿情』分項
+    同時反映股癌與尼可拉斯楊的看法。"""
+    simple = ticker.split(".")[0].upper()
+    matched: List[Dict] = []
+    for path in (OPINIONS_JSON, NICOLAS_OPINIONS_JSON):
+        if os.path.exists(path):
+            matched += [o for o in _load_opinions(path)
+                        if str(o.get("target_ticker", "")).split(".")[0].upper() == simple]
+    if matched:
+        return score_opinions(matched)
     try:
         from src.sentiment.consensus_engine import WeightedConsensusEngine
         return WeightedConsensusEngine().get_stock_consensus(ticker)
@@ -471,6 +524,9 @@ def main():
 
     gooaye_status = scan_gooaye()
     print(f"[daily_report] gooaye: updated={gooaye_status['updated']} title={gooaye_status['episode_title']}")
+    nicolas_status = scan_nicolas()
+    print(f"[daily_report] nicolas: updated={nicolas_status['updated']} title={nicolas_status.get('episode_title')} "
+          f"opinions={nicolas_status['total_opinions']}")
 
     holdings = parse_holding_tickers(_read_text(HOLDINGS_TXT))
     opinions_store = _read_json(OPINIONS_JSON, {"opinions": []})
