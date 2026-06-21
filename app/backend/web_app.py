@@ -298,39 +298,45 @@ def quotes(symbols: str = ""):
     return {"quotes": out}
 
 
+def _gooaye_scan_once():
+    """股癌掃描的同步重活（網路 + DB），供背景更新在執行緒中呼叫。"""
+    from app.backend.database.connection import SessionLocal
+    from app.backend.database.models import PodcastEpisode, PodcastTicker
+    from src.sentiment.audio_feed_adapter import AudioFeedAdapter
+
+    adapter = AudioFeedAdapter(feed_url=GOOAYE_FEED, source_name="Gooaye")
+    episode = adapter.fetch_recent_data()
+    if episode and "id" in episode:
+        db = SessionLocal()
+        try:
+            exists = db.query(PodcastEpisode).filter(PodcastEpisode.id == episode["id"]).first()
+            if not exists:
+                logger.info(f"🎙️ 自動發現股癌新集數：{episode['title']}")
+                db.add(PodcastEpisode(
+                    id=episode["id"], title=episode["title"],
+                    published_date=episode.get("published", ""),
+                    audio_url=episode.get("audio_url"),
+                    transcript=episode.get("transcript", ""),
+                ))
+                db.flush()
+                for op in (adapter.extract_opinions(episode) or []):
+                    db.add(PodcastTicker(
+                        episode_id=episode["id"], ticker=op["target_ticker"],
+                        context=op["core_logic"], sentiment=op["sentiment_label"],
+                        sentiment_score=op["sentiment_score"], confidence=op["confidence_rating"],
+                    ))
+                db.commit()
+        finally:
+            db.close()
+
+
 async def _gooaye_updater():
-    """每 2 小時自動掃股癌 RSS；偵測到新集數就（mock fallback）抽取點名並寫入 DB。"""
+    """每 2 小時自動掃股癌 RSS；偵測到新集數就（mock fallback）抽取點名並寫入 DB。
+    重活在執行緒中跑，避免阻塞 event loop 拖垮服務(502)。"""
     await asyncio.sleep(8)
     while True:
         try:
-            from app.backend.database.connection import SessionLocal
-            from app.backend.database.models import PodcastEpisode, PodcastTicker
-            from src.sentiment.audio_feed_adapter import AudioFeedAdapter
-
-            adapter = AudioFeedAdapter(feed_url=GOOAYE_FEED, source_name="Gooaye")
-            episode = adapter.fetch_recent_data()
-            if episode and "id" in episode:
-                db = SessionLocal()
-                try:
-                    exists = db.query(PodcastEpisode).filter(PodcastEpisode.id == episode["id"]).first()
-                    if not exists:
-                        logger.info(f"🎙️ 自動發現股癌新集數：{episode['title']}")
-                        db.add(PodcastEpisode(
-                            id=episode["id"], title=episode["title"],
-                            published_date=episode.get("published", ""),
-                            audio_url=episode.get("audio_url"),
-                            transcript=episode.get("transcript", ""),
-                        ))
-                        db.flush()
-                        for op in (adapter.extract_opinions(episode) or []):
-                            db.add(PodcastTicker(
-                                episode_id=episode["id"], ticker=op["target_ticker"],
-                                context=op["core_logic"], sentiment=op["sentiment_label"],
-                                sentiment_score=op["sentiment_score"], confidence=op["confidence_rating"],
-                            ))
-                        db.commit()
-                finally:
-                    db.close()
+            await asyncio.to_thread(_gooaye_scan_once)
         except Exception as e:
             logger.warning(f"股癌自動更新降級：{e}")
         await asyncio.sleep(7200)  # 2 小時
@@ -343,7 +349,8 @@ async def _nicolas_updater():
     while True:
         try:
             from src.pipeline.daily_report import scan_nicolas
-            status = scan_nicolas()
+            # 在執行緒中跑（含 YouTube feed/字幕網路 I/O），避免阻塞 asyncio event loop 而拖垮整個服務(502)。
+            status = await asyncio.to_thread(scan_nicolas)
             if status.get("updated"):
                 logger.info(f"🎯 自動發現尼可拉斯楊新集數：{status.get('episode_title')}")
         except Exception as e:
