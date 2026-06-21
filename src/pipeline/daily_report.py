@@ -26,9 +26,12 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 DATA_DIR = os.path.join(REPO_ROOT, "docs", "data")
 OPINIONS_JSON = os.path.join(DATA_DIR, "gooaye_opinions.json")
 NICOLAS_OPINIONS_JSON = os.path.join(DATA_DIR, "nicolas_opinions.json")
-# 尼可拉斯楊Live RSS feed（自動追蹤最新集數用）。Apple 未公開 RSS，先以環境變數 NICOLAS_FEED 設定；
-# 未設定時 scan_nicolas 只會安全降級（沿用既有種子/人工觀點，不影響其餘流程）。
-NICOLAS_FEED = os.environ.get("NICOLAS_FEED", "").strip()
+# 尼可拉斯楊沒有公開 podcast RSS → 改用其 YouTube 頻道(@nicolasyounglive)的官方 XML feed
+# 自動追蹤最新影片/直播。channel_id 可用環境變數覆寫；NICOLAS_FEED 預設即指向該 YouTube feed。
+NICOLAS_YT_CHANNEL = os.environ.get("NICOLAS_YT_CHANNEL", "UCXUP_aBLQBNFgLjvnrMTHtw").strip()
+NICOLAS_FEED = os.environ.get(
+    "NICOLAS_FEED", f"https://www.youtube.com/feeds/videos.xml?channel_id={NICOLAS_YT_CHANNEL}"
+).strip()
 REPORT_JSON = os.path.join(DATA_DIR, "daily_report.json")
 HISTORY_DIR = os.path.join(DATA_DIR, "history")
 HISTORY_INDEX = os.path.join(HISTORY_DIR, "index.json")
@@ -224,44 +227,70 @@ def scan_gooaye(feed_url: str = GOOAYE_FEED, opinions_path: str = OPINIONS_JSON)
     return result
 
 
-def scan_nicolas(feed_url: str = NICOLAS_FEED, opinions_path: str = NICOLAS_OPINIONS_JSON) -> Dict:
-    """自動追蹤『尼可拉斯楊Live』最新集數（同股癌機制）。
+def _fetch_latest_youtube(feed_url: str) -> Dict:
+    """只用標準庫解析 YouTube 頻道 Atom feed 最新一支影片/直播（不需 feedparser）。
+    YouTube feed 為 Atom 格式（<entry> / <yt:videoId> / <title> / <published>），與 RSS 不同。
+    回傳 {id, title, published, url}；失敗回 {}。不下載影片、不轉錄。"""
+    import re
+    import urllib.request
+    try:
+        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+        xml = urllib.request.urlopen(req, timeout=20).read().decode("utf-8", "ignore")
+    except Exception:
+        return {}
+    m = re.search(r"<entry>(.*?)</entry>", xml, re.S)
+    if not m:
+        return {}
+    entry = m.group(1)
+    def _tag(name):
+        mm = re.search(rf"<{name}>(.*?)</{name}>", entry, re.S)
+        return mm.group(1).strip() if mm else ""
+    vid = _tag("yt:videoId")
+    title = _tag("title")
+    if not vid or not title:
+        return {}
+    return {
+        "id": f"yt:{vid}",
+        "title": title,
+        "published": _tag("published"),
+        "url": f"https://www.youtube.com/watch?v={vid}",
+    }
 
-    若有設定 NICOLAS_FEED 即偵測最新集數；偵測到新集數時 merge 抽取的點名（AudioFeedAdapter
-    為 mock fallback——真實逐集觀點需本機 Whisper 轉錄）。未設 feed 或失敗皆安全降級，
-    沿用既有種子/人工觀點，不影響其餘流程。回傳 {updated, episode_title, episode_id, total_opinions}。"""
+
+def scan_nicolas(feed_url: str = NICOLAS_FEED, opinions_path: str = NICOLAS_OPINIONS_JSON) -> Dict:
+    """自動追蹤『尼可拉斯楊Live』最新一集——**改用其 YouTube 頻道官方 XML feed**（他沒有公開 podcast RSS）。
+
+    偵測到最新影片/直播即記錄標題、日期、連結與 id 進 nicolas_opinions.json 的 `latest_episode`，
+    並更新 last_episode_id（有新片 → updated=True）。個股觀點本身仍為種子/人工維護——逐集自動抽取
+    需語音轉錄（本機 Whisper），雲端做不到，故只自動「追蹤集數」、不自動改寫觀點清單。
+    任何失敗安全降級，不影響其餘流程。"""
     store = _read_json(opinions_path, {"last_episode_id": None, "opinions": []})
     if isinstance(store, list):
         store = {"last_episode_id": None, "opinions": store}
     result = {"updated": False, "episode_title": None, "episode_id": store.get("last_episode_id"),
               "total_opinions": len(store.get("opinions", [])), "source": "尼可拉斯楊Live"}
     if not feed_url:
-        result["note"] = "未設定 NICOLAS_FEED（Apple 未公開 RSS）；目前以種子/人工觀點維護。"
+        result["note"] = "未設定追蹤來源。"
         return result
-    try:
-        from src.sentiment.audio_feed_adapter import AudioFeedAdapter
-        adapter = AudioFeedAdapter(feed_url=feed_url, source_name="尼可拉斯楊Live")
-        episode = adapter.fetch_recent_data()
-        if episode and "id" in episode:
-            result["episode_title"] = episode.get("title")
-            result["episode_id"] = episode.get("id")
-            if episode["id"] != store.get("last_episode_id"):
-                opinions = adapter.extract_opinions(episode) or []
-                for o in opinions:
-                    o.setdefault("source_name", "尼可拉斯楊Live")
-                    o.setdefault("analyst_name", "Nicholas Yang")
-                store["opinions"].extend(opinions)
-                store["last_episode_id"] = episode["id"]
-                _write_json(store, opinions_path)
-                result.update({"updated": True, "total_opinions": len(store["opinions"])})
-            return result
-    except Exception as e:
-        print(f"[scan_nicolas] 降級：{e}")
-    ep = _fetch_latest_episode_stdlib(feed_url)
-    if ep:
-        result["episode_title"] = ep.get("title")
-        result["episode_id"] = ep.get("id")
-        result["episode_published"] = ep.get("published")
+
+    ep = _fetch_latest_youtube(feed_url)
+    if not ep:
+        result["note"] = "YouTube feed 暫時取不到（安全降級，沿用既有觀點）。"
+        return result
+
+    result["episode_title"] = ep.get("title")
+    result["episode_id"] = ep.get("id")
+    result["episode_published"] = ep.get("published")
+    result["episode_url"] = ep.get("url")
+    # 記錄最新一集（供前端/狀態顯示「尼可拉斯楊最新一集」）。
+    store["latest_episode"] = {
+        "title": ep.get("title"), "published": ep.get("published"),
+        "url": ep.get("url"), "id": ep.get("id"), "checked_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"),
+    }
+    if ep["id"] != store.get("last_episode_id"):
+        store["last_episode_id"] = ep["id"]
+        result["updated"] = True
+    _write_json(store, opinions_path)
     return result
 
 
