@@ -1226,14 +1226,15 @@ def evaluate_long_term_risk(
     原本只靠「12 個月統計預測」(本質是把近期價格漂移線性外推，對 1 年後預測力低、且會把暫時回檔
     當成長期下跌) 就能硬否決，過度誤殺優質龍頭。新版要求**多重證據同時成立**，並對「長期多頭結構
     (站上長均線) 或基本面強健」的股票給予保護，不再單憑悲觀外推否決。"""
-    exp12 = base12 = high12 = None
+    exp12 = base12 = high12 = exp6 = None
     if price_forecast and price_forecast.get("horizons"):
         for h in price_forecast["horizons"]:
             if h.get("days") == 252:
                 exp12 = float(h.get("expected_return_pct", 0.0))
                 base12 = float(h.get("base", 0.0))
                 high12 = float(h.get("high", 0.0))
-                break
+            elif h.get("days") == 126:
+                exp6 = float(h.get("expected_return_pct", 0.0))
 
     hist_cum = hist_win = hist_avg = None
     hist_trades = 0
@@ -1264,14 +1265,20 @@ def evaluate_long_term_risk(
         and hist_avg < 0 and (hist_win is None or hist_win < 45)
     )
 
+    # 中期(6個月)是否仍偏多：若 6 個月預測仍正向，12 個月尾段的小幅負值多為長天期衰減／收斂分析師
+    # 目標價造成的雜訊，不應觸發「長線需謹慎」與「中長線偏多」的結論互相矛盾。
+    midterm_ok = exp6 is not None and exp6 >= 3.0
+
     if protected:
-        # 品質/多頭結構股：不硬否決。若預測偏負，僅提示審慎。
-        if forecast_negative:
+        # 品質/多頭結構股：不硬否決。只有「連中期(6個月)都走弱」才提示審慎；6 個月仍偏多則不警示，
+        # 避免與下方「中長線偏多·可分批布局」的結論打架。
+        if forecast_negative and not midterm_ok:
             severity = "medium"
             reasons.append(
-                f"12 個月統計預測偏負 ({exp12:.1f}%)，但個股仍處長期多頭結構或基本面強健，"
-                f"視為短期逆風而非長線虧損，宜分批、不宜重押。"
+                f"12 個月統計預測偏負 ({exp12:.1f}%)、且中期動能轉弱；個股仍處多頭結構，"
+                f"視為短期逆風，宜分批、不宜重押。"
             )
+        # exp6 仍正向 → 不加警示（落到「未顯示長抱虧損風險」），與中長線偏多一致。
     else:
         # 非品質股才考慮硬否決，且需多重證據同時成立。
         if forecast_negative and hist_negative and (bearish_structure or hist_weak):
@@ -1291,7 +1298,7 @@ def evaluate_long_term_risk(
             reasons.append(
                 f"個股波段歷史累積 {hist_cum:.1f}%、勝率僅 {hist_win:.0f}%，且趨勢轉弱，長抱賺錢機率偏低。"
             )
-        elif forecast_negative:
+        elif forecast_negative and not midterm_ok:
             severity = "medium"
             reasons.append(f"12 個月預測小幅為負 ({exp12:.1f}%)，僅供觀望、不宜重押。")
 
