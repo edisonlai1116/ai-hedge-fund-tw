@@ -433,6 +433,13 @@ export type SystemStatus = {
     generated_date: string | null;
     top_n: number | null;
   };
+  nicolas?: {
+    episode_title: string | null;
+    published_date: string | null;
+    url: string | null;
+    last_checked: string | null;
+    opinion_count: number | null;
+  };
 };
 
 export async function fetchSystemStatus(): Promise<SystemStatus> {
@@ -472,6 +479,18 @@ export type GooayeOpinion = {
 export async function fetchGooayeOpinions(): Promise<GooayeOpinion[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/daily/data/gooaye_opinions.json?_=${Date.now()}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.opinions ?? []) as GooayeOpinion[];
+  } catch {
+    return [];
+  }
+}
+
+// 尼可拉斯楊Live 觀點（與股癌同結構，來源 source_name=尼可拉斯楊Live）。
+export async function fetchNicolasOpinions(): Promise<GooayeOpinion[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/daily/data/nicolas_opinions.json?_=${Date.now()}`);
     if (!response.ok) return [];
     const data = await response.json();
     return (data.opinions ?? []) as GooayeOpinion[];

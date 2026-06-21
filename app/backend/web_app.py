@@ -143,6 +143,25 @@ def system_status():
     except Exception as e:
         logger.info(f"/status 讀 DB 集數失敗：{e}")
 
+    # 3) 尼可拉斯楊Live 最新一集（YouTube 自動追蹤；docs/data/nicolas_opinions.json 的 latest_episode）
+    out["nicolas"] = {"episode_title": None, "published_date": None, "url": None,
+                      "last_checked": None, "opinion_count": None}
+    try:
+        import json
+        npath = os.path.join(_DOCS, "data", "nicolas_opinions.json")
+        with open(npath, encoding="utf-8") as f:
+            nstore = json.load(f)
+        le = nstore.get("latest_episode") or {}
+        out["nicolas"].update({
+            "episode_title": le.get("title"),
+            "published_date": le.get("published"),
+            "url": le.get("url"),
+            "last_checked": le.get("checked_at"),
+            "opinion_count": len(nstore.get("opinions", [])),
+        })
+    except Exception as e:
+        logger.info(f"/status 讀尼可拉斯楊集數失敗：{e}")
+
     return out
 
 

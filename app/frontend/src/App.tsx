@@ -26,6 +26,7 @@ import {
   analyzeSimpleSignal,
   analyzeSimpleSignalBatch,
   fetchGooayeOpinions,
+  fetchNicolasOpinions,
   fetchMarketRegime,
   fetchQuotes,
   fetchSp500DailyTop,
@@ -215,11 +216,15 @@ export default function App() {
   const [dailyScan, setDailyScan] = useState<SP500DailyScanResponse | null>(null);
   const [backtest, setBacktest] = useState<AiMainlineBacktestResult | null>(null);
   const [gooayeMap, setGooayeMap] = useState<Record<string, GooayeOpinion>>({});
+  const [nicolasMap, setNicolasMap] = useState<Record<string, GooayeOpinion>>({});
 
   useEffect(() => {
     fetchGooayeOpinions()
       .then((ops) => setGooayeMap(buildGooayeMap(ops)))
       .catch(() => setGooayeMap({}));
+    fetchNicolasOpinions()
+      .then((ops) => setNicolasMap(buildGooayeMap(ops)))
+      .catch(() => setNicolasMap({}));
   }, []);
 
 
@@ -414,6 +419,8 @@ export default function App() {
                           setResult(item);
                         }}
                         selectedSymbol={result?.symbol}
+                        gooayeMap={gooayeMap}
+                        nicolasMap={nicolasMap}
                       />
                     ) : null
                   }
@@ -478,6 +485,7 @@ export default function App() {
                         }}
                         selectedSymbol={result?.symbol}
                         gooayeMap={gooayeMap}
+                        nicolasMap={nicolasMap}
                       />
                     ) : null
                   }
@@ -487,7 +495,7 @@ export default function App() {
           ) : null}
 
           {activeTab === 'holdings' ? (
-            <HoldingsManager useAiCommittee={useAiCommittee} committeeModel={committeeModel} gooayeMap={gooayeMap} />
+            <HoldingsManager useAiCommittee={useAiCommittee} committeeModel={committeeModel} gooayeMap={gooayeMap} nicolasMap={nicolasMap} />
           ) : null}
 
           {activeTab === 'backtest' ? (
@@ -543,6 +551,7 @@ export default function App() {
               useAiCommittee={useAiCommittee}
               committeeModel={committeeModel}
               gooayeMap={gooayeMap}
+              nicolasMap={nicolasMap}
             />
           ) : null}
         </section>
@@ -630,10 +639,21 @@ function SystemStatusBadge() {
                 strong
               />
               <StatusRow label="報告標的數" value={status.daily_report.top_n != null ? `${status.daily_report.top_n} 檔` : '—'} />
+              {status.nicolas ? (
+                <>
+                  <div className="my-1 border-t border-slate-100" />
+                  <StatusRow label="尼可拉斯楊最新一集" value={status.nicolas.episode_title ?? '—'} strong />
+                  <StatusRow label="發布時間" value={fmtStamp(status.nicolas.published_date)} />
+                  <StatusRow label="觀點覆蓋" value={status.nicolas.opinion_count != null ? `${status.nicolas.opinion_count} 則` : '—'} />
+                  {status.nicolas.url ? (
+                    <a href={status.nicolas.url} target="_blank" rel="noreferrer" className="block text-right text-[11px] text-violet-600 hover:underline">▶ 看這集</a>
+                  ) : null}
+                </>
+              ) : null}
               <div className="my-1 border-t border-slate-100" />
               <StatusRow label="伺服器時間" value={fmtStamp(status.server_time)} />
               <div className="pt-1 text-[11px] leading-4 text-slate-400">
-                股癌集數每 2 小時自動掃描；每日 Top 50 報告由排程每日重建。時間有變動代表系統有在更新。
+                股癌集數每 2 小時自動掃描；尼可拉斯楊由其 YouTube 頻道每 2 小時自動追蹤最新一集；每日 Top 50 報告由排程每日重建。時間有變動代表系統有在更新。
               </div>
             </div>
           )}
@@ -935,12 +955,14 @@ function SignalList({
   selectedSymbol,
   onSelect,
   gooayeMap,
+  nicolasMap,
 }: {
   title: string;
   items: DetailResult[];
   selectedSymbol?: string;
   onSelect: (item: DetailResult) => void;
   gooayeMap?: Record<string, GooayeOpinion>;
+  nicolasMap?: Record<string, GooayeOpinion>;
 }) {
   return (
     <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
@@ -950,6 +972,7 @@ function SignalList({
       <CardContent className="grid gap-2">
         {items.map((item, index) => {
           const op = gooayeMap?.[tickerBaseKey(item.symbol)];
+          const nop = nicolasMap?.[tickerBaseKey(item.symbol)];
           return (
             <button
               key={`${item.symbol}-${index}`}
@@ -966,6 +989,11 @@ function SignalList({
                   {op ? (
                     <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
                       <Mic className="h-2.5 w-2.5" />股癌點名
+                    </span>
+                  ) : null}
+                  {nop ? (
+                    <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
+                      🎯尼可拉斯楊
                     </span>
                   ) : null}
                 </div>
@@ -1453,11 +1481,13 @@ function PortfolioTab({
   useAiCommittee,
   committeeModel,
   gooayeMap,
+  nicolasMap,
 }: {
   recommendations: SP500DailyPick[];
   useAiCommittee: boolean;
   committeeModel: string;
   gooayeMap: Record<string, GooayeOpinion>;
+  nicolasMap?: Record<string, GooayeOpinion>;
 }) {
   const [account, setAccount] = useState<PaperAccount>(() => loadPaperAccount());
   const accountRef = useRef(account);
@@ -1954,6 +1984,7 @@ function PortfolioTab({
                   {recList.map((r) => {
                     const ccy = paperCurrencyOf(r.symbol);
                     const op = gooayeMap[tickerBaseKey(r.symbol)];
+                    const nop = nicolasMap?.[tickerBaseKey(r.symbol)];
                     return (
                       <tr key={r.symbol} className="border-t border-slate-100">
                         <td className="py-1.5 pr-2 font-semibold text-slate-900">
@@ -1965,6 +1996,11 @@ function PortfolioTab({
                             {op ? (
                               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
                                 <Mic className="h-2.5 w-2.5" />股癌點名
+                              </span>
+                            ) : null}
+                            {nop ? (
+                              <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
+                                🎯尼可拉斯楊
                               </span>
                             ) : null}
                           </div>
@@ -2258,10 +2294,12 @@ function HoldingsManager({
   useAiCommittee,
   committeeModel,
   gooayeMap,
+  nicolasMap,
 }: {
   useAiCommittee: boolean;
   committeeModel: string;
   gooayeMap: Record<string, GooayeOpinion>;
+  nicolasMap?: Record<string, GooayeOpinion>;
 }) {
   const initial = loadRealHoldingsV2();
   const [holdings, setHoldings] = useState<RealHolding[]>(initial.holdings);
@@ -2438,6 +2476,7 @@ function HoldingsManager({
                     const cur = rv ? rv.latest_close : null;
                     const pnl = rv ? rv.pnl_pct : null;
                     const op = gooayeMap[key];
+                    const nop = nicolasMap?.[key];
                     const open = openRows[h.ticker];
                     return (
                       <Fragment key={h.ticker}>
@@ -2449,6 +2488,11 @@ function HoldingsManager({
                               {op ? (
                                 <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
                                   <Mic className="h-2.5 w-2.5" />股癌點名
+                                </span>
+                              ) : null}
+                              {nop ? (
+                                <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
+                                  🎯尼可拉斯楊
                                 </span>
                               ) : null}
                             </div>
