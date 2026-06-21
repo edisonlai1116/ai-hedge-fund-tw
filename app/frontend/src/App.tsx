@@ -976,7 +976,7 @@ function SignalList({
           return (
             <button
               key={`${item.symbol}-${index}`}
-              className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[44px_1fr_120px_120px_90px] md:items-center ${
+              className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[44px_1fr_150px_70px] md:items-center ${
                 selectedSymbol === item.symbol ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white'
               }`}
               onClick={() => onSelect(item)}
@@ -1008,17 +1008,6 @@ function SignalList({
                   <div className="text-[11px] leading-4 text-slate-400">今日時機：{item.today_action}</div>
                 ) : null}
               </div>
-              {(() => {
-                // 買進候選清單裡，不顯示與「買進建議」矛盾的小量賣訊號（你還沒持有、那是給持有者的短線調節）；
-                // 只有真正的「今天賣出」全出場警訊才顯示，避免「分批買進」又「今天可小量賣」自相矛盾。
-                const al = 'action_label' in item ? item.action_label : '';
-                const isBuyRec = /買進|試單/.test(al);
-                const ex = item.today_exit_action || '';
-                const showExit = !!ex && (!isBuyRec || ex.includes('賣出'));
-                return showExit
-                  ? <div className={`font-medium ${actionTone(ex)}`}>{ex}</div>
-                  : <div className="text-slate-300">—</div>;
-              })()}
               <div className="text-slate-700">{'daily_score' in item ? item.daily_score : item.composite_score}</div>
             </button>
           );
