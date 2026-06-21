@@ -1603,6 +1603,37 @@ def _gooaye_agent_opinion(symbol: str) -> dict:
                                confidence=40, summary="股癌/社群輿情近期未明確點名此股，暫以中性看待。"))
 
 
+def _nicolas_agent_opinion(symbol: str) -> dict:
+    """把尼可拉斯楊Live 觀點做成「其中一種 agent 看法」，附加到個股分析的 agents 清單。
+    讀 docs/data/nicolas_opinions.json（由 YouTube 自動字幕逐集擷取）；有點名 → 真實多空看法，
+    無點名 → 中性並註明，確保尼可拉斯楊一律以一個 agent 呈現（與股癌並列）。"""
+    try:
+        import os
+        import json
+        from src.sentiment.consensus_engine import score_opinions
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "docs", "data", "nicolas_opinions.json")
+        with open(path, encoding="utf-8") as f:
+            store = json.load(f)
+        ops_all = store.get("opinions", []) if isinstance(store, dict) else (store or [])
+        simple = str(symbol).split(".")[0].upper()
+        matched = [o for o in ops_all if str(o.get("target_ticker", "")).split(".")[0].upper() == simple]
+        if matched:
+            cons = score_opinions(matched)
+            score = int(cons.get("consensus_score", 50))
+            top = matched[0]
+            logic = top.get("core_logic") or top.get("original_quote") or ""
+            signal = "偏多" if score >= 65 else ("偏空" if score < 45 else "中性")
+            confidence = max(35, min(90, abs(score - 50) * 2))
+            summary = f"尼可拉斯楊共識 {score} 分：{logic}"[:140]
+            return asdict(AgentOpinion(key="nicolas", name="尼可拉斯楊Live", signal=signal,
+                                       confidence=confidence, summary=summary))
+    except Exception:
+        pass
+    return asdict(AgentOpinion(key="nicolas", name="尼可拉斯楊Live", signal="中性",
+                               confidence=40, summary="尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"))
+
+
 def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = True, lightweight: bool = False) -> SignalReport:
     # lightweight=True 用於大盤掃描的初篩排序：跳過個股回測/預測/估值抓取等較重的運算，
     # 只算出排序所需的 composite_score / expected_return / 風報比，正式入選後再做完整分析。
@@ -1788,6 +1819,8 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
     ]
     # 股癌（Gooaye）/社群輿情也列為其中一種 agent 看法。
     agents.append(_gooaye_agent_opinion(symbol))
+    # 尼可拉斯楊Live（AI 算力蛋糕觀點，YouTube 自動字幕擷取）也列為其中一種 agent 看法。
+    agents.append(_nicolas_agent_opinion(symbol))
     horizons = [asdict(view) for view in build_horizon_views(frame)]
     chart = [
         {
