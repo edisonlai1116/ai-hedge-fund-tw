@@ -45,7 +45,20 @@ GOOAYE_FEED = "https://feeds.soundon.fm/podcasts/954689a5-3096-43a4-a80b-7810b21
 # 用 06-13~06-15 三天 Top 50 實測：buy_score 與未來報酬的 Spearman 僅 +0.29/+0.17/-0.03（近乎無預測力），
 # 但「近一個月相對強度(動能)」達 +0.31/+0.38/+0.41。故新增 relative_strength 因子並降低 technical 權重，
 # 新公式回測 Spearman 提升為 +0.43/+0.45/+0.33。relative_strength 缺值時以中性 50 代入（與其他因子一致）。
-WEIGHTS = {"technical": 0.35, "relative_strength": 0.30, "gooaye": 0.20, "ticker_news": 0.05, "macro": 0.10}
+#
+# 2026-06-23 新增 chip_flow（籌碼面/三大法人）因子：
+# 台股用 TWSE T86 外資+投信淨買超；美股用 CMF-20 資金流代理。
+# chip_flow 與動能互補（動能看過去漲幅，籌碼看法人「現在」在買還是在賣），
+# 是對台股報酬最直接的 alpha 因子之一，由 daily_stock_analysis 啟發導入。
+# 初始權重為合理預設，待 Spearman 驗證後依實測調整（WEIGHTS 視為可調超參數）。
+WEIGHTS = {
+    "technical":        0.30,
+    "relative_strength": 0.25,
+    "chip_flow":        0.20,
+    "gooaye":           0.15,
+    "ticker_news":      0.05,
+    "macro":            0.05,
+}
 _NUM = re.compile(r"^-?\d[\d,]*(?:\.\d+)?$")
 
 # 最終排序輸出的檔數（台美股合併取前 N）
@@ -95,14 +108,16 @@ def relative_strength_score(mom_20d: Optional[float]) -> Optional[float]:
 
 def compute_buy_score(technical: Optional[float], gooaye: Optional[float],
                       ticker_news: Optional[float], macro: Optional[float],
-                      relative_strength: Optional[float] = None) -> Dict:
+                      relative_strength: Optional[float] = None,
+                      chip_flow: Optional[float] = None) -> Dict:
     """把各面向分數（0–100，缺項以 50 中性代入）加權成買進分數。"""
     parts = {
-        "technical": 50 if technical is None else float(technical),
+        "technical":         50 if technical        is None else float(technical),
         "relative_strength": 50 if relative_strength is None else float(relative_strength),
-        "gooaye": 50 if gooaye is None else float(gooaye),
-        "ticker_news": 50 if ticker_news is None else float(ticker_news),
-        "macro": 50 if macro is None else float(macro),
+        "chip_flow":         50 if chip_flow         is None else float(chip_flow),
+        "gooaye":            50 if gooaye            is None else float(gooaye),
+        "ticker_news":       50 if ticker_news       is None else float(ticker_news),
+        "macro":             50 if macro             is None else float(macro),
     }
     score = sum(parts[k] * WEIGHTS[k] for k in WEIGHTS)
     return {"buy_score": int(round(score)), "components": {k: int(round(v)) for k, v in parts.items()}}
@@ -407,14 +422,16 @@ def _normalize(ticker: str) -> str:
 
 
 def _technical(symbol: str) -> Optional[Dict]:
-    """免 Key 技術面分析（Yahoo + simple_signal）。失敗回 None。"""
+    """免 Key 技術面分析（Yahoo + simple_signal）。失敗回 None。
+    同時順手計算 CMF（美股資金流代理）與 20 日動能，沿用同一份報價，零額外下載。
+    """
     try:
         from src.simple_signal import download_prices, build_report
         df = download_prices(symbol, "1y")
         if df is None or df.empty:
             return None
         r = build_report(symbol, df, fetch_fundamentals=False, lightweight=True)
-        # 近一個月（約 20 交易日）報酬率 → 相對強度／動能因子。免額外下載，沿用同一份報價。
+        # 近一個月（約 20 交易日）報酬率 → 相對強度／動能因子。
         mom_20d = None
         try:
             closes = df["Close"].dropna()
@@ -422,15 +439,27 @@ def _technical(symbol: str) -> Optional[Dict]:
                 mom_20d = (float(closes.iloc[-1]) / float(closes.iloc[-21]) - 1.0) * 100.0
         except Exception:
             mom_20d = None
+        # 美股用 CMF 作為籌碼面代理（台股由 TWSE T86 提供，不在此計算）
+        cmf_score = None
+        is_tw = symbol.upper().endswith(".TW") or symbol.upper().endswith(".TWO")
+        if not is_tw:
+            try:
+                from src.data.chip_flow import compute_cmf, cmf_to_score
+                cmf_val = compute_cmf(df)
+                cmf_score = cmf_to_score(cmf_val)
+            except Exception:
+                cmf_score = None
         return {
             "composite_score": getattr(r, "composite_score", 50),
-            "mom_20d": mom_20d,
-            "bias": getattr(r, "bias", ""),
-            "today_action": getattr(r, "today_action", ""),
-            "buy_zone": getattr(r, "buy_zone", ""),
-            "sell_zone": getattr(r, "sell_zone", ""),
-            "stop_loss": getattr(r, "stop_loss", ""),
-            "latest_close": getattr(r, "latest_close", None),
+            "mom_20d":         mom_20d,
+            "cmf_score":       cmf_score,   # 美股專用；台股此欄為 None
+            "bias":            getattr(r, "bias", ""),
+            "today_action":    getattr(r, "today_action", ""),
+            "buy_zone":        getattr(r, "buy_zone", ""),
+            "sell_zone":       getattr(r, "sell_zone", ""),
+            "stop_loss":       getattr(r, "stop_loss", ""),
+            "latest_close":    getattr(r, "latest_close", None),
+            "_df":             df,   # 供台股 chip_flow 複用 df（避免重複下載）
         }
     except Exception as e:
         print(f"[_technical] {symbol} 降級：{e}")
@@ -476,9 +505,18 @@ def _full_analysis(symbol: str) -> Optional[Dict]:
 def _ticker_news(symbol: str) -> Optional[Dict]:
     try:
         from src.sentiment.news_feed import ticker_news_sentiment
-        return ticker_news_sentiment(symbol)
+        return ticker_news_sentiment(symbol)   # 回傳包含 "titles" 欄位
     except Exception:
         return None
+
+
+def _events(titles: List[str]) -> Dict:
+    """從已抓到的 news titles 分類催化/風險事件（複用，不重複網路請求）。"""
+    try:
+        from src.sentiment.catalysts import classify_events
+        return classify_events(titles)
+    except Exception:
+        return {"catalysts": [], "risks": []}
 
 
 def _load_opinions(path: str) -> List[Dict]:
@@ -521,8 +559,12 @@ def _movers(limit: int = 40) -> List[str]:
         return []
 
 
-def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, mover: bool = False) -> Dict:
-    """組裝單檔的買進分數列。"""
+def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool,
+                   mover: bool = False, tw_chip_table: Optional[Dict] = None) -> Dict:
+    """組裝單檔的買進分數列。
+
+    tw_chip_table: 預抓的 TWSE T86 全市場籌碼表（None 則自動抓）。
+    """
     symbol = _normalize(raw_ticker)
     tech = _technical(symbol)
     news = _ticker_news(symbol)
@@ -533,30 +575,53 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool, m
     gooaye_score = cons["consensus_score"] if cons.get("opinions") else None
     news_score = news["score"] if news else None
 
-    scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score,
-                               relative_strength=rs_score)
-    top_op = cons["opinions"][0] if cons.get("opinions") else None
+    # 籌碼面因子
+    chip = None
+    chip_score = None
     market = "tw" if symbol.endswith(".TW") or symbol.endswith(".TWO") else "us"
+    try:
+        from src.data.chip_flow import chip_flow_score as _chip_flow_score
+        df = (tech or {}).get("_df")   # 複用已下載的 df，不重抓
+        chip = _chip_flow_score(symbol, df=df, tw_table=tw_chip_table)
+        chip_score = chip["score"] if chip else None
+    except Exception as e:
+        print(f"[analyze_ticker] chip_flow 降級 {symbol}：{e}")
+
+    # _df 不應暴露到報告 JSON，移除內部欄位
+    if tech and "_df" in tech:
+        del tech["_df"]
+    if tech and "cmf_score" in tech and chip and chip.get("source") == "CMF":
+        pass   # cmf_score 已透過 chip 呈現，tech 中保留也無害
+
+    # 催化/風險事件（複用 news 已抓到的 titles，不重複請求）
+    titles = (news or {}).get("titles", [])
+    evt = _events(titles)
+
+    scored = compute_buy_score(technical_score, gooaye_score, news_score, macro_score,
+                               relative_strength=rs_score, chip_flow=chip_score)
+    top_op = cons["opinions"][0] if cons.get("opinions") else None
     base = raw_ticker.split(".")[0].upper()
     name = TW_NAMES.get(base, "") if market == "tw" else base
     return {
-        "ticker": raw_ticker,
-        "symbol": symbol,
-        "name": name,
-        "market": market,
-        "held": held,
-        "gooaye_named": named,
-        "market_mover": mover,
-        "buy_score": scored["buy_score"],
+        "ticker":        raw_ticker,
+        "symbol":        symbol,
+        "name":          name,
+        "market":        market,
+        "held":          held,
+        "gooaye_named":  named,
+        "market_mover":  mover,
+        "buy_score":     scored["buy_score"],
         "recommendation": recommendation(scored["buy_score"]),
-        "components": scored["components"],
-        "technical": tech,
+        "components":    scored["components"],
+        "technical":     tech,
+        "chip":          chip,   # 法人動向／資金流
+        "events":        evt,    # 催化/風險警報（不入 buy_score；呈現用）
         "gooaye": {
-            "score": cons.get("consensus_score"),
-            "label": cons.get("consensus_label"),
+            "score":         cons.get("consensus_score"),
+            "label":         cons.get("consensus_label"),
             "opinion_count": len(cons.get("opinions", [])),
-            "top_logic": (top_op or {}).get("core_logic", ""),
-            "top_quote": (top_op or {}).get("original_quote", ""),
+            "top_logic":     (top_op or {}).get("core_logic", ""),
+            "top_quote":     (top_op or {}).get("original_quote", ""),
         },
         "news": {"score": (news or {}).get("score"), "label": (news or {}).get("label")},
     }
@@ -585,6 +650,15 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             seen.add(key)
             universe.append(t)
 
+    # 台股籌碼表：整張 T86 一次抓取，全部台股共用（避免每檔各打一次）
+    tw_chip_table: Optional[Dict] = None
+    try:
+        from src.data.chip_flow import fetch_tw_chip_table
+        tw_chip_table = fetch_tw_chip_table()
+        print(f"[build_report] TWSE T86 籌碼表：{len(tw_chip_table)} 檔")
+    except Exception as e:
+        print(f"[build_report] fetch_tw_chip_table 降級：{e}")
+
     macro_score = int(macro.get("score", 50))
     rows = []
     for t in universe:
@@ -594,6 +668,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             held=(key in held_set or t.upper() in held_set),
             named=(key in named_simple),
             mover=(key in mover_simple),
+            tw_chip_table=tw_chip_table,
         ))
     rows = rank_rows(rows)[:TOP_N]   # 台美股合併取前 50
 
@@ -606,7 +681,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "generated_date": now.strftime("%Y-%m-%d"),
-        "mode": "免 Key（台美股 Top 50：美股熱門榜 + 台灣50 + 股癌共識 + Yahoo 技術面 + 新聞輿情）",
+        "mode": "免 Key（台美股 Top 50：美股熱門榜 + 台灣50 + 股癌共識 + Yahoo 技術面 + 籌碼面/法人 + 新聞輿情 + 催化/風險警報）",
         "universe": {
             "us_movers": len(movers), "tw_universe": len(TW_UNIVERSE),
             "gooaye_named": len(named_tickers), "scanned": len(universe), "top_n": TOP_N,

@@ -90,9 +90,9 @@
     <table id="picks">
       <thead><tr>
         <th>#</th><th>標的</th><th>買進分數</th><th>建議</th>
-        <th class="hide-sm">技術面</th><th>股癌共識</th><th class="hide-sm">新聞</th>
+        <th class="hide-sm">技術面</th><th>籌碼/法人</th><th>股癌共識</th><th class="hide-sm">新聞</th>
       </tr></thead>
-      <tbody id="picks-body"><tr><td colspan="7" class="muted">載入中…</td></tr></tbody>
+      <tbody id="picks-body"><tr><td colspan="8" class="muted">載入中…</td></tr></tbody>
     </table>
   </div>
 
@@ -113,11 +113,36 @@ const stanceCls = s => /看多|偏多|多|bull|買/i.test(s||"") ? "pill-bull" :
 function detailHtml(p){
   const d = p.detail || {};
   let h = "";
+
+  // 催化/風險警報
+  const ev = p.events || {};
+  const cats = ev.catalysts || [];
+  const risks = ev.risks || [];
+  if(cats.length){
+    h += `<div class="hl" style="margin-top:4px"><strong style="color:var(--bull)">🚀 催化因素</strong></div>`;
+    cats.forEach(c => {
+      h += `<div class="hl" style="color:var(--bull)">▸ <span class="badge pill-bull">${esc(c.tag)}</span> ${esc(c.headline)}</div>`;
+    });
+  }
+  if(risks.length){
+    h += `<div class="hl" style="margin-top:4px"><strong style="color:var(--bear)">⚠️ 風險警報</strong></div>`;
+    risks.forEach(r => {
+      h += `<div class="hl" style="color:var(--bear)">▸ <span class="badge pill-bear">${esc(r.tag)}</span> ${esc(r.headline)}</div>`;
+    });
+  }
+
+  // 籌碼面 / 法人動向
+  const chip = p.chip;
+  if(chip){
+    h += `<div class="hl" style="margin-top:6px"><strong>🏦 籌碼面/法人動向</strong> — <span class="badge ${sigClass(chip.score)}">${esc(chip.label)}</span> <span class="muted">(${chip.score}/100)</span></div>`;
+    h += `<div class="hl">${esc(chip.net_summary||"")} ${chip.net_trend ? '· ' + esc(chip.net_trend) : ''} <span class="muted">資料來源：${esc(chip.source||"")}</span></div>`;
+  }
+
   // 股癌 / 輿情
   if(p.gooaye?.opinion_count){
-    h += `<div class="hl"><strong>股癌/輿情論述：</strong>${esc(p.gooaye.top_logic)||"—"}</div>`;
+    h += `<div class="hl" style="margin-top:6px"><strong>股癌/輿情論述：</strong>${esc(p.gooaye.top_logic)||"—"}</div>`;
     if(p.gooaye.top_quote) h += `<div class="hl">「${esc(p.gooaye.top_quote)}」</div>`;
-  } else { h += `<div class="hl muted">此標的目前無股癌/輿情點名。</div>`; }
+  } else { h += `<div class="hl muted" style="margin-top:6px">此標的目前無股癌/輿情點名。</div>`; }
   // 操作建議價
   if(d.buy_zone||d.sell_zone||d.stop_loss){
     h += `<div class="hl"><strong>操作：</strong>${esc(d.today_action||d.bias||"")}　現價 ${esc(d.latest_close)}　`+
@@ -152,7 +177,7 @@ function detailHtml(p){
   } else if(!d.agents || !d.agents.length){
     h += `<div class="hl muted">完整分析（各 agent、3/6/9/12 月預測）將於每日排程在雲端產生後顯示。</div>`;
   }
-  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 相對強度 ${p.components?.relative_strength ?? '—'} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
+  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 相對強度 ${p.components?.relative_strength ?? '—'} · 籌碼 ${p.components?.chip_flow ?? '—'} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
   return h;
 }
 
@@ -192,12 +217,19 @@ function render(d){
   // picks
   const body = document.getElementById("picks-body");
   const picks = d.top_picks || [];
-  if(!picks.length){ body.innerHTML = "<tr><td colspan='7' class='muted'>無標的</td></tr>"; return; }
+  if(!picks.length){ body.innerHTML = "<tr><td colspan='8' class='muted'>無標的</td></tr>"; return; }
   body.innerHTML = "";
   picks.forEach((p,i)=>{
-    const tags = `<span class="badge">${p.market==='tw'?'台股':'美股'}</span>` + (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'');
+    const hasRisk = (p.events?.risks?.length > 0);
+    const riskBadge = hasRisk ? '<span class="badge pill-bear" title="有風險警報">⚠</span>' : '';
+    const tags = `<span class="badge">${p.market==='tw'?'台股':'美股'}</span>` + (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'') + riskBadge;
     const tech = p.technical;
     const techCell = tech ? `${esc(tech.today_action||tech.bias||"")}<div class="muted">買 ${esc(tech.buy_zone||"—")}</div>` : '<span class="muted">—</span>';
+    const chip = p.chip;
+    const chipScore = chip?.score ?? null;
+    const chipCell = chip
+      ? `<span class="badge ${sigClass(chipScore)}">${chipScore}</span> <span class="muted">${esc(chip.label||"")}</span><div class="muted" style="font-size:.72rem">${esc(chip.net_trend||"")}</div>`
+      : '<span class="muted">—</span>';
     const gscore = p.gooaye?.score ?? 50;
     const tr = document.createElement("tr");
     tr.className = "pick";
@@ -208,11 +240,12 @@ function render(d){
       `<td><span class="score">${p.buy_score}</span>${bar(p.buy_score)}</td>`+
       `<td><span class="badge ${recClass(p.recommendation)}">${esc(p.recommendation)}</span></td>`+
       `<td class="hide-sm">${techCell}</td>`+
+      `<td>${chipCell}</td>`+
       `<td><span class="badge ${sigClass(gscore)}">${gscore}</span> <span class="muted">${esc(p.gooaye?.label||"")}</span></td>`+
       `<td class="hide-sm">${p.news?.label?esc(p.news.label):'<span class="muted">—</span>'}</td>`;
     const det = document.createElement("tr");
     det.className = "detail";
-    det.innerHTML = `<td colspan="7">${detailHtml(p)}</td>`;
+    det.innerHTML = `<td colspan="8">${detailHtml(p)}</td>`;
     tr.addEventListener("click",()=>det.classList.toggle("open"));
     body.appendChild(tr); body.appendChild(det);
   });

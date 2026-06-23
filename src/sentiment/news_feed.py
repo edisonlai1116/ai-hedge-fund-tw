@@ -120,10 +120,14 @@ def macro_sentiment() -> Dict:
 
 
 def ticker_news_sentiment(ticker: str, company_hint: str = "") -> Dict:
-    """單一個股的新聞標題情緒。失敗回中性。"""
+    """單一個股的新聞標題情緒。失敗回中性。
+
+    回傳包含 "titles" 欄位供 catalysts 模組複用（避免重複抓取）。
+    """
     base = ticker.split(".")[0]
     query = f"{base} stock {company_hint}".strip()
     titles = _google_news_titles(query, limit=15)
     result = keyword_sentiment(titles)
     result["sample_headlines"] = titles[:5]
+    result["titles"] = titles   # 供 catalysts.classify_events 複用
     return result
