@@ -37,6 +37,8 @@ import {
   type AgentView,
   type AiMainlineBacktestResult,
   type ChartPoint,
+  type ChipFlowResult,
+  type EventsResult,
   type GooayeOpinion,
   type HoldingReviewItemPayload,
   type HoldingReviewResult,
@@ -680,6 +682,10 @@ function SignalInsight({ result, lists }: { result: DetailResult | null; lists?:
     <div className="space-y-5">
       <StockOverviewCard result={result} />
       {result.long_term_risk ? <LongTermRiskBanner risk={result.long_term_risk} /> : null}
+      {result.chip ? <ChipFlowCard chip={result.chip} /> : null}
+      {result.events && (result.events.catalysts.length > 0 || result.events.risks.length > 0)
+        ? <CatalystsCard events={result.events} />
+        : null}
       {result.price_forecast ? <PriceForecastCard forecast={result.price_forecast} latestClose={result.latest_close} /> : null}
       {result.horizons?.length ? <HorizonPlanCard horizons={result.horizons} /> : null}
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -689,6 +695,118 @@ function SignalInsight({ result, lists }: { result: DetailResult | null; lists?:
       <AgentVoteCard result={result} />
       <PriceChartCard result={result} />
     </div>
+  );
+}
+
+function chipScoreColor(score: number): string {
+  if (score >= 65) return 'text-emerald-700';
+  if (score < 45) return 'text-rose-700';
+  return 'text-amber-700';
+}
+
+function chipScoreBg(score: number): string {
+  if (score >= 65) return 'border-emerald-200 bg-emerald-50';
+  if (score < 45) return 'border-rose-200 bg-rose-50';
+  return 'border-amber-200 bg-amber-50';
+}
+
+function ChipFlowCard({ chip }: { chip: ChipFlowResult }) {
+  return (
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          🏦 籌碼面 / 法人動向
+        </CardTitle>
+        <CardDescription>
+          {chip.source === 'TWSE T86' ? '台灣證交所三大法人買賣超（免 Key）' : 'Chaikin Money Flow CMF-20（資金流代理）'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className={`rounded-md border p-3 ${chipScoreBg(chip.score)}`}>
+          <div className="flex items-center justify-between">
+            <span className={`text-sm font-semibold ${chipScoreColor(chip.score)}`}>{chip.label}</span>
+            <span className={`text-lg font-bold ${chipScoreColor(chip.score)}`}>{chip.score} / 100</span>
+          </div>
+          <div className="mt-1 text-xs text-slate-600">{chip.net_summary}</div>
+          {chip.net_trend && (
+            <div className="mt-0.5 text-xs text-slate-500">趨勢：{chip.net_trend}</div>
+          )}
+        </div>
+        {chip.source === 'TWSE T86' && chip.foreign_net !== null && (
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="rounded border border-slate-200 p-2">
+              <div className="text-slate-500">外資</div>
+              <div className={`font-semibold ${(chip.foreign_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {(chip.foreign_net ?? 0) >= 0 ? '+' : ''}{((chip.foreign_net ?? 0) / 1000).toFixed(0)}張
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 p-2">
+              <div className="text-slate-500">投信</div>
+              <div className={`font-semibold ${(chip.trust_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {(chip.trust_net ?? 0) >= 0 ? '+' : ''}{((chip.trust_net ?? 0) / 1000).toFixed(0)}張
+              </div>
+            </div>
+            <div className="rounded border border-slate-200 p-2">
+              <div className="text-slate-500">合計</div>
+              <div className={`font-semibold ${(chip.total_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {(chip.total_net ?? 0) >= 0 ? '+' : ''}{((chip.total_net ?? 0) / 1000).toFixed(0)}張
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-slate-400">
+          籌碼分數已納入每日 Top 50 買進評分（權重 20%）。台股資料來自 TWSE 開放資料，美股為技術性資金流代理，非實際法人數據。
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CatalystsCard({ events }: { events: EventsResult }) {
+  const hasCats = events.catalysts.length > 0;
+  const hasRisks = events.risks.length > 0;
+  if (!hasCats && !hasRisks) return null;
+  return (
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          📋 催化因素 / 風險警報
+        </CardTitle>
+        <CardDescription>從個股新聞標題自動擷取的事件訊號（不影響分數，純資訊呈現）</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {hasCats && (
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">🚀 催化因素</div>
+            <div className="space-y-1.5">
+              {events.catalysts.map((c, i) => (
+                <div key={i} className="flex items-start gap-2 rounded-md border border-emerald-100 bg-emerald-50 p-2">
+                  <span className="mt-0.5 shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
+                    {c.tag}
+                  </span>
+                  <span className="text-xs text-slate-700 leading-5">{c.headline}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {hasRisks && (
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-rose-700">⚠️ 風險警報</div>
+            <div className="space-y-1.5">
+              {events.risks.map((r, i) => (
+                <div key={i} className="flex items-start gap-2 rounded-md border border-rose-100 bg-rose-50 p-2">
+                  <span className="mt-0.5 shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800">
+                    {r.tag}
+                  </span>
+                  <span className="text-xs text-slate-700 leading-5">{r.headline}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

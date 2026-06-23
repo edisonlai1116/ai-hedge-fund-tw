@@ -71,6 +71,27 @@ export type PriceForecast = {
   horizons: ForecastHorizon[];
 };
 
+export type ChipFlowResult = {
+  score: number;
+  label: string;
+  foreign_net: number | null;
+  trust_net: number | null;
+  total_net: number | null;
+  net_trend: string;
+  net_summary: string;
+  source: string;
+};
+
+export type EventItem = {
+  tag: string;
+  headline: string;
+};
+
+export type EventsResult = {
+  catalysts: EventItem[];
+  risks: EventItem[];
+};
+
 export type LongTermRisk = {
   blocked: boolean;
   severity: string;
@@ -173,6 +194,8 @@ export type SimpleSignalResult = {
   value_trap_risk?: string;
   price_forecast?: PriceForecast | null;
   long_term_risk?: LongTermRisk | null;
+  chip?: ChipFlowResult | null;
+  events?: EventsResult | null;
 };
 
 export type HoldingReviewResult = {

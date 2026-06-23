@@ -134,6 +134,8 @@ class SimpleSignalResponse(BaseModel):
     value_trap_risk: str | None = None
     price_forecast: dict | None = None
     long_term_risk: dict | None = None
+    chip: dict | None = None     # 籌碼面/法人動向（台股=TWSE T86；美股=CMF）
+    events: dict | None = None   # 催化因素 + 風險警報（不影響分數，純資訊呈現）
 
 
 class HoldingReviewResponse(BaseModel):
@@ -474,6 +476,33 @@ def _build_holding_verdict(
     return ("續抱觀察", "低", "0%", f"無明確賣出訊號（趨勢 {bias}、RSI {rsi:.0f}），續抱觀察、守住保護停損即可。")
 
 
+# ── 籌碼面 + 催化/風險 helper（免 API Key，安全降級） ──────────────────────────
+def _compute_chip(symbol: str, frame) -> dict | None:
+    """計算個股籌碼面分數。台股用 TWSE T86（全市場一次抓取、記憶體快取）；美股用 CMF。"""
+    try:
+        from src.data.chip_flow import chip_flow_score, fetch_tw_chip_table
+        tw_table = None
+        is_tw = symbol.upper().endswith((".TW", ".TWO"))
+        if is_tw:
+            tw_table = fetch_tw_chip_table()
+        return chip_flow_score(symbol, df=frame if frame is not None else None, tw_table=tw_table)
+    except Exception as e:
+        logging.getLogger("uvicorn.error").info(f"[chip_flow] {symbol} 降級：{e}")
+        return None
+
+
+def _compute_events(symbol: str) -> dict:
+    """從個股新聞標題分類催化因素與風險警報。失敗回空清單。"""
+    try:
+        from src.sentiment.news_feed import ticker_news_sentiment
+        from src.sentiment.catalysts import classify_events
+        news = ticker_news_sentiment(symbol)
+        return classify_events(news.get("titles", []))
+    except Exception as e:
+        logging.getLogger("uvicorn.error").info(f"[events] {symbol} 降級：{e}")
+        return {"catalysts": [], "risks": []}
+
+
 # 注意：以下重活全部宣告為「同步 def」而非「async def」。
 # FastAPI 會把同步 path operation 丟到外部 threadpool 執行，事件迴圈保持空閒，
 # /healthz 才答得出來；否則單一 worker 的事件迴圈會被 yfinance 下載/回測卡死，
@@ -489,7 +518,9 @@ def analyze_simple_signal(request: SimpleSignalRequest) -> SimpleSignalResponse:
             committee_model=request.committee_model,
         )
         _attach_backtest(report, frame)
-        return SimpleSignalResponse(**report.__dict__)
+        chip = _compute_chip(report.symbol, frame)
+        events = _compute_events(report.symbol)
+        return SimpleSignalResponse(**{**report.__dict__, "chip": chip, "events": events})
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -512,7 +543,9 @@ def analyze_simple_signal_batch(request: SimpleSignalBatchRequest) -> list[Simpl
         reports: list[SimpleSignalResponse] = []
         for report, frame in reports_with_frames:
             _attach_backtest(report, frame)
-            reports.append(SimpleSignalResponse(**report.__dict__))
+            chip = _compute_chip(report.symbol, frame)
+            events = _compute_events(report.symbol)
+            reports.append(SimpleSignalResponse(**{**report.__dict__, "chip": chip, "events": events}))
 
         return sorted(reports, key=lambda item: item.composite_score, reverse=True)
     except ValueError as exc:
@@ -545,7 +578,9 @@ def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewResponse
             if item.cost_basis is not None and item.shares is not None:
                 unrealized_pnl = round((report.latest_close - item.cost_basis) * item.shares, 2)
 
-            signal = SimpleSignalResponse(**report.__dict__)
+            chip = _compute_chip(report.symbol, frame)
+            events = _compute_events(report.symbol)
+            signal = SimpleSignalResponse(**{**report.__dict__, "chip": chip, "events": events})
             return HoldingReviewResponse(
                 symbol=report.symbol,
                 cost_basis=item.cost_basis,
