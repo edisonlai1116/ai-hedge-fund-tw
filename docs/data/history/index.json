@@ -100,11 +100,11 @@
   },
   {
     "date": "2026-06-24",
-    "generated_at": "2026-06-24T07:38:43+08:00",
+    "generated_at": "2026-06-24T19:44:15+08:00",
     "macro_score": 26,
     "top_ticker": "MU",
-    "top_score": 83,
-    "strong_buy": 5,
+    "top_score": 85,
+    "strong_buy": 3,
     "pick_count": 50
   }
 ]
