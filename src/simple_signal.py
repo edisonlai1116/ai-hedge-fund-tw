@@ -1026,6 +1026,7 @@ def build_price_forecast(
     rsi14: float,
     composite_score: int,
     analyst_target_price: float | None = None,
+    symbol: str = "",
 ) -> dict:
     """以歷史漂移率 + 波動度錐 (drift / volatility cone) 推估 3/6/9/12 個月股價區間，
     並結合趨勢、RSI、綜合分數與分析師目標價，給出「現在該買或賣」的判讀。
@@ -1051,6 +1052,17 @@ def build_price_forecast(
     if raw_annual_drift < 0:
         raw_annual_drift *= 0.55
     capped_annual = max(min(raw_annual_drift, 0.45), -0.22)
+
+    # AI 主線科技巨頭設正向漂移下限（+5% 年化）：這些股票的 10 年 CAGR 遠超 5%，
+    # 短期回檔被線性外推成長線必虧是典型的樣本期偏誤，應保護不被誤標。
+    _mega_cap_floor_symbols = {
+        "NVDA", "MSFT", "AAPL", "GOOGL", "GOOG", "AMZN", "META",
+        "AVGO", "TSM", "AMD", "MU", "ARM", "PLTR", "2330",
+    }
+    sym_base = symbol.upper().split(".")[0] if symbol else ""
+    if sym_base in _mega_cap_floor_symbols and capped_annual < 0.05:
+        capped_annual = 0.05  # 科技主線最低年化漂移 +5%
+
     mu_capped = capped_annual / 252.0
 
     horizons = [("3個月", 63), ("6個月", 126), ("9個月", 189), ("12個月", 252)]
@@ -1392,6 +1404,7 @@ def derive_today_plan(
     candlestick_pattern: str = "無",
     fundamental_score: int = 0,
     valuation_gap_pct: float | None = None,
+    ai_chain_layer: str | None = None,
 ) -> tuple[str, str, str, str, str, str, float, float, int, str, float]:
     buy_low, buy_high = parse_range(buy_zone)
     sell_low, sell_high = parse_range(sell_zone)
@@ -1410,6 +1423,8 @@ def derive_today_plan(
 
     # Value investor allowance: if it is heavily undervalued with strong fundamentals, allow buying even in downtrend
     is_strong_value = (fundamental_score >= 5 and valuation_gap_pct is not None and valuation_gap_pct >= 10.0)
+    # AI 主線核心股（有 ai_chain_layer + 基本面及格）：大跌是加碼機會，不應直接否決
+    is_ai_mainline = ai_chain_layer is not None and fundamental_score >= 5
     min_return_threshold = 12.0 if is_strong_value else MIN_POSITION_RETURN_PCT
 
     # Estimate winning probability p
@@ -1431,9 +1446,21 @@ def derive_today_plan(
 
     candle_bonus = f" (偵測到K線訊號: {candlestick_pattern})" if candlestick_pattern != "無" else ""
 
-    if (bias == "偏空" and not is_strong_value) or buy_strength == "不建議進場":
+    if buy_strength == "不建議進場" and not is_ai_mainline:
         today_action = NO_BUY
         today_note = f"趨勢偏弱，今天不建議新倉進場。{candle_bonus}"
+    elif bias == "偏空" and not is_strong_value and not is_ai_mainline:
+        today_action = NO_BUY
+        today_note = f"趨勢偏弱，今天不建議新倉進場。{candle_bonus}"
+    elif bias == "偏空" and is_ai_mainline:
+        # AI 主線科技股（NVDA/MSFT/MU 等）大跌時是加碼機會，不能直接否決。
+        # 參考策略：主線回檔時分批小量建倉，堅守核心邏輯不輕易賣出。
+        today_action = BUY_SMALL
+        dip_kelly = max(kelly_position_pct, 0.05)  # 主線大跌至少給 5% 底倉建議
+        today_note = (
+            f"⚡ AI主線回檔承接機會（{ai_chain_layer}）：短線雖偏弱，但主線長期敘事不變，"
+            f"大跌時分批小量建倉是正確策略，建議倉位 {dip_kelly:.1%}（先建底倉，待趨勢確認後加碼）。{candle_bonus}"
+        )
     elif expected_return_pct < min_return_threshold:
         today_action = NO_BUY
         today_note = f"目前可用的報酬空間不足 {min_return_threshold:.1f}%，今天先不要急著買。{candle_bonus}"
@@ -1930,6 +1957,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             rsi14=rsi14,
             composite_score=rule_score,
             analyst_target_price=analyst_target_price,
+            symbol=symbol,
         )
         long_term_risk = evaluate_long_term_risk(
             price_forecast or None, timeline_bt,
@@ -1968,6 +1996,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         candlestick_pattern=candlestick_pattern,
         fundamental_score=fundamental_score,
         valuation_gap_pct=valuation_gap_pct,
+        ai_chain_layer=ai_chain_layer,
     )
 
     # Re-use pre-fetched Investing.com data from early scan
