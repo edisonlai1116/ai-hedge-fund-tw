@@ -747,7 +747,8 @@ def build_agent_opinions(
         graham_sig = "Bullish"
         graham_conf = 90
         graham_sum = f"股價顯著低於防守價或低本益比 (PE: {forward_pe or 0:.1f})，提供了極佳的安全邊際保護。"
-    elif (graham_number is not None and latest_close > graham_number * 1.5) and (forward_pe is not None and forward_pe > 30.0):
+    elif (graham_number is not None and latest_close > graham_number * 1.5) and (forward_pe is not None and forward_pe > 30.0) and ai_chain_layer is None:
+        # AI 主線成長股本就交易於高溢價，不以葛拉漢防守價否決其多頭邏輯
         graham_sig = "Bearish"
         graham_conf = 85
         graham_sum = f"估值過度透支 (PE: {forward_pe:.1f}) 且大幅高於資產防守價值，不具備安全邊際。"
@@ -782,11 +783,13 @@ def build_agent_opinions(
     taleb_sig = "Neutral"
     taleb_conf = 70
     taleb_sum = "資產負債表與估值水平尚可，未見顯著的反脆弱或脆弱特徵。"
+    # AI 主線股的反脆弱性來自需求獨佔與定價權，不是低 PE；門檻提高到 65
+    taleb_pe_high = 65.0 if ai_chain_layer is not None else 40.0
     if fundamental_score >= 6 and (forward_pe is not None and forward_pe <= 20.0):
         taleb_sig = "Bullish"
         taleb_conf = 80
         taleb_sum = "擁有強勁的流動性與防禦性估值，具備顯著的反脆弱抗震能力。"
-    elif (forward_pe is not None and forward_pe > 40.0) or fundamental_score <= 3:
+    elif (forward_pe is not None and forward_pe > taleb_pe_high) or fundamental_score <= 3:
         taleb_sig = "Bearish"
         taleb_conf = 95
         taleb_sum = f"高估值 (PE: {forward_pe or 0:.1f}) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
@@ -808,11 +811,13 @@ def build_agent_opinions(
     burry_sig = "Neutral"
     burry_conf = 65
     burry_sum = "市場情緒與多空力量均衡，未見極端的非對稱套利機會。"
+    # AI 主線股成長率高，PEG < 1 才是真正指標；PE 門檻提高到 65
+    burry_pe_high = 65.0 if ai_chain_layer is not None else 45.0
     if gap >= 25.0 or rsi14 < 35.0:
         burry_sig = "Bullish"
         burry_conf = 85
         burry_sum = "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
-    elif (forward_pe is not None and forward_pe > 45.0) or rsi14 > 70.0:
+    elif (forward_pe is not None and forward_pe > burry_pe_high) or rsi14 > 70.0:
         burry_sig = "Bearish"
         burry_conf = 90
         burry_sum = f"市場情緒極度亢奮且估值溢價嚴重 (PE: {forward_pe or 0:.1f})，防範泡沫破裂與高位套牢風險。"
@@ -1906,13 +1911,15 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             value_boost -= 5
 
     # 5. Low P/E Valuation Boost (+12, +5, -15)
+    # AI 主線成長股以高 PE 交易是合理的（PEG 才是關鍵），門檻提高到 65 才扣分
+    pe_penalty_threshold = 65 if ai_chain_layer is not None else 40
     if forward_pe is not None:
         if 0 < forward_pe <= 18:
             value_boost += 12
             value_notes.append(f"低前瞻本益比({forward_pe:.1f}倍)")
         elif 18 < forward_pe <= 28:
             value_boost += 5
-        elif forward_pe > 40:
+        elif forward_pe > pe_penalty_threshold:
             value_boost -= 15
             value_notes.append(f"估值偏高(本益比 {forward_pe:.1f}倍)")
 
