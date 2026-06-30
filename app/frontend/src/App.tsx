@@ -991,37 +991,66 @@ function ValuationCard({ result }: { result: DetailResult }) {
           </div>
         </div>
         {models.length > 0 ? (
-          <div>
-            <div className="mb-2 text-xs font-medium text-slate-500">12 種估值模型細項（相對現價折溢價）</div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {models.map((m, i) => {
-                const mGap = close > 0 && m.valuation > 0 ? (m.valuation / close - 1) * 100 : null;
-                return (
-                  <div
-                    key={`${m.name}-${i}`}
-                    className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-2.5 py-1.5"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-medium text-slate-700">{m.name}</div>
-                      <div className="text-[10px] text-slate-400">{m.type}</div>
-                    </div>
-                    <div className="ml-2 shrink-0 text-right">
-                      <div className="text-xs font-semibold text-slate-900">{m.valuation > 0 ? m.valuation.toFixed(2) : '—'}</div>
-                      {mGap != null ? (
-                        <div className={`text-[10px] font-medium ${mGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {mGap >= 0 ? '+' : ''}
-                          {mGap.toFixed(0)}%
+          (() => {
+            // 以中位數為基準標記離群模型（與後端穩健平均同邏輯：落在 [×0.4, ×2.6] 外視為離群、不計入合理價值）。
+            const valid = models.map((m) => m.valuation).filter((v) => v > 0).sort((a, b) => a - b);
+            const median = valid.length
+              ? valid.length % 2
+                ? valid[(valid.length - 1) / 2]
+                : (valid[valid.length / 2 - 1] + valid[valid.length / 2]) / 2
+              : 0;
+            const lo = median * 0.4;
+            const hi = median * 2.6;
+            const isOutlier = (v: number) => valid.length >= 6 && median > 0 && v > 0 && (v < lo || v > hi);
+            const outlierCount = models.filter((m) => isOutlier(m.valuation)).length;
+            return (
+              <div>
+                <div className="mb-2 text-xs font-medium text-slate-500">12 種估值模型細項（相對現價折溢價）</div>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {models.map((m, i) => {
+                    const mGap = close > 0 && m.valuation > 0 ? (m.valuation / close - 1) * 100 : null;
+                    const outlier = isOutlier(m.valuation);
+                    return (
+                      <div
+                        key={`${m.name}-${i}`}
+                        className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 ${
+                          outlier ? 'border-slate-100 bg-slate-50/60 opacity-60' : 'border-slate-100 bg-slate-50'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="truncate text-xs font-medium text-slate-700">{m.name}</span>
+                            {outlier ? (
+                              <span className="shrink-0 rounded bg-slate-200 px-1 text-[9px] font-medium text-slate-500">離群</span>
+                            ) : null}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{m.type}</div>
                         </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                        <div className="ml-2 shrink-0 text-right">
+                          <div className="text-xs font-semibold text-slate-900">{m.valuation > 0 ? m.valuation.toFixed(2) : '—'}</div>
+                          {mGap != null ? (
+                            <div className={`text-[10px] font-medium ${outlier ? 'text-slate-400' : mGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {mGap >= 0 ? '+' : ''}
+                              {mGap.toFixed(0)}%
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {outlierCount > 0 ? (
+                  <p className="mt-2 text-[11px] leading-4 text-slate-400">
+                    灰色「離群」模型（共 {outlierCount} 項）與其他模型差距過大（多為成長股的 DCF 外推或防守型估值），
+                    合理價值採穩健平均、已降低其影響。
+                  </p>
+                ) : null}
+              </div>
+            );
+          })()
         ) : null}
         <p className="text-xs leading-5 text-slate-400">
-          估值為模型推估（多數標的由 yfinance 財務數據動態計算 12 模型均值），非 InvestingPro 官方數據，僅供參考；
+          估值為模型推估（多數標的由 yfinance 財務數據動態計算、取穩健平均），非 InvestingPro 官方數據，僅供參考；
           折價不代表短期會漲，請搭配趨勢、買賣點與長線風險一併判斷。
         </p>
       </CardContent>

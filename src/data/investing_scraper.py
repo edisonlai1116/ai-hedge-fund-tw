@@ -16,6 +16,26 @@ def safe_print(msg: str):
         except Exception:
             print(msg.encode('ascii', errors='backslashreplace').decode('ascii'))
 
+def _robust_fair_value(values) -> float | None:
+    """以中位數為基準剔除離群值後取平均的「穩健合理價值」。
+
+    多模型估值中，個別模型(尤其 DCF 外推、葛拉漢防守價) 對成長股/新上市股常給出極端值，
+    直接取算術平均會被少數離群點主導。這裡保留落在中位數 [×0.4, ×2.6] 區間內的模型再平均；
+    若有效模型太少(<6) 或剔除後不足 3 個，則退回全體平均，確保穩定。"""
+    vals = sorted(float(v) for v in values if v and float(v) > 0)
+    if not vals:
+        return None
+    n = len(vals)
+    if n >= 6:
+        mid = vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2
+        if mid > 0:
+            lo, hi = mid * 0.4, mid * 2.6
+            kept = [v for v in vals if lo <= v <= hi]
+            if len(kept) >= 3:
+                vals = kept
+    return round(sum(vals) / len(vals), 2)
+
+
 class InvestingScraper:
     """
     Scrapes or hybridly calculates stock valuations, target prices,
@@ -199,13 +219,13 @@ class InvestingScraper:
             bv_growth = round(bvps * (1.0 + roe) * 2.2, 2)
             models.append({"name": "淨值增長折現模型", "valuation": bv_growth, "type": "財務底層"})
             
-            # Compute average of valid models
-            valid_valuations = [m["valuation"] for m in models if m["valuation"] > 0]
-            if valid_valuations:
-                fair_value = round(sum(valid_valuations) / len(valid_valuations), 2)
-            else:
+            # 合理價值採「穩健平均」：以中位數為基準剔除離群模型，再取平均。
+            # 避免新上市/高波動股的單一極端模型(如 DCF 外推、葛拉漢防守價)把合理價值與折溢價嚴重扭曲
+            # （例：CRWV 原始平均被兩個極端 DCF 拉高到 +26%，穩健平均後更貼近真實估值）。
+            fair_value = _robust_fair_value([m["valuation"] for m in models])
+            if fair_value is None:
                 fair_value = round(close * 1.05, 2)
-                
+
             gap = round(((fair_value / close) - 1) * 100, 2)
             
             # Determine momentum summary
