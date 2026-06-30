@@ -36,6 +36,21 @@ def _robust_fair_value(values) -> float | None:
     return round(sum(vals) / len(vals), 2)
 
 
+def _unknown_valuation() -> dict:
+    """估值未知時的回傳（未抓取基本面，或動態計算失敗）。
+
+    不再捏造固定的「合理價=現價×1.15、折價 15%」假數字 —— 那會讓每日掃描清單上一堆
+    未被完整估值的股票全部顯示「折價 15%」，看起來像真的卻是佔位值。改回傳 None，
+    前端不顯示折溢價徽章/估值卡，低估排名也會把 None 視為無估值而排到後段。"""
+    return {
+        "fair_value": None,
+        "valuation_gap_pct": None,
+        "analyst_target": None,
+        "warren_ai_momentum": None,
+        "models_breakdown": [],
+    }
+
+
 class InvestingScraper:
     """
     Scrapes or hybridly calculates stock valuations, target prices,
@@ -59,31 +74,9 @@ class InvestingScraper:
         # 會造成「合理價值 158.50 vs 現價 1147、卻仍標折價 22.5%」這種與所有模型互相矛盾的錯誤。
         # 一律改走下方動態 12 模型計算，折溢價永遠以「當前股價」推算，並取穩健平均。
 
-        # If not fetching fundamentals, do a fast in-memory close-anchored model breakdown
+        # 未抓基本面時無法真正估值 → 回傳「未知」(None)，不捏造固定 15% 折價的佔位數字。
         if not fetch_fundamentals:
-            close = close_price or 100.0
-            fair_value = round(close * 1.15, 2)
-            gap = 15.0
-            return {
-                "fair_value": fair_value,
-                "valuation_gap_pct": gap,
-                "analyst_target": round(close * 1.18, 2),
-                "warren_ai_momentum": "偏多 (Bullish)",
-                "models_breakdown": [
-                    {"name": "5年期 DCF 營收成長模型", "valuation": round(close * 1.20, 2), "type": "現金流折現"},
-                    {"name": "10年期 DCF 自由現金流模型", "valuation": round(close * 1.24, 2), "type": "現金流折現"},
-                    {"name": "本益比倍數估值法 (P/E Multiple)", "valuation": round(close * 1.15, 2), "type": "乘數模型"},
-                    {"name": "股價淨值比倍數法 (P/B Multiple)", "valuation": round(close * 1.08, 2), "type": "乘數模型"},
-                    {"name": "EV/EBITDA 企業價值倍數", "valuation": round(close * 1.12, 2), "type": "乘數模型"},
-                    {"name": "葛拉漢防守型估值 (Graham Number)", "valuation": round(close * 0.95, 2), "type": "防禦價值"},
-                    {"name": "盈餘實力估值法 (Earnings Power)", "valuation": round(close * 1.25, 2), "type": "財務底層"},
-                    {"name": "ROE 股利增長折現模型", "valuation": round(close * 1.14, 2), "type": "財務底層"},
-                    {"name": "股價營收比乘數法 (P/S Multiple)", "valuation": round(close * 1.11, 2), "type": "乘數模型"},
-                    {"name": "股利折現模型 (DDM)", "valuation": round(close * 0.88, 2), "type": "現金流折現"},
-                    {"name": "PEG 成長乘數估值法", "valuation": round(close * 1.30, 2), "type": "乘數模型"},
-                    {"name": "淨值增長折現模型", "valuation": round(close * 1.16, 2), "type": "財務底層"}
-                ]
-            }
+            return _unknown_valuation()
 
         # --- End specific mocks, fallback to dynamically calculated/estimated models ---
         try:
@@ -188,30 +181,8 @@ class InvestingScraper:
             return res
         except Exception as e:
             safe_print(f"[Warning] Failed to dynamically compute Investing data: {e}")
-            # Dynamic fail-safe mock
-            close = close_price or 100.0
-            fair_value = round(close * 1.15, 2)
-            gap = 15.0
-            return {
-                "fair_value": fair_value,
-                "valuation_gap_pct": gap,
-                "analyst_target": round(close * 1.18, 2),
-                "warren_ai_momentum": "偏多 (Bullish)",
-                "models_breakdown": [
-                    {"name": "5年期 DCF 營收成長模型", "valuation": round(close * 1.20, 2), "type": "現金流折現"},
-                    {"name": "10年期 DCF 自由現金流模型", "valuation": round(close * 1.24, 2), "type": "現金流折現"},
-                    {"name": "本益比倍數估值法 (P/E Multiple)", "valuation": round(close * 1.15, 2), "type": "乘數模型"},
-                    {"name": "股價淨值比倍數法 (P/B Multiple)", "valuation": round(close * 1.08, 2), "type": "乘數模型"},
-                    {"name": "EV/EBITDA 企業價值倍數", "valuation": round(close * 1.12, 2), "type": "乘數模型"},
-                    {"name": "葛拉漢防守型估值 (Graham Number)", "valuation": round(close * 0.95, 2), "type": "防禦價值"},
-                    {"name": "盈餘實力估值法 (Earnings Power)", "valuation": round(close * 1.25, 2), "type": "財務底層"},
-                    {"name": "ROE 股利增長折現模型", "valuation": round(close * 1.14, 2), "type": "財務底層"},
-                    {"name": "股價營收比乘數法 (P/S Multiple)", "valuation": round(close * 1.11, 2), "type": "乘數模型"},
-                    {"name": "股利折現模型 (DDM)", "valuation": round(close * 0.88, 2), "type": "現金流折現"},
-                    {"name": "PEG 成長乘數估值法", "valuation": round(close * 1.30, 2), "type": "乘數模型"},
-                    {"name": "淨值增長折現模型", "valuation": round(close * 1.16, 2), "type": "財務底層"}
-                ]
-            }
+            # 計算失敗 → 回傳「未知」(None)，不捏造佔位估值。
+            return _unknown_valuation()
 
 _GLOBAL_INVESTING_SCRAPER = InvestingScraper()
 
