@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-from src.simple_signal import SignalReport, apply_committee_overlay, build_report, compute_rsi, generate_decision_assistance
+from src.simple_signal import BUY_NOW, BUY_SMALL, SignalReport, apply_committee_overlay, build_report, compute_rsi, generate_decision_assistance
 
 
 SP500_WIKI_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -1054,7 +1054,7 @@ def build_signal_backtest(frame: pd.DataFrame, report: SignalReport, regime: Mar
     )
 
 
-def decide_action_label(daily_score: int, regime: MarketRegime, backtest: SignalBacktest, bias: str, is_strong_value: bool = False) -> tuple[str, str, str]:
+def decide_action_label(daily_score: int, regime: MarketRegime, backtest: SignalBacktest, bias: str, is_strong_value: bool = False, is_dip_buy: bool = False) -> tuple[str, str, str]:
     """建議強度與綜合分數(daily_score)**單調對應** —— 分數越高建議越積極，不會出現
     「100 分卻先觀察」的矛盾。回測信心(confidence_score)只用來決定是否升到最高一級
     「全力買進」與部位大小，不再把高分股壓成先觀察。風險閘門(明顯偏空、大盤要減碼)優先。
@@ -1062,8 +1062,13 @@ def decide_action_label(daily_score: int, regime: MarketRegime, backtest: Signal
     2026-06-19 重寫：原本以 backtest.confidence_score 當硬性門檻，導致慢牛股(如 BRK-B)
     daily_score=100 仍落到「先觀察」，與排名(分數)和對帳本建議互相矛盾。"""
     conf = getattr(backtest, "confidence_score", 50)
-    is_bearish_blocked = (bias == "偏空" and not is_strong_value)
+    # 2026-06-30：好股大跌承接（quality-dip）不算追空頭——這正是「別人恐懼我貪婪」的買點，
+    # 不該被偏空風險閘門壓成「觀望/減碼」。
+    is_bearish_blocked = (bias == "偏空" and not is_strong_value and not is_dip_buy)
 
+    # 好股大跌承接：給「分批小量承接」評級，部位保守、留銀彈攤平。
+    if is_dip_buy and bias != "偏多":
+        return "分批小量承接", "中", "小部位分批"
     # 風險閘門：明顯偏空且非強勢價值 → 不追空頭
     if is_bearish_blocked:
         return "觀望 / 減碼", "低", "低風險部位"
@@ -1115,6 +1120,12 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "3017": "⚡ 資料中心基礎設施 DC Infra",
         "2382": "⚡ 資料中心基礎設施 DC Infra",
         "2317": "⚡ 資料中心基礎設施 DC Infra",
+        "2308": "⚡ 資料中心基礎設施 DC Infra",   # 台達電：AI 伺服器電源/散熱龍頭
+        "2376": "⚡ 資料中心基礎設施 DC Infra",   # 技嘉：AI 伺服器
+        "3231": "⚡ 資料中心基礎設施 DC Infra",   # 緯創：AI 伺服器
+        "6669": "⚡ 資料中心基礎設施 DC Infra",   # 緯穎：雲端 AI 伺服器
+        "2454": "🎮 計算核心 Compute Core",       # 聯發科：AI ASIC / 邊緣運算
+        "3661": "💡 IP & 軟體 IP & Software",      # 世芯-KY：AI ASIC 設計
         "ARM": "💡 IP & 軟體 IP & Software",
         "SNPS": "💡 IP & 軟體 IP & Software",
         "CDNS": "💡 IP & 軟體 IP & Software",
@@ -1123,7 +1134,7 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "RKLB": "🚀 太空 / 衛星 Space & Satellite",
         "LMT": "🚀 太空 / 衛星 Space & Satellite",
     }
-    
+
     # 4 Bottlenecks mapping
     bottlenecks = {
         "NVDA": "CoWoS 封裝 🔥",
@@ -1292,8 +1303,15 @@ def enrich_candidate(
                 candlestick_pattern=enriched_report.candlestick_pattern,
                 fundamental_score=f_score,
                 valuation_gap_pct=enriched_report.valuation_gap_pct,
+                ai_chain_layer=enriched_report.ai_chain_layer,
+                ma120=enriched_report.ma120,
+                long_term_blocked=bool(enriched_report.long_term_risk and enriched_report.long_term_risk.get("blocked")),
+                drawdown_from_high_pct=(
+                    ((enriched_report.latest_close / float(frame.tail(60)["High"].max())) - 1) * 100
+                    if len(frame) >= 1 and float(frame.tail(60)["High"].max()) > 0 else 0.0
+                ),
             )
-            
+
             # Update report fields
             enriched_report.buy_zone = buy_zone
             enriched_report.sell_zone = sell_zone
@@ -1472,12 +1490,17 @@ def enrich_candidate(
     f_score = enriched_report.fundamental_score
     val_gap = enriched_report.valuation_gap_pct
     is_strong_value = (f_score >= 5 and val_gap is not None and val_gap >= 10.0)
+    # 好股大跌承接：today_action 已由 derive_today_plan 判為買進（含 quality-dip 路徑），
+    # 且非長線虧損閘門否決者，視為 dip-buy，讓建議強度與「今天可買」一致、不互相矛盾。
+    _lt_blocked = bool(enriched_report.long_term_risk and enriched_report.long_term_risk.get("blocked"))
+    is_dip_buy = (enriched_report.today_action in (BUY_NOW, BUY_SMALL)) and not _lt_blocked
     action_label, buy_urgency, position_sizing = decide_action_label(
         daily_score=daily_score,
         regime=regime,
         backtest=backtest,
         bias=enriched_report.bias,
-        is_strong_value=is_strong_value
+        is_strong_value=is_strong_value,
+        is_dip_buy=is_dip_buy,
     )
 
     # 長線虧損閘門：即使長抱仍可能虧損的股票，一律不建議買進。

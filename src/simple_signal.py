@@ -1063,6 +1063,8 @@ def build_price_forecast(
     _mega_cap_floor_symbols = {
         "NVDA", "MSFT", "AAPL", "GOOGL", "GOOG", "AMZN", "META",
         "AVGO", "TSM", "AMD", "MU", "ARM", "PLTR", "2330",
+        # 台股 AI 主線龍頭：10 年 CAGR 遠高於 5%，短期回檔不應被線性外推成長線必虧
+        "2308", "2317", "2382", "2454", "2376", "3231", "6669", "3661", "3017",
     }
     sym_base = symbol.upper().split(".")[0] if symbol else ""
     if sym_base in _mega_cap_floor_symbols and capped_annual < 0.05:
@@ -1410,6 +1412,9 @@ def derive_today_plan(
     fundamental_score: int = 0,
     valuation_gap_pct: float | None = None,
     ai_chain_layer: str | None = None,
+    ma120: float = 0.0,
+    long_term_blocked: bool = False,
+    drawdown_from_high_pct: float = 0.0,
 ) -> tuple[str, str, str, str, str, str, float, float, int, str, float]:
     buy_low, buy_high = parse_range(buy_zone)
     sell_low, sell_high = parse_range(sell_zone)
@@ -1432,6 +1437,28 @@ def derive_today_plan(
     is_ai_mainline = ai_chain_layer is not None and fundamental_score >= 5
     min_return_threshold = 12.0 if is_strong_value else MIN_POSITION_RETURN_PCT
 
+    # === 好股票大跌 = 承接機會（quality-dip buy）===
+    # 2026-06-30：修正「好股在大盤恐慌大跌時被判偏空 → 今天不要買」的反向錯誤
+    #   （例：2026-06-26 台美股大跌，2308 台達電被標不要買，6/29、6/30 卻大漲）。
+    # 邏輯：長線結構未壞（站上年線 MA120）或基本面強健 / AI 主線 / 深度價值，
+    #   且短線被市場恐慌錯殺至超跌（RSI 低 或 自 60 日高點大幅回落），
+    #   視為「好股大跌的分批承接機會」，而非弱勢不要買。
+    #   長線虧損閘門已否決者（long_term_blocked）一律排除，避免承接真正向下的標的。
+    long_uptrend_intact = ma120 > 0 and latest_close >= ma120 * 0.97
+    quality_name = (
+        fundamental_score >= 6
+        or long_uptrend_intact
+        or is_ai_mainline
+        or is_strong_value
+    )
+    panic_oversold = (rsi14 < 45.0) or (drawdown_from_high_pct <= -12.0)
+    is_quality_dip = (
+        not long_term_blocked
+        and quality_name
+        and panic_oversold
+        and bias != "偏多"  # 偏多本就走 near_buy/小量買路徑，這裡專收偏空/中性的錯殺
+    )
+
     # Estimate winning probability p
     p_map = {
         "強力買進": 0.64,
@@ -1451,7 +1478,38 @@ def derive_today_plan(
 
     candle_bonus = f" (偵測到K線訊號: {candlestick_pattern})" if candlestick_pattern != "無" else ""
 
-    if buy_strength == "不建議進場" and not is_ai_mainline:
+    if long_term_blocked:
+        # 長線期望值為負（長抱仍虧損）：即使短線超跌也不承接，把資金留給長線向上的好股。
+        today_action = NO_BUY
+        today_note = f"⚠️ 長線期望值為負，即使短線大跌也不建議承接，請優先布局長線向上的標的。{candle_bonus}"
+    elif is_quality_dip:
+        # 好股票被市場恐慌錯殺 → 分批小量承接（買在恐慌、留銀彈攤平、嚴設停損）。
+        today_action = BUY_SMALL
+        dip_kelly = max(kelly_position_pct, 0.05)
+        # 承接區錨定現價附近（買的是今天的恐慌，不是更深的支撐），並重算報酬/風報比。
+        entry_zone = format_range(
+            max(latest_close * 0.97, latest_close - 0.6 * atr14),
+            min(latest_close * 1.005, latest_close + 0.1 * atr14),
+        )
+        entry_mid = range_mid(entry_zone)
+        expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
+        risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
+        reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        if long_uptrend_intact:
+            why = "長線結構未破（仍站穩年線 MA120）"
+        elif is_ai_mainline:
+            why = f"AI 主線核心（{ai_chain_layer}）"
+        elif fundamental_score >= 6:
+            why = f"基本面強健（F-Score {fundamental_score}/9）"
+        else:
+            why = "深度價值（具安全邊際）"
+        dd_txt = f"、自近期高點回落約 {abs(drawdown_from_high_pct):.0f}%" if drawdown_from_high_pct <= -8.0 else ""
+        today_note = (
+            f"⚡ 好股票大跌承接機會：{why}，但短線被市場恐慌錯殺至超跌（RSI {rsi14:.0f}{dd_txt}）。"
+            f"優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、"
+            f"留銀彈攤平，建議倉位 {dip_kelly:.1%}。務必嚴設停損於 {stop_loss}，若真跌破再停損出場。{candle_bonus}"
+        )
+    elif buy_strength == "不建議進場" and not is_ai_mainline:
         today_action = NO_BUY
         today_note = f"趨勢偏弱，今天不建議新倉進場。{candle_bonus}"
     elif bias == "偏空" and not is_strong_value and not is_ai_mainline:
@@ -1553,6 +1611,12 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "3017": "⚡ 資料中心基礎設施 DC Infra",
         "2382": "⚡ 資料中心基礎設施 DC Infra",
         "2317": "⚡ 資料中心基礎設施 DC Infra",
+        "2308": "⚡ 資料中心基礎設施 DC Infra",   # 台達電：AI 伺服器電源/散熱龍頭
+        "2376": "⚡ 資料中心基礎設施 DC Infra",   # 技嘉：AI 伺服器
+        "3231": "⚡ 資料中心基礎設施 DC Infra",   # 緯創：AI 伺服器
+        "6669": "⚡ 資料中心基礎設施 DC Infra",   # 緯穎：雲端 AI 伺服器
+        "2454": "🎮 計算核心 Compute Core",       # 聯發科：AI ASIC / 邊緣運算
+        "3661": "💡 IP & 軟體 IP & Software",      # 世芯-KY：AI ASIC 設計
         "ARM": "💡 IP & 軟體 IP & Software",
         "SNPS": "💡 IP & 軟體 IP & Software",
         "CDNS": "💡 IP & 軟體 IP & Software",
@@ -1561,7 +1625,7 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "RKLB": "🚀 太空 / 衛星 Space & Satellite",
         "LMT": "🚀 太空 / 衛星 Space & Satellite",
     }
-    
+
     # 4 Bottlenecks mapping
     bottlenecks = {
         "NVDA": "CoWoS 封裝 🔥",
@@ -2004,6 +2068,9 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         fundamental_score=fundamental_score,
         valuation_gap_pct=valuation_gap_pct,
         ai_chain_layer=ai_chain_layer,
+        ma120=ma120,
+        long_term_blocked=bool(long_term_risk and long_term_risk.get("blocked")),
+        drawdown_from_high_pct=((latest_close / resistance60) - 1) * 100 if resistance60 > 0 else 0.0,
     )
 
     # Re-use pre-fetched Investing.com data from early scan
