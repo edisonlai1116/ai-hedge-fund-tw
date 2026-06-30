@@ -1238,6 +1238,7 @@ def evaluate_long_term_risk(
     ma_long: float | None = None,
     fundamental_score: int | None = None,
     bias: str | None = None,
+    valuation_gap_pct: float | None = None,
 ) -> dict:
     """判斷長線是否「真的」會虧損 → blocked=True 才不建議買進。
 
@@ -1288,6 +1289,15 @@ def evaluate_long_term_risk(
     # 目標價造成的雜訊，不應觸發「長線需謹慎」與「中長線偏多」的結論互相矛盾。
     midterm_ok = exp6 is not None and exp6 >= 3.0
 
+    # 2026-06-30：修正「12 個月預測為正、估值大幅折價，卻被短期/小樣本的負向波段回測硬否決」的矛盾
+    #   （例：CRWV CoreWeave，新上市高波動，11 筆波段回測累積 -36%，但 12 個月統計預測 +6.3%、
+    #    InvestingPro 估值折價 +26%，卻被判「長線恐虧損 不建議買進」——結論與自身數據自相矛盾）。
+    # 規則：12 個月前瞻期望為正 或 顯著被低估(估值折價≥15%) → 不以「僅靠回測歷史」的證據硬否決，
+    #   改為謹慎提示。仍由買進端的結構/品質閘門決定是否真的給買訊，不會強迫接刀。
+    forward_positive_12m = exp12 is not None and exp12 >= 0
+    materially_undervalued = valuation_gap_pct is not None and valuation_gap_pct >= 15.0
+    rescue_from_history_only_block = forward_positive_12m or materially_undervalued
+
     if protected:
         # 品質/多頭結構股：不硬否決。只有「連中期(6個月)都走弱」才提示審慎；6 個月仍偏多則不警示，
         # 避免與下方「中長線偏多·可分批布局」的結論打架。
@@ -1312,11 +1322,25 @@ def evaluate_long_term_risk(
             severity = "high"
             reasons.append(f"12 個月統計預測達 {exp12:.1f}%、且已跌破長期均線轉空，長線期望值明顯為負。")
         elif hist_negative and hist_weak and bearish_structure:
-            blocked = True
-            severity = "medium"
-            reasons.append(
-                f"個股波段歷史累積 {hist_cum:.1f}%、勝率僅 {hist_win:.0f}%，且趨勢轉弱，長抱賺錢機率偏低。"
-            )
+            if rescue_from_history_only_block:
+                # 回測歷史偏弱，但前瞻期望為正或估值大幅折價 → 視為短線逆風、不硬否決。
+                severity = "medium"
+                why_bits = []
+                if forward_positive_12m:
+                    why_bits.append(f"12 個月統計預測為正 ({exp12:.1f}%)")
+                if materially_undervalued:
+                    why_bits.append(f"估值仍折價 {valuation_gap_pct:.0f}%")
+                reasons.append(
+                    f"個股波段歷史回測偏弱（累積 {hist_cum:.1f}%、勝率 {hist_win:.0f}%），"
+                    f"但{ '、'.join(why_bits) }；多為新上市/高波動的小樣本回測，不硬性否決，"
+                    f"宜分批小量、嚴設停損承接，不宜重押。"
+                )
+            else:
+                blocked = True
+                severity = "medium"
+                reasons.append(
+                    f"個股波段歷史累積 {hist_cum:.1f}%、勝率僅 {hist_win:.0f}%，且趨勢轉弱，長抱賺錢機率偏低。"
+                )
         elif forecast_negative and not midterm_ok:
             severity = "medium"
             reasons.append(f"12 個月預測小幅為負 ({exp12:.1f}%)，僅供觀望、不宜重押。")
@@ -2034,6 +2058,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             price_forecast or None, timeline_bt,
             latest_close=latest_close, ma_long=ma120,
             fundamental_score=fundamental_score, bias=bias,
+            valuation_gap_pct=valuation_gap_pct,
         )
         if long_term_risk.get("blocked"):
             buy_strength = "不建議進場"
