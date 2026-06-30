@@ -6,6 +6,13 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8766", "--directory", "docs"],
       "port": 8766
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8770", "--directory", "app/frontend/dist"],
+      "port": 8770,
+      "autoPort": false
     }
   ]
 }

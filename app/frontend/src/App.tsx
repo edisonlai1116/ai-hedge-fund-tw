@@ -681,6 +681,7 @@ function SignalInsight({ result, lists }: { result: DetailResult | null; lists?:
   return (
     <div className="space-y-5">
       <StockOverviewCard result={result} />
+      {result.investingpro_fair_value != null ? <ValuationCard result={result} /> : null}
       {result.long_term_risk ? <LongTermRiskBanner risk={result.long_term_risk} /> : null}
       {result.chip ? <ChipFlowCard chip={result.chip} /> : null}
       {result.events && (result.events.catalysts.length > 0 || result.events.risks.length > 0)
@@ -922,6 +923,109 @@ function LongTermRiskBanner({ risk }: { risk: LongTermRisk }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function valuationGapTone(gap: number): string {
+  if (gap >= 5) return 'text-emerald-700';
+  if (gap <= -5) return 'text-rose-700';
+  return 'text-slate-600';
+}
+
+function valuationGapBg(gap: number): string {
+  if (gap >= 5) return 'border-emerald-200 bg-emerald-50';
+  if (gap <= -5) return 'border-rose-200 bg-rose-50';
+  return 'border-slate-200 bg-slate-50';
+}
+
+type ValuationModel = { name: string; valuation: number; type: string };
+
+function ValuationCard({ result }: { result: DetailResult }) {
+  const fair = result.investingpro_fair_value;
+  if (fair == null) return null;
+  const gap = result.valuation_gap_pct ?? 0;
+  const close = result.latest_close;
+  const target = result.analyst_target_price;
+  const momentum = result.warren_ai_momentum;
+  const models = (result.investingpro_models ?? []) as ValuationModel[];
+  const undervalued = gap >= 0;
+  const verdict =
+    gap >= 15 ? '顯著被低估' : gap >= 5 ? '略為低估' : gap <= -15 ? '顯著高估' : gap <= -5 ? '略為高估' : '估值合理';
+
+  return (
+    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Gauge className="h-4 w-4" />
+          InvestingPro 估值（12 模型綜合）
+        </CardTitle>
+        <CardDescription>
+          綜合 DCF、本益比、P/B、EV/EBITDA、葛拉漢防守價等 12 種估值模型，估算合理價值與目前折溢價。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className={`rounded-md border p-3 ${valuationGapBg(gap)}`}>
+          <div className="flex items-center justify-between">
+            <span className={`text-sm font-semibold ${valuationGapTone(gap)}`}>{verdict}</span>
+            <span className={`text-lg font-bold ${valuationGapTone(gap)}`}>
+              {undervalued ? '折價' : '溢價'} {Math.abs(gap).toFixed(1)}%
+            </span>
+          </div>
+          <div className="mt-1 text-xs leading-5 text-slate-600">
+            合理價值約 <span className="font-semibold text-slate-900">{fair.toFixed(2)}</span>，目前股價 {close.toFixed(2)}
+            {undervalued ? '，低於合理價值、具安全邊際。' : '，高於合理價值、留意追高風險。'}
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="text-xs text-slate-500">合理價值（12 模型均值）</div>
+            <div className="text-lg font-semibold text-slate-900">{fair.toFixed(2)}</div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="text-xs text-slate-500">分析師共識目標價</div>
+            <div className="text-lg font-semibold text-slate-900">{target != null ? target.toFixed(2) : '—'}</div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="text-xs text-slate-500">Warren AI 技術動能</div>
+            <div className={`text-sm font-semibold ${stanceTone(momentum ?? '')}`}>{momentum ?? '—'}</div>
+          </div>
+        </div>
+        {models.length > 0 ? (
+          <div>
+            <div className="mb-2 text-xs font-medium text-slate-500">12 種估值模型細項（相對現價折溢價）</div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {models.map((m, i) => {
+                const mGap = close > 0 && m.valuation > 0 ? (m.valuation / close - 1) * 100 : null;
+                return (
+                  <div
+                    key={`${m.name}-${i}`}
+                    className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-2.5 py-1.5"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-medium text-slate-700">{m.name}</div>
+                      <div className="text-[10px] text-slate-400">{m.type}</div>
+                    </div>
+                    <div className="ml-2 shrink-0 text-right">
+                      <div className="text-xs font-semibold text-slate-900">{m.valuation > 0 ? m.valuation.toFixed(2) : '—'}</div>
+                      {mGap != null ? (
+                        <div className={`text-[10px] font-medium ${mGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {mGap >= 0 ? '+' : ''}
+                          {mGap.toFixed(0)}%
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+        <p className="text-xs leading-5 text-slate-400">
+          估值為模型推估（多數標的由 yfinance 財務數據動態計算 12 模型均值），非 InvestingPro 官方數據，僅供參考；
+          折價不代表短期會漲，請搭配趨勢、買賣點與長線風險一併判斷。
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
