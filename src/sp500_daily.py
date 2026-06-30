@@ -1444,6 +1444,23 @@ def enrich_candidate(
             value_boost -= 12
             value_notes.append(f"短線已高(RSI: {rsi:.1f})")
 
+        # 7. InvestingPro 12 模型估值折價（穩健平均）：低估補漲模式的核心排名因子。
+        # 被低估越多、加分越高，讓「被低估最多 %」的好股排到前面；溢價則扣分避免追貴。
+        inv_gap = enriched_report.valuation_gap_pct
+        if inv_gap is not None:
+            if inv_gap >= 25:
+                value_boost += 22
+                value_notes.append(f"InvestingPro 估值大幅折價 {inv_gap:.0f}%")
+            elif inv_gap >= 15:
+                value_boost += 15
+                value_notes.append(f"InvestingPro 估值折價 {inv_gap:.0f}%")
+            elif inv_gap >= 8:
+                value_boost += 8
+                value_notes.append(f"InvestingPro 估值折價 {inv_gap:.0f}%")
+            elif inv_gap <= -10:
+                value_boost -= 12
+                value_notes.append(f"InvestingPro 估值溢價 {abs(inv_gap):.0f}%（偏貴）")
+
     if scan_type == "lagging_value":
         # 低估補漲：基本面/估值仍是主角(0.32，保留價值個性)，但加入相對強度確認「真的開始補漲」、
         # 並加入未來半年上漲空間，讓選出的是「被低估且看好會補漲」而非單純便宜卻沒戲的價值陷阱。
@@ -1927,8 +1944,26 @@ def get_sp500_daily_top_picks(
             return -3
         return 0
 
-    if scan_type in ("lagging_value", "explosive_growth"):
-        # 低估補漲 / 早期飆股雷達：純以 daily_score 排序（早期布局不該被「今天能否進場」綁住）。
+    if scan_type == "lagging_value":
+        # 低估補漲：以 InvestingPro 12 模型穩健估值「折價 %」為主排序鍵 —— 直接呈現「被低估最多」的排名；
+        # daily_score(已含基本面/相對強度/上漲空間，並已過濾價值陷阱) 為次要鍵，確保被低估又有補漲動能者居前。
+        # 無估值資料者(折價視為 -999) 沉到名單後段，不會擠掉真正被低估的好股。
+        def _gap_key(item: SP500DailyPick) -> float:
+            g = item.valuation_gap_pct
+            return g if g is not None else -999.0
+        picks.sort(
+            key=lambda item: (
+                _gap_key(item),
+                item.daily_score,
+                item.backtest_score,
+                item.technical_score,
+                item.fundamental_score,
+            ),
+            reverse=True,
+        )
+        ordered_picks = picks
+    elif scan_type == "explosive_growth":
+        # 早期飆股雷達：純以 daily_score 排序（早期布局不該被「今天能否進場」綁住）。
         picks.sort(
             key=lambda item: (
                 item.daily_score,

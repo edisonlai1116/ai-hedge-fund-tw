@@ -1247,6 +1247,16 @@ function SignalList({
                       🎯尼可拉斯楊
                     </span>
                   ) : null}
+                  {item.valuation_gap_pct != null ? (
+                    <span
+                      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                        item.valuation_gap_pct >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                      }`}
+                      title="InvestingPro 12 模型穩健估值相對現價的折溢價"
+                    >
+                      {item.valuation_gap_pct >= 0 ? '折價' : '溢價'} {Math.abs(item.valuation_gap_pct).toFixed(0)}%
+                    </span>
+                  ) : null}
                 </div>
                 <div className="text-xs text-slate-500">{'company_name' in item ? item.company_name : finalVerdict(item)}</div>
                 {op ? <div className="mt-0.5 text-[11px] leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
