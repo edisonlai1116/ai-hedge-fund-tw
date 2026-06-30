@@ -55,71 +55,10 @@ class InvestingScraper:
         
         safe_print(f"[Investing Scraper] Loading Investing.com data for: {full_symbol} (fundamentals={fetch_fundamentals})")
         
-        # --- Specific Hardcoded Mocks for high accuracy of User's core stocks ---
-        if sym == "MU":
-            return {
-                "fair_value": 158.50,
-                "valuation_gap_pct": 22.50,
-                "analyst_target": 162.50,  # Or Timothy Arcuri target $1625 modeled against Apple/Nvidia
-                "warren_ai_momentum": "強力買進 (Strong Buy)",
-                "models_breakdown": [
-                    {"name": "5年期 DCF 營收成長模型", "valuation": 168.20, "type": "現金流折現"},
-                    {"name": "10年期 DCF 自由現金流模型", "valuation": 174.50, "type": "現金流折現"},
-                    {"name": "本益比倍數估值法 (P/E Multiple)", "valuation": 155.00, "type": "乘數模型"},
-                    {"name": "股價淨值比倍數法 (P/B Multiple)", "valuation": 142.10, "type": "乘數模型"},
-                    {"name": "EV/EBITDA 企業價值倍數", "valuation": 160.80, "type": "乘數模型"},
-                    {"name": "葛拉漢防守型估值 (Graham Number)", "valuation": 128.50, "type": "防禦價值"},
-                    {"name": "盈餘實力估值法 (Earnings Power)", "valuation": 182.00, "type": "財務底層"},
-                    {"name": "ROE 股利增長折現模型", "valuation": 149.30, "type": "財務底層"},
-                    {"name": "股價營收比乘數法 (P/S Multiple)", "valuation": 150.20, "type": "乘數模型"},
-                    {"name": "股利折現模型 (DDM)", "valuation": 138.60, "type": "現金流折現"},
-                    {"name": "PEG 成長乘數估值法", "valuation": 195.40, "type": "乘數模型"},
-                    {"name": "淨值增長折現模型", "valuation": 153.20, "type": "財務底層"}
-                ]
-            }
-        elif sym == "2451":
-            return {
-                "fair_value": 125.00,
-                "valuation_gap_pct": 31.60,
-                "analyst_target": 135.00,
-                "warren_ai_momentum": "強力買進 (Strong Buy)",
-                "models_breakdown": [
-                    {"name": "5年期 DCF 營收成長模型", "valuation": 128.00, "type": "現金流折現"},
-                    {"name": "10年期 DCF 自由現金流模型", "valuation": 133.50, "type": "現金流折現"},
-                    {"name": "本益比倍數估值法 (P/E Multiple)", "valuation": 118.00, "type": "乘數模型"},
-                    {"name": "股價淨值比倍數法 (P/B Multiple)", "valuation": 112.50, "type": "乘數模型"},
-                    {"name": "EV/EBITDA 企業價值倍數", "valuation": 120.00, "type": "乘數模型"},
-                    {"name": "葛拉漢防守型估值 (Graham Number)", "valuation": 105.80, "type": "防禦價值"},
-                    {"name": "盈餘實力估值法 (Earnings Power)", "valuation": 140.00, "type": "財務底層"},
-                    {"name": "ROE 股利增長折現模型", "valuation": 115.00, "type": "財務底層"},
-                    {"name": "股價營收比乘數法 (P/S Multiple)", "valuation": 122.00, "type": "乘數模型"},
-                    {"name": "股利折現模型 (DDM)", "valuation": 129.20, "type": "現金流折現"},
-                    {"name": "PEG 成長乘數估值法", "valuation": 145.00, "type": "乘數模型"},
-                    {"name": "淨值增長折現模型", "valuation": 116.50, "type": "財務底層"}
-                ]
-            }
-        elif sym == "ADBE":
-            return {
-                "fair_value": 412.50,
-                "valuation_gap_pct": -12.40,
-                "analyst_target": 510.00,
-                "warren_ai_momentum": "中性 (Neutral)",
-                "models_breakdown": [
-                    {"name": "5年期 DCF 營收成長模型", "valuation": 415.00, "type": "現金流折現"},
-                    {"name": "10年期 DCF 自由現金流模型", "valuation": 405.00, "type": "現金流折現"},
-                    {"name": "本益比倍數估值法 (P/E Multiple)", "valuation": 395.00, "type": "乘數模型"},
-                    {"name": "股價淨值比倍數法 (P/B Multiple)", "valuation": 372.00, "type": "乘數模型"},
-                    {"name": "EV/EBITDA 企業價值倍數", "valuation": 420.00, "type": "乘數模型"},
-                    {"name": "葛拉漢防守型估值 (Graham Number)", "valuation": 310.50, "type": "防禦價值"},
-                    {"name": "盈餘實力估值法 (Earnings Power)", "valuation": 450.00, "type": "財務底層"},
-                    {"name": "ROE 股利增長折現模型", "valuation": 435.00, "type": "財務底層"},
-                    {"name": "股價營收比乘數法 (P/S Multiple)", "valuation": 418.00, "type": "乘數模型"},
-                    {"name": "股利折現模型 (DDM)", "valuation": 0.00, "type": "不適用"},
-                    {"name": "PEG 成長乘數估值法", "valuation": 460.00, "type": "乘數模型"},
-                    {"name": "淨值增長折現模型", "valuation": 380.00, "type": "財務底層"}
-                ]
-            }
-            
+        # 註：先前對 MU / 2451 / ADBE 寫死的估值已移除 —— 那是固定數字，不隨股價更新，
+        # 會造成「合理價值 158.50 vs 現價 1147、卻仍標折價 22.5%」這種與所有模型互相矛盾的錯誤。
+        # 一律改走下方動態 12 模型計算，折溢價永遠以「當前股價」推算，並取穩健平均。
+
         # If not fetching fundamentals, do a fast in-memory close-anchored model breakdown
         if not fetch_fundamentals:
             close = close_price or 100.0
