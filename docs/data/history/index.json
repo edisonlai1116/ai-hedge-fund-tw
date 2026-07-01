@@ -169,5 +169,14 @@
     "top_score": 82,
     "strong_buy": 8,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-02",
+    "generated_at": "2026-07-02T07:51:49+08:00",
+    "macro_score": 25,
+    "top_ticker": "MAAS",
+    "top_score": 74,
+    "strong_buy": 4,
+    "pick_count": 50
   }
 ]
