@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:F3HWmp3Qk5g",
+  "last_episode_id": "yt:ttOMo85Hhq4",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "台股上看五萬五！",
-    "published": "2026-07-01T02:35:13+00:00",
-    "url": "https://www.youtube.com/watch?v=F3HWmp3Qk5g",
-    "id": "yt:F3HWmp3Qk5g",
-    "checked_at": "2026-07-02T19:31:07+08:00"
+    "title": "扎克伯格砸盤，原來你們都是想騙我！",
+    "published": "2026-07-02T11:47:26+00:00",
+    "url": "https://www.youtube.com/watch?v=ttOMo85Hhq4",
+    "id": "yt:ttOMo85Hhq4",
+    "checked_at": "2026-07-03T07:34:08+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
