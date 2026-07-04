@@ -196,5 +196,14 @@
     "top_score": 71,
     "strong_buy": 5,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-05",
+    "generated_at": "2026-07-05T07:30:41+08:00",
+    "macro_score": 28,
+    "top_ticker": "GKOS",
+    "top_score": 72,
+    "strong_buy": 5,
+    "pick_count": 50
   }
 ]
