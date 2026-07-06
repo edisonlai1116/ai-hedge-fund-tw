@@ -162,6 +162,26 @@ def system_status():
     except Exception as e:
         logger.info(f"/status 讀尼可拉斯楊集數失敗：{e}")
 
+    # 4) 程式更新時間（右上角顯示）：Docker 建置時寫入 build_info.json（建置＝部署時間）；
+    #    本機開發 fallback 用核心原始碼的最後修改時間。另附 Render 的 git commit 短碼。
+    out["code"] = {"updated_at": None, "commit": (os.environ.get("RENDER_GIT_COMMIT") or "")[:7] or None}
+    try:
+        import json
+        root = os.path.abspath(os.path.join(_DOCS, ".."))
+        info_path = os.path.join(root, "build_info.json")
+        if os.path.exists(info_path):
+            with open(info_path, encoding="utf-8") as f:
+                out["code"]["updated_at"] = (json.load(f) or {}).get("built_at")
+        else:
+            src_dir = os.path.join(root, "src")
+            mtimes = []
+            for base, _dirs, files in os.walk(src_dir):
+                mtimes.extend(os.path.getmtime(os.path.join(base, fn)) for fn in files if fn.endswith(".py"))
+            if mtimes:
+                out["code"]["updated_at"] = datetime.fromtimestamp(max(mtimes), tz).isoformat(timespec="seconds")
+    except Exception as e:
+        logger.info(f"/status 讀程式更新時間失敗：{e}")
+
     return out
 
 

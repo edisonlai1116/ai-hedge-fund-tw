@@ -1547,6 +1547,31 @@ def derive_today_plan(
             f"優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、"
             f"留銀彈攤平，建議倉位 {dip_kelly:.1%}。務必嚴設停損於 {stop_loss}，若真跌破再停損出場。{candle_bonus}"
         )
+    elif (
+        not long_term_blocked
+        and drawdown_from_high_pct <= -30.0
+        and rsi14 < 40.0
+        and valuation_gap_pct is not None
+        and valuation_gap_pct >= 10.0
+    ):
+        # === 深度超跌反轉（2026-07-06 回放檢討新增）===
+        # CRWV 案例：自高點 -41%、RSI 34、低估 15%、12 個月統計預測 +27%，但 F-Score 差 1 分、
+        # 年線之下，所有「好股」定義都差一點點 → 被「偏空不建議進場」擋掉，隨後 +6%。
+        # 深跌 + 明確低估 + 未觸長線虧損閘門 = 不對稱賭注，允許「最小倉位」參與反轉。
+        today_action = BUY_SMALL
+        entry_zone = format_range(
+            max(latest_close * 0.97, latest_close - 0.6 * atr14),
+            min(latest_close * 1.005, latest_close + 0.1 * atr14),
+        )
+        entry_mid = range_mid(entry_zone)
+        expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
+        risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
+        reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        today_note = (
+            f"🎲 深度超跌＋低估的反轉機會：自近期高點已回落 {abs(drawdown_from_high_pct):.0f}%、RSI {rsi14:.0f} 超賣，"
+            f"且估值折價 {valuation_gap_pct:.0f}%、未觸發長線虧損閘門。這類標的波動極大，"
+            f"僅適合「最小倉位」（總資金 3~5%）試單參與反轉，務必嚴設停損 {stop_loss}，跌破就走、不攤平。{candle_bonus}"
+        )
     elif buy_strength == "不建議進場" and not is_ai_mainline:
         today_action = NO_BUY
         today_note = f"趨勢偏弱，今天不建議新倉進場。{candle_bonus}"
@@ -1576,6 +1601,31 @@ def derive_today_plan(
         expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
         risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
         reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+    elif (
+        bias != "偏空"
+        and drawdown_from_high_pct >= -3.0
+        and buy_strength in ("強力買進", "可分批買進")
+    ):
+        # === 強勢突破可小量參與（2026-07-06 回放檢討新增）===
+        # 7/2 回放：TENB +9.2%、6409 +8.9%、VRNS +6.3%、MRNA、HIMS、HOOD…15 檔
+        # 「偏多＋貼近 60 日高點＋強度強力買進」的突破股全被判「等回檔」而錯過。
+        # 賣出端已修（強勢股不賣在突破點），買進端同理：突破日本身就是進場訊號，
+        # 用「小倉位＋明確停損」參與，而不是等一個常常等不到的回檔。
+        today_action = BUY_SMALL
+        breakout_kelly = max(min(kelly_position_pct, 0.10), 0.03)  # 追突破倉位收斂：3%~10%
+        entry_zone = format_range(
+            max(latest_close * 0.99, latest_close - 0.35 * atr14),
+            min(latest_close * 1.005, latest_close + 0.1 * atr14),
+        )
+        entry_mid = range_mid(entry_zone)
+        expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
+        risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
+        reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        today_note = (
+            f"🚀 強勢突破可小量參與：股價貼近 60 日高點、綜合強度「{buy_strength}」，突破本身就是進場訊號——"
+            f"與其等常常等不到的回檔，不如小倉位（約 {breakout_kelly:.0%}，比一般買點更小）順勢參與，"
+            f"停損設突破失敗處（跌回 20 日均線或 {stop_loss}），跌破就走。{candle_bonus}"
+        )
     elif quality_name and bias != "偏空" and drawdown_from_high_pct <= -3.0 and rsi14 < 63:
         # 2026-07-06 檢討修正：好股（基本面強/站穩年線/AI主線/深度價值）已自近期高點回落 3% 以上，
         # 「這就是回檔」——強勢股很少跌回機械式理想買區，一直等回檔會錯過整段行情
@@ -1674,6 +1724,8 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "LRCX": "🏭 半導體製造 Foundry & Equipment",
         "KLAC": "🏭 半導體製造 Foundry & Equipment",
         "VRT": "⚡ 資料中心基礎設施 DC Infra",
+        "CRWV": "⚡ 資料中心基礎設施 DC Infra",  # CoreWeave：AI 算力雲（GPU 租賃），2026-07-06 回放檢討補上
+        "NBIS": "⚡ 資料中心基礎設施 DC Infra",  # Nebius：AI 算力雲
         "DELL": "⚡ 資料中心基礎設施 DC Infra",
         "GE": "⚡ 資料中心基礎設施 DC Infra",
         "VST": "⚡ 資料中心基礎設施 DC Infra",

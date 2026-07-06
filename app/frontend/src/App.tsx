@@ -598,9 +598,18 @@ function SystemStatusBadge() {
 
   const ep = status?.gooaye.episode_title;
   const label = err ? '狀態取得失敗' : ep ? `股癌 ${ep}` : '載入中…';
+  const codeAt = fmtStamp(status?.code?.updated_at);
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-2">
+      {codeAt !== '—' ? (
+        <span
+          className="hidden whitespace-nowrap text-[11px] text-slate-400 md:inline"
+          title="後端程式最後更新（部署/建置）時間"
+        >
+          程式更新：{codeAt}
+        </span>
+      ) : null}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -624,6 +633,9 @@ function SystemStatusBadge() {
             <div className="text-slate-500">載入中…</div>
           ) : (
             <div className="space-y-2">
+              <StatusRow label="程式更新時間" value={fmtStamp(status.code?.updated_at)} strong />
+              {status.code?.commit ? <StatusRow label="程式版本 (commit)" value={status.code.commit} /> : null}
+              <div className="my-1 border-t border-slate-100" />
               <StatusRow label="股癌最新集數" value={status.gooaye.episode_title ?? '—'} strong />
               <StatusRow label="集數發布時間" value={fmtStamp(status.gooaye.published_date)} />
               <StatusRow

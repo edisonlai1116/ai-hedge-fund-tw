@@ -36,6 +36,9 @@ COPY docs/ /app/docs/
 # 前端 build 產物（web_app 會從 app/frontend/dist 服務）
 COPY --from=frontend /fe/dist /app/app/frontend/dist
 
+# 程式建置時間（右上角「程式更新時間」顯示用；此層在 COPY 原始碼之後，程式一變就會重建）
+RUN python -c "import json,datetime; tz=datetime.timezone(datetime.timedelta(hours=8)); json.dump({'built_at': datetime.datetime.now(tz).isoformat(timespec='seconds')}, open('/app/build_info.json','w'))"
+
 EXPOSE 8000
 # Render 會提供 $PORT；本機預設 8000
 CMD ["sh", "-c", "uvicorn app.backend.web_app:app --host 0.0.0.0 --port ${PORT:-8000}"]

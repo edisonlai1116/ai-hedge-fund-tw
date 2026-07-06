@@ -1113,6 +1113,8 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "LRCX": "🏭 半導體製造 Foundry & Equipment",
         "KLAC": "🏭 半導體製造 Foundry & Equipment",
         "VRT": "⚡ 資料中心基礎設施 DC Infra",
+        "CRWV": "⚡ 資料中心基礎設施 DC Infra",  # CoreWeave：AI 算力雲（GPU 租賃），2026-07-06 回放檢討補上
+        "NBIS": "⚡ 資料中心基礎設施 DC Infra",  # Nebius：AI 算力雲
         "DELL": "⚡ 資料中心基礎設施 DC Infra",
         "GE": "⚡ 資料中心基礎設施 DC Infra",
         "VST": "⚡ 資料中心基礎設施 DC Infra",

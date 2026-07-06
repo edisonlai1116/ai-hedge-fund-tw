@@ -463,6 +463,10 @@ export type SystemStatus = {
     last_checked: string | null;
     opinion_count: number | null;
   };
+  code?: {
+    updated_at: string | null;
+    commit: string | null;
+  };
 };
 
 export async function fetchSystemStatus(): Promise<SystemStatus> {
