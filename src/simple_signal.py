@@ -96,6 +96,7 @@ class SignalReport:
     price_forecast: dict | None = None
     long_term_risk: dict | None = None
     ma120: float = 0.0  # 長線生命線（波段策略的長線出場依據）
+    drawdown_from_high_pct: float = 0.0  # 距 60 日高點回落 %（0 = 貼近新高；持股健檢判斷強勢突破用）
 
 
 
@@ -1047,7 +1048,17 @@ def build_price_forecast(
     if len(window) < 20:
         return {}
 
-    mu_daily = float(window.mean())
+    # 2026-07-06 檢討修正：漂移改「多視窗混合」。舊制單一 378 日等權平均會讓一年多前的
+    # 崩跌長期污染預測——例：6409 已 V 型反轉且創 60 日新高，半年期望報酬仍算出 -6%，
+    # 在突破日觸發持股健檢的賣出閘門（1000 元被叫賣、7 個交易日後 1290）。
+    # 近期動能的預測力已在 Top50 因子研究驗證（20 日動能與未來報酬 Spearman +0.31~0.41），
+    # 故近 63 日權重最高、126 日次之、378 日只留基底；波動度仍用長窗（估計較穩定）。
+    w63 = log_ret.tail(63)
+    w126 = log_ret.tail(126)
+    if len(w63) >= 20 and len(w126) >= 40:
+        mu_daily = 0.45 * float(w63.mean()) + 0.35 * float(w126.mean()) + 0.20 * float(window.mean())
+    else:
+        mu_daily = float(window.mean())
     sigma_daily = float(window.std())
 
     # 年化漂移設上下限，避免將短期強勢線性外推成不合理的預測。
@@ -1439,6 +1450,7 @@ def derive_today_plan(
     ma120: float = 0.0,
     long_term_blocked: bool = False,
     drawdown_from_high_pct: float = 0.0,
+    ma20: float = 0.0,
 ) -> tuple[str, str, str, str, str, str, float, float, int, str, float]:
     buy_low, buy_high = parse_range(buy_zone)
     sell_low, sell_high = parse_range(sell_zone)
@@ -1475,7 +1487,9 @@ def derive_today_plan(
         or is_ai_mainline
         or is_strong_value
     )
-    panic_oversold = (rsi14 < 45.0) or (drawdown_from_high_pct <= -12.0)
+    # 2026-07-06 檢討修正：回落門檻 -12% → -8%。一般市場恐慌日好股多回落 3~8%，
+    # 舊門檻讓「大跌抄底」幾乎永遠不觸發（上週五大跌被判不要買、下週一即大漲）。
+    panic_oversold = (rsi14 < 45.0) or (drawdown_from_high_pct <= -8.0)
     is_quality_dip = (
         not long_term_blocked
         and quality_name
@@ -1562,16 +1576,42 @@ def derive_today_plan(
         expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
         risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
         reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+    elif quality_name and bias != "偏空" and drawdown_from_high_pct <= -3.0 and rsi14 < 63:
+        # 2026-07-06 檢討修正：好股（基本面強/站穩年線/AI主線/深度價值）已自近期高點回落 3% 以上，
+        # 「這就是回檔」——強勢股很少跌回機械式理想買區，一直等回檔會錯過整段行情
+        # （上週五市場大跌時被判「等回檔/不要買」，下週一即大漲的教訓）。
+        today_action = BUY_SMALL
+        dip_kelly = max(kelly_position_pct, 0.05)
+        entry_zone = format_range(
+            max(latest_close * 0.985, latest_close - 0.5 * atr14),
+            min(latest_close * 1.005, latest_close + 0.1 * atr14),
+        )
+        entry_mid = range_mid(entry_zone)
+        expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
+        risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
+        reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        today_note = (
+            f"📉 好股回檔即機會：已自近期高點回落約 {abs(drawdown_from_high_pct):.0f}%、RSI {rsi14:.0f} 未過熱。"
+            f"與其等更深的理想買點（強勢股常常等不到），不如現價附近先小量分批承接、留銀彈，"
+            f"建議倉位 {dip_kelly:.1%}，跌破停損 {stop_loss} 再退場。{candle_bonus}"
+        )
     else:
         today_action = WAIT_PULLBACK
         today_note = f"目前離理想買點有點遠，更適合等回檔再接。{candle_bonus}"
 
     sell_mid = (sell_low + sell_high) / 2
+    # 2026-07-06 檢討修正：強勢突破（偏多且貼近 60 日高點）時，高 RSI 是「動能強」的表現而非賣點。
+    # 6409 在 1000 元創 60 日新高當天被判「可小量賣」，其後 7 個交易日再漲 +29%——
+    # 強勢股的賣出紀律改用移動停利（收盤跌破 20 日均線再處理），不賣在突破點。
+    strong_breakout = bias == "偏多" and drawdown_from_high_pct >= -2.0
     if bias == "偏空" and latest_close < ma50:
         exit_action = SELL_NOW
         exit_zone = format_range(max(latest_close * 0.997, latest_close - 0.2 * atr14), max(latest_close * 1.006, latest_close))
+    elif rsi14 > 68 and not strong_breakout:
+        exit_action = SELL_SMALL
+        exit_zone = sell_zone
     else:
-        exit_action = SELL_SMALL if rsi14 > 68 else HOLD
+        exit_action = HOLD
         exit_zone = sell_zone
 
     exit_note = f"持股續抱中，目標賣點區設在 {sell_zone}。{candle_bonus}"
@@ -1579,6 +1619,12 @@ def derive_today_plan(
         exit_note = f"技術均線已跌破生命線，建議在現價附近 {exit_zone} 執行全額停損或紀律退場以保全資金。{candle_bonus}"
     elif exit_action == SELL_SMALL:
         exit_note = f"短線 RSI ({rsi14:.1f}) 已進入超買過熱區，建議在 {exit_zone} 分批掛單鎖定利潤。{candle_bonus}"
+    elif strong_breakout and rsi14 > 68:
+        trail_ref = f"（約 {ma20:.2f}）" if ma20 > 0 else ""
+        exit_note = (
+            f"🚀 強勢突破創高中：RSI {rsi14:.0f} 偏熱是動能強的表現，不是賣出訊號，不要賣在突破點。"
+            f"改用移動停利保護獲利——收盤跌破 20 日均線{trail_ref}再分批減碼；目標賣點區 {sell_zone} 僅供參考。{candle_bonus}"
+        )
 
     # Estimate wave holding period
     if bias == "偏多":
@@ -1800,6 +1846,9 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
     resistance = float(recent20["High"].max())
     support60 = float(recent60["Low"].min())
     resistance60 = float(recent60["High"].max())
+    # 收盤基準的 60 日高點：判斷「是否貼近新高（強勢突破）」用收盤對收盤，
+    # 避免盤中影線讓創收盤新高的股票被誤判為「已回落 5~7%」。
+    close_high60 = float(recent60["Close"].max())
 
     # Candlestick Pattern Detection
     candlestick_pattern = detect_candlestick(frame["Open"], frame["High"], frame["Low"], frame["Close"])
@@ -2012,12 +2061,19 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             value_notes.append(f"估值偏高(本益比 {forward_pe:.1f}倍)")
 
     # 6. Technical Pullback & Oversold Boost (+10, +5, -12)
+    # 2026-07-06 檢討修正：偏多趨勢且貼近 60 日高點的高 RSI 是「突破動能」，不再扣 12 分——
+    # 動能因子已驗證正向預測未來報酬（Spearman +0.31~0.41），把突破股扣成「先觀察」正是
+    # 之前 6409 在突破日被系統看衰的原因之一。
+    _dd60_pct = ((latest_close / close_high60) - 1) * 100 if close_high60 > 0 else 0.0
     if rsi14 < 42:
         value_boost += 10
         value_notes.append(f"技術超跌(RSI: {rsi14:.1f})")
     elif rsi14 <= 50:
         value_boost += 5
         value_notes.append(f"回檔整理中(RSI: {rsi14:.1f})")
+    elif rsi14 > 60 and trend_up and _dd60_pct >= -2.0:
+        value_boost += 3
+        value_notes.append(f"突破創高動能(RSI: {rsi14:.1f})")
     elif rsi14 > 60:
         value_boost -= 12
         value_notes.append(f"短線已高(RSI: {rsi14:.1f})")
@@ -2095,7 +2151,8 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         ai_chain_layer=ai_chain_layer,
         ma120=ma120,
         long_term_blocked=bool(long_term_risk and long_term_risk.get("blocked")),
-        drawdown_from_high_pct=((latest_close / resistance60) - 1) * 100 if resistance60 > 0 else 0.0,
+        drawdown_from_high_pct=((latest_close / close_high60) - 1) * 100 if close_high60 > 0 else 0.0,
+        ma20=ma20,
     )
 
     # Re-use pre-fetched Investing.com data from early scan
@@ -2185,6 +2242,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         price_forecast=price_forecast or None,
         long_term_risk=long_term_risk,
         ma120=round(ma120, 2),
+        drawdown_from_high_pct=round(((latest_close / close_high60) - 1) * 100, 2) if close_high60 > 0 else 0.0,
     )
 
     report.decision_assistance = generate_decision_assistance(report)

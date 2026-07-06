@@ -420,6 +420,29 @@ def _build_holding_verdict(
         return _exit(
             f"長線虧損閘門觸發（{ltr.get('note', '12 個月統計期望報酬偏負')}），長抱半年以上仍難轉正，建議全數出場。"
         )
+
+    # ---- 0.5) 強勢突破護欄（2026-07-06 檢討修正）----
+    # 偏多且貼近 60 日高點 = 持股最強的訊號。此時統計預測（半年期望報酬）多半仍被
+    # 更早的下跌歷史污染，不能拿舊帳當賣出理由——6409 在 1000 元創新高當天被判「獲利了結」，
+    # 7 個交易日後 1290（+29%）就是教訓。強勢股改用移動停利：收盤跌破 20 日均線再減碼。
+    dd60 = _to_float(getattr(report, "drawdown_from_high_pct", None))
+    ma20 = getattr(report, "ma20", 0.0) or 0.0
+    strong_breakout = bias == "偏多" and dd60 is not None and dd60 >= -2.0
+    if strong_breakout:
+        trail_ref = f"（約 {ma20:.2f} 元）" if ma20 > 0 else ""
+        if extreme_ob:
+            return (
+                "觀察減碼", "低", "20%",
+                f"股價貼近 60 日高點、動能強勁，但 RSI {rsi:.0f} 嚴重過熱——僅小幅減碼兩成鎖利，"
+                f"其餘部位改用移動停利續抱（收盤跌破 20 日均線{trail_ref}再減碼），不賣在突破點。",
+            )
+        return (
+            "強勢續抱", "低", "0%",
+            f"股價貼近 60 日高點、趨勢偏多（RSI {rsi:.0f}），突破創高是持股最強的訊號；"
+            f"統計預測若偏弱多為舊資料殘影，參考價值有限。改用移動停利保護——"
+            f"收盤跌破 20 日均線{trail_ref}或前波低點再處理，抱住強勢股讓獲利奔跑。",
+        )
+
     if exp6 is not None and (exp6 <= -5 or (exp6 < 0 and exp12 is not None and exp12 < 0)):
         if structurally_intact:
             return (
@@ -434,6 +457,14 @@ def _build_holding_verdict(
     # ---- 2) 半年上檔有限又短線過熱 → 分批鎖利 ----
     weak6 = exp6 is not None and exp6 < 4
     if extreme_ob:
+        # 2026-07-06 檢討修正：半年期望報酬仍高（≥15%）時不砍半倉——過熱只防急回、減碼三成即可，
+        # 別把「上檔仍大」的持股在動能最強時砍掉一半。
+        if exp6 is not None and exp6 >= 15:
+            return (
+                "觀察減碼", "中", "30%",
+                f"RSI {rsi:.0f} 嚴重超買、短線隨時可能急回，但未來半年統計期望報酬仍有 {exp6:.1f}%——"
+                f"僅減碼約三成防守，其餘部位續抱讓獲利奔跑，跌破 20 日均線再進一步減碼。",
+            )
         upside = f"、未來半年期望報酬僅 {exp6:.1f}% 上檔有限" if exp6 is not None else ""
         return (
             "分批減碼", "中", "50%",

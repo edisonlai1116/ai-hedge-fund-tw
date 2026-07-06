@@ -140,6 +140,34 @@ def rank_rows(rows: List[Dict]) -> List[Dict]:
     return sorted(rows, key=lambda r: r.get("buy_score", 0), reverse=True)
 
 
+def diversify_head(rows: List[Dict], head: int = 10, max_per_theme: int = 3) -> List[Dict]:
+    """頭部主題分散：前 head 名內同一 AI 鏈主題最多 max_per_theme 檔，超額者往後遞延。
+
+    2026-07-06 檢討：動能因子會讓單一主題（例：記憶體 MU/STX/2330…）在齊漲時霸榜，
+    齊跌時 Top10 同步重挫（2026-06-13 Top10 平均 -3.3% vs 台股大盤 +2.6%）。
+    分數只決定「誰入榜」，主題上限決定「頭部怎麼配」，降低單一主題回檔拖垮整體的風險。
+    """
+    try:
+        from src.simple_signal import map_ai_chain_and_bottleneck
+    except Exception:
+        return rows
+    head_list: List[Dict] = []
+    deferred: List[Dict] = []
+    rest: List[Dict] = []
+    counts: Dict[str, int] = {}
+    for r in rows:
+        if len(head_list) >= head:
+            rest.append(r)
+            continue
+        layer = map_ai_chain_and_bottleneck(str(r.get("ticker", "")), "")[0] or "（一般）"
+        if counts.get(layer, 0) >= max_per_theme:
+            deferred.append(r)
+            continue
+        counts[layer] = counts.get(layer, 0) + 1
+        head_list.append(r)
+    return head_list + deferred + rest
+
+
 def parse_holding_tickers(text: str) -> List[str]:
     """從持股檔文字解析代號（每行 `代號 成本 股數`），只回代號、不回成本。"""
     out = []
@@ -670,7 +698,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             mover=(key in mover_simple),
             tw_chip_table=tw_chip_table,
         ))
-    rows = rank_rows(rows)[:TOP_N]   # 台美股合併取前 50
+    rows = diversify_head(rank_rows(rows)[:TOP_N])   # 台美股合併取前 50，頭部做主題分散
 
     # 入選 Top 50 才跑完整分析（agents / 3-6-9-12 月預測 / 各天期買賣價），控制運算量。
     for r in rows:

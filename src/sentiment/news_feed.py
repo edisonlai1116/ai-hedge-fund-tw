@@ -35,15 +35,19 @@ _POSITIVE = {
     "反彈", "突破", "樂觀", "降息", "停火", "和談", "獲利", "超預期",
 }
 # 空頭 / 利空關鍵字。
+# 2026-07-06 檢討修正：移除「查詢主題本身」的字（tariff/war/conflict/關稅/戰爭/衝突）——
+# MACRO_QUERIES 刻意去搜這些主題，這些字必然出現在標題裡，把它們計為利空等於
+# 讓 macro 分數結構性偏空（實測大盤創高期間 macro 仍長期 30/100 偏空）。
+# 保留「升級惡化」類字（invasion/attack/crisis 等），那才是真正的市場利空。
 _NEGATIVE = {
     "plunge", "plunges", "crash", "crashes", "slump", "tumble", "tumbles", "fall",
     "falls", "drop", "drops", "loss", "losses", "miss", "misses", "downgrade",
     "downgraded", "bearish", "selloff", "sell-off", "recession", "fear", "fears",
     "weak", "weakness", "slowdown", "warning", "warns", "cut guidance", "layoff",
-    "layoffs", "sanction", "sanctions", "tariff", "tariffs", "war", "conflict",
+    "layoffs", "sanction", "sanctions",
     "invasion", "attack", "rate hike", "hikes rates", "default", "crisis",
     "下跌", "大跌", "崩", "暴跌", "重挫", "看空", "利空", "弱勢", "衰退", "恐慌",
-    "下修", "示警", "警告", "裁員", "制裁", "關稅", "戰爭", "衝突", "升息", "危機",
+    "下修", "示警", "警告", "裁員", "制裁", "升息", "危機",
 }
 
 
@@ -103,8 +107,27 @@ def _google_news_titles(query: str, limit: int = 20) -> List[str]:
         return []
 
 
+def _market_trend_score() -> int | None:
+    """大盤「實際走勢」分數（^GSPC 20 日動能 + 是否站上 MA50）。抓不到資料回 None。
+
+    2026-07-06 檢討新增：新聞關鍵字只反映媒體用詞，常與盤面脫節（大盤創高時 macro 仍偏空、
+    導致系統在回檔日勸阻抄底）。把市場自身趨勢納入錨定，讓 macro 反映真實多空。
+    """
+    try:
+        import yfinance as yf
+        closes = yf.Ticker("^GSPC").history(period="6mo")["Close"]
+        if len(closes) < 60:
+            return None
+        mom20_pct = (float(closes.iloc[-1]) / float(closes.iloc[-21]) - 1) * 100
+        ma50 = float(closes.rolling(50).mean().iloc[-1])
+        above_ma50 = float(closes.iloc[-1]) >= ma50
+        return _clamp(50 + mom20_pct * 4 + (8 if above_ma50 else -8))
+    except Exception:
+        return None
+
+
 def macro_sentiment() -> Dict:
-    """彙整總經 / 地緣政治新聞 → 市場級情緒（score 0–100）。失敗回中性。"""
+    """彙整總經 / 地緣政治新聞 + 大盤實際趨勢 → 市場級情緒（score 0–100）。失敗回中性。"""
     all_titles: List[str] = []
     per_query = []
     for q in MACRO_QUERIES:
@@ -113,6 +136,15 @@ def macro_sentiment() -> Dict:
         per_query.append({"query": q, "count": len(titles)})
 
     result = keyword_sentiment(all_titles)
+    # 以大盤實際趨勢錨定（55%），新聞關鍵字為輔（45%）：媒體天天有人喊崩盤，
+    # 但「市場現在實際怎麼走」才是可交易的訊號。
+    trend = _market_trend_score()
+    if trend is not None:
+        blended = _clamp(0.45 * result["score"] + 0.55 * trend)
+        result["keyword_score"] = result["score"]
+        result["trend_score"] = trend
+        result["score"] = blended
+        result["label"] = _label(blended)
     result["queries"] = per_query
     # 取最具代表性的幾則標題給前端顯示。
     result["sample_headlines"] = all_titles[:8]
