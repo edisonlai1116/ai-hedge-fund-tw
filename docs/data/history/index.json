@@ -214,5 +214,14 @@
     "top_score": 73,
     "strong_buy": 6,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-07",
+    "generated_at": "2026-07-07T07:36:52+08:00",
+    "macro_score": 66,
+    "top_ticker": "LMND",
+    "top_score": 76,
+    "strong_buy": 8,
+    "pick_count": 50
   }
 ]
