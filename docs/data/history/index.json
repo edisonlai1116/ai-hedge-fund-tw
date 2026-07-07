@@ -223,5 +223,14 @@
     "top_score": 76,
     "strong_buy": 10,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-08",
+    "generated_at": "2026-07-08T07:29:04+08:00",
+    "macro_score": 70,
+    "top_ticker": "AGIO",
+    "top_score": 77,
+    "strong_buy": 20,
+    "pick_count": 50
   }
 ]
