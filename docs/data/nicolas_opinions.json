@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:C2aLMT30OoQ",
+  "last_episode_id": "yt:mbwaDOBPYF4",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "跌了不要怕！Ai沒有泡沫！下半年繼續持有這些股票！",
-    "published": "2026-07-06T12:00:08+00:00",
-    "url": "https://www.youtube.com/watch?v=C2aLMT30OoQ",
-    "id": "yt:C2aLMT30OoQ",
-    "checked_at": "2026-07-10T19:47:16+08:00"
+    "title": "大跌不用怕！用我的方法可以選出跌出價值的股票！分批大膽抄底才能發財！",
+    "published": "2026-07-10T13:15:38+00:00",
+    "url": "https://www.youtube.com/watch?v=mbwaDOBPYF4",
+    "id": "yt:mbwaDOBPYF4",
+    "checked_at": "2026-07-11T07:26:32+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
