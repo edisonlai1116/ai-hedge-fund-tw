@@ -271,11 +271,11 @@
   },
   {
     "date": "2026-07-13",
-    "generated_at": "2026-07-13T07:16:27+08:00",
-    "macro_score": 76,
+    "generated_at": "2026-07-13T20:15:21+08:00",
+    "macro_score": 64,
     "top_ticker": "AMD",
-    "top_score": 83,
-    "strong_buy": 10,
+    "top_score": 81,
+    "strong_buy": 7,
     "pick_count": 50
   }
 ]
