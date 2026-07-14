@@ -280,11 +280,11 @@
   },
   {
     "date": "2026-07-14",
-    "generated_at": "2026-07-14T07:26:05+08:00",
-    "macro_score": 70,
-    "top_ticker": "PBF",
+    "generated_at": "2026-07-14T18:44:00+08:00",
+    "macro_score": 65,
+    "top_ticker": "CBZ",
     "top_score": 76,
-    "strong_buy": 11,
+    "strong_buy": 9,
     "pick_count": 50
   }
 ]
