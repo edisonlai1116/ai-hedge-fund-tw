@@ -286,5 +286,14 @@
     "top_score": 76,
     "strong_buy": 9,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-15",
+    "generated_at": "2026-07-15T07:25:01+08:00",
+    "macro_score": 64,
+    "top_ticker": "ATAI",
+    "top_score": 78,
+    "strong_buy": 13,
+    "pick_count": 50
   }
 ]
