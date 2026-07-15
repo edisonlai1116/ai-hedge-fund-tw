@@ -295,5 +295,14 @@
     "top_score": 78,
     "strong_buy": 13,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-16",
+    "generated_at": "2026-07-16T07:28:24+08:00",
+    "macro_score": 64,
+    "top_ticker": "FLYW",
+    "top_score": 80,
+    "strong_buy": 15,
+    "pick_count": 50
   }
 ]
