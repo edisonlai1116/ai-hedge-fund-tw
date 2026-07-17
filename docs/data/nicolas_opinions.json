@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:XdO9G5UtYIw",
+  "last_episode_id": "yt:x_4EHLo1PjQ",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "跌到位，就漲回去了。",
-    "published": "2026-07-14T12:34:44+00:00",
-    "url": "https://www.youtube.com/watch?v=XdO9G5UtYIw",
-    "id": "yt:XdO9G5UtYIw",
-    "checked_at": "2026-07-17T07:23:07+08:00"
+    "title": "25年4月7日 我也哭過 後來沒事了",
+    "published": "2026-07-17T09:43:59+00:00",
+    "url": "https://www.youtube.com/watch?v=x_4EHLo1PjQ",
+    "id": "yt:x_4EHLo1PjQ",
+    "checked_at": "2026-07-17T18:42:46+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
