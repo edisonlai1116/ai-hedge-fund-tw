@@ -331,5 +331,14 @@
     "top_score": 79,
     "strong_buy": 18,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-20",
+    "generated_at": "2026-07-20T07:27:27+08:00",
+    "macro_score": 58,
+    "top_ticker": "PVLA",
+    "top_score": 78,
+    "strong_buy": 17,
+    "pick_count": 50
   }
 ]
