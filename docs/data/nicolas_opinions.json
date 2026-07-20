@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:RfQQfrwsIXM",
+  "last_episode_id": "yt:X__pxOBWmEk",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "投資之後的感覺。",
-    "published": "2026-07-17T12:02:36+00:00",
-    "url": "https://www.youtube.com/watch?v=RfQQfrwsIXM",
-    "id": "yt:RfQQfrwsIXM",
-    "checked_at": "2026-07-20T07:25:18+08:00"
+    "title": "加倉，3個月黃金期。",
+    "published": "2026-07-20T11:30:41+00:00",
+    "url": "https://www.youtube.com/watch?v=X__pxOBWmEk",
+    "id": "yt:X__pxOBWmEk",
+    "checked_at": "2026-07-20T19:41:19+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
