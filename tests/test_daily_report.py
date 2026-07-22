@@ -46,13 +46,13 @@ def test_diversify_head_caps_theme():
         {"ticker": "MU", "buy_score": 90},
         {"ticker": "WDC", "buy_score": 88},
         {"ticker": "STX", "buy_score": 86},
-        {"ticker": "SNDK", "buy_score": 84},   # 無主題對映 → 一般
+        {"ticker": "SNDK", "buy_score": 84},   # 2026-07-22 起 SNDK 也對映記憶體主題
         {"ticker": "TSM", "buy_score": 82},
     ]
     out = diversify_head(rows, head=4, max_per_theme=2)
     tickers = [r["ticker"] for r in out]
-    # 記憶體主題 MU/WDC 佔滿 2 檔上限後，STX 被遞延到 head 之後；名單成員不變。
-    assert tickers[:4] == ["MU", "WDC", "SNDK", "TSM"]
+    # 記憶體主題 MU/WDC 佔滿 2 檔上限後，STX/SNDK 都被遞延到 head 之後；名單成員不變。
+    assert tickers[:4] == ["MU", "WDC", "TSM", "STX"]
     assert set(tickers) == {"MU", "WDC", "STX", "SNDK", "TSM"}
 
 

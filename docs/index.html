@@ -79,6 +79,21 @@
     <div class="hl" id="gooaye-ep"></div>
   </div>
 
+  <div class="panel" id="dip-panel" style="display:none">
+    <div class="row">
+      <strong>📉 錯殺雷達 · 優質股大跌承接機會</strong>
+      <span class="spacer"></span>
+      <span class="badge pill-neutral" id="dip-count">—</span>
+    </div>
+    <div class="muted" style="margin:4px 0">AI 主線／權值優質股出現超跌（距 60 日高點 -8% 或 RSI &lt; 42）時獨立列出——大跌時分數排序會被動能拖低，這裡保證看得到「跌出來的機會」。點一列看細節。</div>
+    <table id="dips">
+      <thead><tr>
+        <th>標的</th><th>回檔原因</th><th>今日操作</th><th class="hide-sm">承接區</th><th>買進分數</th>
+      </tr></thead>
+      <tbody id="dips-body"></tbody>
+    </table>
+  </div>
+
   <div class="panel">
     <div class="row"><strong>🏆 每日最該買排序</strong>
       <span class="spacer"></span>
@@ -213,6 +228,35 @@ function render(d){
     "最新集數：" + esc(g.episode_title || "—") +
     (g.episode_published ? `（${esc(g.episode_published)}）` : "") +
     (g.total_opinions!=null ? `　·　累積點名觀點 ${g.total_opinions} 則` : "");
+
+  // 錯殺雷達（優質股大跌承接機會）
+  const dips = d.dip_radar || [];
+  const dipPanel = document.getElementById("dip-panel");
+  if(dips.length){
+    dipPanel.style.display = "";
+    document.getElementById("dip-count").textContent = dips.length + " 檔";
+    const db = document.getElementById("dips-body");
+    db.innerHTML = "";
+    dips.forEach(p=>{
+      const tech = p.technical || {};
+      const det = p.detail || {};
+      const action = det.today_action || tech.today_action || "—";
+      const zone = det.buy_zone || tech.buy_zone || "—";
+      const tr = document.createElement("tr");
+      tr.className = "pick";
+      tr.innerHTML =
+        `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="muted" style="font-size:.72rem">${esc(p.ai_chain_layer||"")}</div></td>`+
+        `<td><span class="badge pill-bear">${esc(p.dip_reason||"超跌")}</span></td>`+
+        `<td><span class="badge ${stanceCls(action)}">${esc(action)}</span></td>`+
+        `<td class="hide-sm">${esc(zone)}</td>`+
+        `<td><span class="score">${p.buy_score ?? "—"}</span></td>`;
+      const dtr = document.createElement("tr");
+      dtr.className = "detail";
+      dtr.innerHTML = `<td colspan="5">${detailHtml(p)}</td>`;
+      tr.addEventListener("click",()=>dtr.classList.toggle("open"));
+      db.appendChild(tr); db.appendChild(dtr);
+    });
+  }
 
   // picks
   const body = document.getElementById("picks-body");

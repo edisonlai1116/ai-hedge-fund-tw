@@ -65,20 +65,27 @@ _NUM = re.compile(r"^-?\d[\d,]*(?:\.\d+)?$")
 TOP_N = 50
 
 # 台股 universe：台灣 50（0050）成分股為主的大型權值/熱門股（免 Key，固定清單）。
+# 2026-07-22 檢討擴充：補 AI 主線/記憶體要角（群聯、南亞科、緯穎、光寶科、建準、旭隼）——
+# 7/17~19 群聯大跌時根本不在掃描池，跌出來的買點使用者完全看不到。上櫃標的需明寫 .TWO。
 TW_UNIVERSE = [
     "2330", "2317", "2454", "2308", "2382", "2412", "2881", "2882", "2891", "2886",
     "3711", "2303", "2002", "1303", "1301", "1216", "2207", "2884", "2885", "2892",
     "2880", "2883", "5880", "2890", "2887", "3045", "4904", "2912", "1101", "2357",
     "2395", "2603", "2609", "2615", "3008", "3034", "3037", "3231", "2376", "2377",
     "6505", "9910", "2474", "2345", "3661", "4938", "2379", "3017", "5871", "2327",
+    "8299.TWO", "2408", "6669", "2301", "2421", "6409",
 ]
 
 # 美股 universe：大型權值/熱門股後盾清單。即使 Yahoo 當日熱門榜抓不到，美股也一定會進榜。
+# 2026-07-22 檢討擴充：補 AI 算力雲/記憶體/網通/電力主線（CRWV、NBIS、SNDK、WDC、STX、
+# MRVL、VRT、ANET、VST、CEG）——7/17~19 這批股票大跌時不在固定掃描池（熱門榜看漲跌幅、
+# 恐慌日反而抓不到它們），錯殺買點無從浮現。
 US_UNIVERSE = [
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "AVGO", "TSLA", "BRK-B", "JPM",
     "LLY", "V", "UNH", "XOM", "MA", "COST", "HD", "PG", "JNJ", "ABBV",
     "NFLX", "BAC", "CRM", "ORCL", "AMD", "KO", "PEP", "WMT", "MRK", "CVX",
     "ADBE", "QCOM", "TXN", "INTC", "MU", "PLTR", "SMCI", "ARM", "TSM", "ASML",
+    "CRWV", "NBIS", "SNDK", "WDC", "STX", "MRVL", "VRT", "ANET", "VST", "CEG",
 ]
 
 # 台股代號 → 中文名（給網頁顯示「2330 台積電」）。
@@ -94,6 +101,7 @@ TW_NAMES = {
     "6505": "台塑化", "9910": "豐泰", "2474": "可成", "2345": "智邦", "3661": "世芯-KY",
     "4938": "和碩", "2379": "瑞昱", "3017": "奇鋐", "5871": "中租-KY", "2327": "國巨",
     "5876": "上海商銀", "2301": "光寶科", "2421": "建準", "6409": "旭隼", "2890.TW": "永豐金",
+    "8299": "群聯", "2408": "南亞科", "6669": "緯穎",
 }
 
 
@@ -166,6 +174,45 @@ def diversify_head(rows: List[Dict], head: int = 10, max_per_theme: int = 3) -> 
         counts[layer] = counts.get(layer, 0) + 1
         head_list.append(r)
     return head_list + deferred + rest
+
+
+def dip_radar_rows(rows: List[Dict], max_n: int = 10) -> List[Dict]:
+    """錯殺雷達：從「全掃描結果」挑出優質主線股的大跌超跌候選，保證獨立浮出。
+
+    2026-07-22 檢討新增：買進分數含 25% 動能因子，恐慌殺跌時優質股分數必然重挫而
+    掉出 Top50（7/17~19 CRWV/NBIS/SNDK/群聯/台達電 全數消失，7/21 反彈才知錯過），
+    「大跌抓買點」的訊號被排序機制自己吃掉。雷達不看買進分數排名，直接以
+    「AI 主線對照表內（人工精選品質清單）＋ 超跌（距 60 日高點 ≤ -8% 或 RSI < 42）」
+    篩選，依回落深度排序取前 max_n，讓大跌買點永遠有獨立版位、不與動能股競爭。
+    """
+    try:
+        from src.simple_signal import map_ai_chain_and_bottleneck
+    except Exception:
+        return []
+    out: List[Dict] = []
+    for r in rows:
+        tech = r.get("technical")
+        if not tech:
+            continue
+        layer = map_ai_chain_and_bottleneck(str(r.get("ticker", "")), "")[0]
+        if layer is None:
+            continue
+        rsi = tech.get("rsi14")
+        dd = tech.get("drawdown_from_high_pct")
+        oversold = (dd is not None and dd <= -8.0) or (rsi is not None and rsi < 42.0)
+        if not oversold:
+            continue
+        # 原地標註並回傳同一個 dict：同檔若也入選 Top 50，共用完整分析結果（不重複下載）。
+        r["ai_chain_layer"] = layer
+        bits = []
+        if dd is not None and dd <= -8.0:
+            bits.append(f"距 60 日高點 {dd:.0f}%")
+        if rsi is not None and rsi < 42.0:
+            bits.append(f"RSI {rsi:.0f} 超賣")
+        r["dip_reason"] = "、".join(bits)
+        out.append(r)
+    out.sort(key=lambda e: (e.get("technical") or {}).get("drawdown_from_high_pct") or 0.0)
+    return out[:max_n]
 
 
 def parse_holding_tickers(text: str) -> List[str]:
@@ -482,6 +529,9 @@ def _technical(symbol: str) -> Optional[Dict]:
             "mom_20d":         mom_20d,
             "cmf_score":       cmf_score,   # 美股專用；台股此欄為 None
             "bias":            getattr(r, "bias", ""),
+            "rsi14":           getattr(r, "rsi14", None),
+            "drawdown_from_high_pct": getattr(r, "drawdown_from_high_pct", None),
+            "today_note":      getattr(r, "today_note", ""),
             "today_action":    getattr(r, "today_action", ""),
             "buy_zone":        getattr(r, "buy_zone", ""),
             "sell_zone":       getattr(r, "sell_zone", ""),
@@ -600,6 +650,22 @@ def analyze_ticker(raw_ticker: str, macro_score: int, held: bool, named: bool,
 
     technical_score = tech["composite_score"] if tech else None
     rs_score = relative_strength_score(tech.get("mom_20d")) if tech else None
+
+    # 2026-07-22 檢討修正：優質主線股在恐慌殺跌時，動能因子把它們排出 Top50 正是在
+    # 「最該買」的時候（7/15 後 MU/2379 消失、7/17~19 榜上全是生技動能股）。
+    # 對 AI 主線對照表內的標的，超跌（RSI<42 或距 60 日高點 -10% 以上）時動能分數設 45 地板：
+    # 跌深不再被動能加倍懲罰，讓「跌出來的機會」留在榜內競爭；一般標的不變（動能照罰）。
+    if tech and rs_score is not None:
+        try:
+            from src.simple_signal import map_ai_chain_and_bottleneck
+            _layer = map_ai_chain_and_bottleneck(symbol, "")[0]
+        except Exception:
+            _layer = None
+        _rsi = tech.get("rsi14")
+        _dd = tech.get("drawdown_from_high_pct")
+        _oversold = (_rsi is not None and _rsi < 42.0) or (_dd is not None and _dd <= -10.0)
+        if _layer is not None and _oversold:
+            rs_score = max(rs_score, 45.0)
     gooaye_score = cons["consensus_score"] if cons.get("opinions") else None
     news_score = news["score"] if news else None
 
@@ -698,11 +764,18 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             mover=(key in mover_simple),
             tw_chip_table=tw_chip_table,
         ))
-    rows = diversify_head(rank_rows(rows)[:TOP_N])   # 台美股合併取前 50，頭部做主題分散
+    all_rows = rank_rows(rows)
+    # 錯殺雷達：在裁切 Top N「之前」從全掃描結果挑出優質股大跌候選（不受動能排序擠掉）。
+    dip_radar = dip_radar_rows(all_rows)
+    rows = diversify_head(all_rows[:TOP_N])   # 台美股合併取前 50，頭部做主題分散
 
     # 入選 Top 50 才跑完整分析（agents / 3-6-9-12 月預測 / 各天期買賣價），控制運算量。
     for r in rows:
         r["detail"] = _full_analysis(r["symbol"])
+    # 雷達候選同樣給完整分析（含修正後的今日操作/承接區），未入 Top 50 也看得到細節。
+    for r in dip_radar:
+        if "detail" not in r:
+            r["detail"] = _full_analysis(r["symbol"])
 
     tz = timezone(timedelta(hours=8))  # 台北時間
     now = datetime.now(tz)
@@ -715,6 +788,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             "gooaye_named": len(named_tickers), "scanned": len(universe), "top_n": TOP_N,
             "tw_in_top": sum(1 for r in rows if r.get("market") == "tw"),
             "us_in_top": sum(1 for r in rows if r.get("market") == "us"),
+            "dip_radar": len(dip_radar),
         },
         "macro": {
             "score": macro_score,
@@ -724,6 +798,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
         },
         "gooaye_status": gooaye_status,
         "weights": WEIGHTS,
+        "dip_radar": dip_radar,   # 錯殺雷達：優質主線股大跌超跌候選（獨立於 Top N 排序）
         "top_picks": rows,
         "disclaimer": "本報告為自動產生之研究輔助，非投資建議；資料來源含 Yahoo Finance、股癌 Podcast 與公開新聞，僅供參考。",
     }

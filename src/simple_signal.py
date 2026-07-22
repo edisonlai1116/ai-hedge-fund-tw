@@ -1451,6 +1451,9 @@ def derive_today_plan(
     long_term_blocked: bool = False,
     drawdown_from_high_pct: float = 0.0,
     ma20: float = 0.0,
+    fundamentals_available: bool = True,
+    ma120_rising: bool = False,
+    drop_3d_pct: float = 0.0,
 ) -> tuple[str, str, str, str, str, str, float, float, int, str, float]:
     buy_low, buy_high = parse_range(buy_zone)
     sell_low, sell_high = parse_range(sell_zone)
@@ -1469,8 +1472,12 @@ def derive_today_plan(
 
     # Value investor allowance: if it is heavily undervalued with strong fundamentals, allow buying even in downtrend
     is_strong_value = (fundamental_score >= 5 and valuation_gap_pct is not None and valuation_gap_pct >= 10.0)
-    # AI 主線核心股（有 ai_chain_layer + 基本面及格）：大跌是加碼機會，不應直接否決
-    is_ai_mainline = ai_chain_layer is not None and fundamental_score >= 5
+    # AI 主線核心股（有 ai_chain_layer + 基本面及格）：大跌是加碼機會，不應直接否決。
+    # 2026-07-22 檢討修正（7/17~19 CRWV/NBIS/SNDK/群聯/台達電 回檔全被判「不要買」、7/21 反彈）：
+    # 每日管線 fetch_fundamentals=False → fundamental_score 恆為 0，讓 is_ai_mainline 永遠 False，
+    # 所有「主線回檔承接」路徑形同死路。基本面「沒抓到」不等於「不好」——AI 主線對照表本身就是
+    # 人工精選的品質清單；資料不可用時不再卡 F-Score 門檻，資料可用時照舊要求 >=5 防雷。
+    is_ai_mainline = ai_chain_layer is not None and (fundamental_score >= 5 or not fundamentals_available)
     min_return_threshold = 12.0 if is_strong_value else MIN_POSITION_RETURN_PCT
 
     # === 好股票大跌 = 承接機會（quality-dip buy）===
@@ -1480,7 +1487,13 @@ def derive_today_plan(
     #   且短線被市場恐慌錯殺至超跌（RSI 低 或 自 60 日高點大幅回落），
     #   視為「好股大跌的分批承接機會」，而非弱勢不要買。
     #   長線虧損閘門已否決者（long_term_blocked）一律排除，避免承接真正向下的標的。
-    long_uptrend_intact = ma120 > 0 and latest_close >= ma120 * 0.97
+    # 2026-07-22 檢討修正：恐慌殺盤常把好股「殺破年線再 V 轉」（7/17~19 台達電/群聯正是如此），
+    # 舊定義（收盤 >= 年線 * 0.97）在最該接的那幾天反而判定結構已壞。放寬：年線本身仍上揚
+    # （長線趨勢未轉彎）時，跌破年線 10% 以內仍視為長線結構未壞；年線已走平/下彎則維持嚴格門檻。
+    long_uptrend_intact = ma120 > 0 and (
+        latest_close >= ma120 * 0.97
+        or (ma120_rising and latest_close >= ma120 * 0.90)
+    )
     quality_name = (
         fundamental_score >= 6
         or long_uptrend_intact
@@ -1489,7 +1502,9 @@ def derive_today_plan(
     )
     # 2026-07-06 檢討修正：回落門檻 -12% → -8%。一般市場恐慌日好股多回落 3~8%，
     # 舊門檻讓「大跌抄底」幾乎永遠不觸發（上週五大跌被判不要買、下週一即大漲）。
-    panic_oversold = (rsi14 < 45.0) or (drawdown_from_high_pct <= -8.0)
+    # 2026-07-22 新增「近 3 日急跌」觸發：緩跌後的急殺常是恐慌高潮（RSI 未必 <45、
+    # 距 60 日高點未必 -8%，但 3 日內 -6% 的殺盤本身就是錯殺訊號）。
+    panic_oversold = (rsi14 < 45.0) or (drawdown_from_high_pct <= -8.0) or (drop_3d_pct <= -6.0)
     is_quality_dip = (
         not long_term_blocked
         and quality_name
@@ -1542,6 +1557,8 @@ def derive_today_plan(
         else:
             why = "深度價值（具安全邊際）"
         dd_txt = f"、自近期高點回落約 {abs(drawdown_from_high_pct):.0f}%" if drawdown_from_high_pct <= -8.0 else ""
+        if drop_3d_pct <= -6.0:
+            dd_txt += f"、近 3 日急跌 {abs(drop_3d_pct):.0f}%"
         today_note = (
             f"⚡ 好股票大跌承接機會：{why}，但短線被市場恐慌錯殺至超跌（RSI {rsi14:.0f}{dd_txt}）。"
             f"優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、"
@@ -1551,8 +1568,12 @@ def derive_today_plan(
         not long_term_blocked
         and drawdown_from_high_pct <= -30.0
         and rsi14 < 40.0
-        and valuation_gap_pct is not None
-        and valuation_gap_pct >= 10.0
+        and (
+            (valuation_gap_pct is not None and valuation_gap_pct >= 10.0)
+            # 2026-07-22：估值資料抓不到（每日管線）時不再直接封死這條路，
+            # 改用「更深的跌幅 + 更低的 RSI」作為替代證據，維持不對稱賭注的嚴格度。
+            or (valuation_gap_pct is None and drawdown_from_high_pct <= -35.0 and rsi14 < 38.0)
+        )
     ):
         # === 深度超跌反轉（2026-07-06 回放檢討新增）===
         # CRWV 案例：自高點 -41%、RSI 34、低估 15%、12 個月統計預測 +27%，但 F-Score 差 1 分、
@@ -1567,9 +1588,13 @@ def derive_today_plan(
         expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
         risk_pct = ((entry_mid - stop_mid) / entry_mid) * 100 if entry_mid > 0 else 0.0
         reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        _value_evidence = (
+            f"且估值折價 {valuation_gap_pct:.0f}%" if valuation_gap_pct is not None
+            else "跌幅與超賣程度已達深度錯殺標準"
+        )
         today_note = (
             f"🎲 深度超跌＋低估的反轉機會：自近期高點已回落 {abs(drawdown_from_high_pct):.0f}%、RSI {rsi14:.0f} 超賣，"
-            f"且估值折價 {valuation_gap_pct:.0f}%、未觸發長線虧損閘門。這類標的波動極大，"
+            f"{_value_evidence}、未觸發長線虧損閘門。這類標的波動極大，"
             f"僅適合「最小倉位」（總資金 3~5%）試單參與反轉，務必嚴設停損 {stop_loss}，跌破就走、不攤平。{candle_bonus}"
         )
     elif buy_strength == "不建議進場" and not is_ai_mainline:
@@ -1712,6 +1737,12 @@ def map_ai_chain_and_bottleneck(symbol: str, sector: str) -> tuple[str | None, s
         "MU": "💾 儲存與記憶體 Memory & Storage",
         "WDC": "💾 儲存與記憶體 Memory & Storage",
         "STX": "💾 儲存與記憶體 Memory & Storage",
+        "SNDK": "💾 儲存與記憶體 Memory & Storage",  # Sandisk：NAND，2026-07-22 回放檢討補上
+        "8299": "💾 儲存與記憶體 Memory & Storage",  # 群聯：NAND 控制 IC／模組（上櫃 .TWO）
+        "2408": "💾 儲存與記憶體 Memory & Storage",  # 南亞科：DRAM
+        "MRVL": "🌐 網路互聯 Networking",            # 邁威爾：客製 ASIC / DPU
+        "ALAB": "🌐 網路互聯 Networking",            # Astera Labs：PCIe/CXL 連接
+        "CRDO": "🌐 網路互聯 Networking",            # Credo：AEC 高速連接
         "COHR": "🌈 光通訊 Photonic / Optical",
         "LITE": "🌈 光通訊 Photonic / Optical",
         "ANET": "🌐 網路互聯 Networking",
@@ -1904,6 +1935,12 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
 
     # Candlestick Pattern Detection
     candlestick_pattern = detect_candlestick(frame["Open"], frame["High"], frame["Low"], frame["Close"])
+
+    # 年線是否仍上揚（vs 約 1 個月前）＋近 3 日跌幅：恐慌錯殺判定用（derive_today_plan）。
+    ma120_series = frame["MA120"].dropna()
+    ma120_rising = len(ma120_series) > 21 and float(ma120_series.iloc[-1]) > float(ma120_series.iloc[-21])
+    close_series = frame["Close"]
+    drop_3d_pct = ((latest_close / float(close_series.iloc[-4])) - 1) * 100 if len(close_series) > 4 else 0.0
 
     # Fundamental analysis via yfinance info（帶快取 + timeout 保護）
     fundamental_score = 0
@@ -2205,6 +2242,10 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         long_term_blocked=bool(long_term_risk and long_term_risk.get("blocked")),
         drawdown_from_high_pct=((latest_close / close_high60) - 1) * 100 if close_high60 > 0 else 0.0,
         ma20=ma20,
+        # 基本面是否「真的有抓到」：沒抓（每日管線）或抓失敗時，主線/品質判定不再卡 F-Score。
+        fundamentals_available=bool(info),
+        ma120_rising=ma120_rising,
+        drop_3d_pct=drop_3d_pct,
     )
 
     # Re-use pre-fetched Investing.com data from early scan
