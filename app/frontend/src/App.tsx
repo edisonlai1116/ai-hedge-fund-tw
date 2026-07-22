@@ -870,6 +870,18 @@ function StockOverviewCard({ result }: { result: DetailResult }) {
             <MetricCard label="預估持有" value={result.holding_days_estimate > 0 ? `${result.holding_days_estimate} 天` : '暫不建倉'} icon={<Clock3 className="h-4 w-4" />} />
             <MetricCard label="綜合分數" value={`${result.composite_score}`} />
           </div>
+          {result.today_note && (
+            <p className={`mt-3 rounded-md border p-3 text-xs leading-5 ${todayNoteTone(result.today_note)}`}>
+              <span className="font-semibold">買進理由：</span>
+              {result.today_note}
+            </p>
+          )}
+          {result.today_exit_note && (
+            <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+              <span className="font-semibold">賣出理由：</span>
+              {result.today_exit_note}
+            </p>
+          )}
         </div>
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">核心技術資料</div>
@@ -889,6 +901,13 @@ function StockOverviewCard({ result }: { result: DetailResult }) {
       </CardContent>
     </Card>
   );
+}
+
+function todayNoteTone(note: string): string {
+  // 大跌承接/突破參與等機會型理由（⚡📉🎲🚀 開頭）用綠色突顯，警示用紅色，其餘中性。
+  if (/[⚡📉🎲🚀]/u.test(note)) return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (note.includes('⚠️') || note.includes('不建議')) return 'border-rose-200 bg-rose-50 text-rose-700';
+  return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
 function forecastVerdictTone(verdict: string): string {
