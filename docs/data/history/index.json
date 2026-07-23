@@ -367,5 +367,14 @@
     "top_score": 79,
     "strong_buy": 9,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-24",
+    "generated_at": "2026-07-24T07:27:51+08:00",
+    "macro_score": 53,
+    "top_ticker": "WEX",
+    "top_score": 76,
+    "strong_buy": 9,
+    "pick_count": 50
   }
 ]
