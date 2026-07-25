@@ -385,5 +385,14 @@
     "top_score": 82,
     "strong_buy": 15,
     "pick_count": 50
+  },
+  {
+    "date": "2026-07-26",
+    "generated_at": "2026-07-26T07:29:15+08:00",
+    "macro_score": 61,
+    "top_ticker": "ANET",
+    "top_score": 74,
+    "strong_buy": 9,
+    "pick_count": 50
   }
 ]
