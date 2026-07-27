@@ -397,11 +397,11 @@
   },
   {
     "date": "2026-07-27",
-    "generated_at": "2026-07-27T07:28:48+08:00",
-    "macro_score": 65,
-    "top_ticker": "ANET",
-    "top_score": 75,
-    "strong_buy": 9,
+    "generated_at": "2026-07-27T20:20:14+08:00",
+    "macro_score": 57,
+    "top_ticker": "AAPL",
+    "top_score": 83,
+    "strong_buy": 14,
     "pick_count": 50
   }
 ]
