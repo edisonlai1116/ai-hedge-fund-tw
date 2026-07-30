@@ -424,11 +424,11 @@
   },
   {
     "date": "2026-07-30",
-    "generated_at": "2026-07-30T07:47:43+08:00",
-    "macro_score": 40,
+    "generated_at": "2026-07-30T19:05:56+08:00",
+    "macro_score": 47,
     "top_ticker": "AAPL",
-    "top_score": 77,
-    "strong_buy": 9,
+    "top_score": 79,
+    "strong_buy": 13,
     "pick_count": 50
   }
 ]
