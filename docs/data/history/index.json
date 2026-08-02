@@ -457,5 +457,14 @@
     "top_score": 77,
     "strong_buy": 10,
     "pick_count": 50
+  },
+  {
+    "date": "2026-08-03",
+    "generated_at": "2026-08-03T07:28:45+08:00",
+    "macro_score": 59,
+    "top_ticker": "DXCM",
+    "top_score": 77,
+    "strong_buy": 11,
+    "pick_count": 50
   }
 ]
