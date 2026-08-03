@@ -466,5 +466,14 @@
     "top_score": 78,
     "strong_buy": 10,
     "pick_count": 50
+  },
+  {
+    "date": "2026-08-04",
+    "generated_at": "2026-08-04T07:34:44+08:00",
+    "macro_score": 56,
+    "top_ticker": "AMC",
+    "top_score": 78,
+    "strong_buy": 7,
+    "pick_count": 50
   }
 ]
