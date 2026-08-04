@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:HtLHwr-ICik",
+  "last_episode_id": "yt:0_JX9rjdIZs",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "暴跌全身發冷的真實體感！一股沒賣！堅定信心！",
-    "published": "2026-07-31T12:00:13+00:00",
-    "url": "https://www.youtube.com/watch?v=HtLHwr-ICik",
-    "id": "yt:HtLHwr-ICik",
-    "checked_at": "2026-08-04T19:20:29+08:00"
+    "title": "有點穩了。我一股沒賣，大跌加倉，投資心理是發財關鍵。",
+    "published": "2026-08-04T12:58:23+00:00",
+    "url": "https://www.youtube.com/watch?v=0_JX9rjdIZs",
+    "id": "yt:0_JX9rjdIZs",
+    "checked_at": "2026-08-05T07:31:03+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
