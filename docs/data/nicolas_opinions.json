@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:0_JX9rjdIZs",
+  "last_episode_id": "yt:l_JSoZsdZ-Q",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "有點穩了。我一股沒賣，大跌加倉，投資心理是發財關鍵。",
-    "published": "2026-08-04T12:58:23+00:00",
-    "url": "https://www.youtube.com/watch?v=0_JX9rjdIZs",
-    "id": "yt:0_JX9rjdIZs",
-    "checked_at": "2026-08-06T19:17:53+08:00"
+    "title": "分享股票見頂檢測AI提示詞：2029年AI泡沫破裂？三大歷史泡沫：鐵路/電力/網路泡沫揭露最終見頂信號！",
+    "published": "2026-08-06T11:51:27+00:00",
+    "url": "https://www.youtube.com/watch?v=l_JSoZsdZ-Q",
+    "id": "yt:l_JSoZsdZ-Q",
+    "checked_at": "2026-08-07T09:35:45+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
