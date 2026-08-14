@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:s4zreVAUcZE",
+  "last_episode_id": "yt:ebV7mgXEJ6g",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "板塊大輪動的機會來了！黃金白銀、軟體股、半導體、金融股，PLTR抄底還是逃跑？還有黃金先行指標分享！",
-    "published": "2026-08-10T11:32:59+00:00",
-    "url": "https://www.youtube.com/watch?v=s4zreVAUcZE",
-    "id": "yt:s4zreVAUcZE",
-    "checked_at": "2026-08-14T17:55:51+08:00"
+    "title": "抄底暴漲！2週大賺50%！公開買入的股票和收入！",
+    "published": "2026-08-14T11:17:04+00:00",
+    "url": "https://www.youtube.com/watch?v=ebV7mgXEJ6g",
+    "id": "yt:ebV7mgXEJ6g",
+    "checked_at": "2026-08-15T06:46:28+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
