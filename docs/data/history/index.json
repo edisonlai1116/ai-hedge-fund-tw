@@ -586,11 +586,11 @@
   },
   {
     "date": "2026-08-17",
-    "generated_at": "2026-08-17T06:45:54+08:00",
-    "macro_score": 75,
+    "generated_at": "2026-08-17T17:38:07+08:00",
+    "macro_score": 80,
     "top_ticker": "3017",
-    "top_score": 86,
-    "strong_buy": 22,
+    "top_score": 81,
+    "strong_buy": 20,
     "pick_count": 50
   }
 ]
