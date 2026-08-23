@@ -646,5 +646,14 @@
     "top_score": 83,
     "strong_buy": 23,
     "pick_count": 50
+  },
+  {
+    "date": "2026-08-24",
+    "generated_at": "2026-08-24T06:47:06+08:00",
+    "macro_score": 61,
+    "top_ticker": "PLTR",
+    "top_score": 83,
+    "strong_buy": 24,
+    "pick_count": 50
   }
 ]
