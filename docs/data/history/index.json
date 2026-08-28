@@ -685,10 +685,10 @@
   },
   {
     "date": "2026-08-28",
-    "generated_at": "2026-08-28T03:26:43+08:00",
-    "macro_score": 73,
-    "top_ticker": "PLTR",
-    "top_score": 84,
+    "generated_at": "2026-08-28T14:14:24+08:00",
+    "macro_score": 70,
+    "top_ticker": "3017",
+    "top_score": 87,
     "strong_buy": 35,
     "pick_count": 50
   }
