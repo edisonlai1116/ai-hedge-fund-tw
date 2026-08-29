@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:JApvmrOEcZQ",
+  "last_episode_id": "yt:S--vrQWugVI",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "9到11月小心大跌？風險中存在機會！佩洛西和比特幣已經發出機會信號：暗中佈局！",
-    "published": "2026-08-25T11:27:49+00:00",
-    "url": "https://www.youtube.com/watch?v=JApvmrOEcZQ",
-    "id": "yt:JApvmrOEcZQ",
-    "checked_at": "2026-08-29T11:46:15+08:00"
+    "title": "軟件股暴漲，半導體股票11月-明年4月啟動，9月16日必須小心加息，防範黃金科技股大跌！",
+    "published": "2026-08-29T11:30:22+00:00",
+    "url": "https://www.youtube.com/watch?v=S--vrQWugVI",
+    "id": "yt:S--vrQWugVI",
+    "checked_at": "2026-08-29T22:08:13+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
