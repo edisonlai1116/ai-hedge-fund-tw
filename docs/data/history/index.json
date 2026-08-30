@@ -703,11 +703,11 @@
   },
   {
     "date": "2026-08-30",
-    "generated_at": "2026-08-30T08:30:59+08:00",
-    "macro_score": 59,
+    "generated_at": "2026-08-30T22:34:22+08:00",
+    "macro_score": 61,
     "top_ticker": "3017",
-    "top_score": 86,
-    "strong_buy": 22,
+    "top_score": 85,
+    "strong_buy": 17,
     "pick_count": 50
   }
 ]
