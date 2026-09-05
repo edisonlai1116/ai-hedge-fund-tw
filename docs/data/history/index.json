@@ -757,11 +757,11 @@
   },
   {
     "date": "2026-09-05",
-    "generated_at": "2026-09-05T08:15:12+08:00",
-    "macro_score": 55,
+    "generated_at": "2026-09-05T20:20:28+08:00",
+    "macro_score": 56,
     "top_ticker": "3017",
-    "top_score": 86,
-    "strong_buy": 16,
+    "top_score": 87,
+    "strong_buy": 14,
     "pick_count": 50
   }
 ]
