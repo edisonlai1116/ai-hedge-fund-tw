@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:TI-Qa30nyjY",
+  "last_episode_id": "yt:5HEAo9a-y1w",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "美股Ai半導體要關注了！AI投資發財最後的機會，就在9月-11月！錯過，你就被AI取代。",
-    "published": "2026-09-04T11:47:15+00:00",
-    "url": "https://www.youtube.com/watch?v=TI-Qa30nyjY",
-    "id": "yt:TI-Qa30nyjY",
-    "checked_at": "2026-09-07T08:06:58+08:00"
+    "title": "記憶體股票最後的機會，錯過，99%的人將要買在山頂。",
+    "published": "2026-09-07T11:59:41+00:00",
+    "url": "https://www.youtube.com/watch?v=5HEAo9a-y1w",
+    "id": "yt:5HEAo9a-y1w",
+    "checked_at": "2026-09-07T22:43:22+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
