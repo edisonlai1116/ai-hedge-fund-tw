@@ -808,5 +808,14 @@
     "top_score": 86,
     "strong_buy": 14,
     "pick_count": 50
+  },
+  {
+    "date": "2026-09-11",
+    "generated_at": "2026-09-11T08:19:45+08:00",
+    "macro_score": 38,
+    "top_ticker": "MU",
+    "top_score": 83,
+    "strong_buy": 10,
+    "pick_count": 50
   }
 ]
