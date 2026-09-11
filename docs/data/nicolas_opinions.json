@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:5HEAo9a-y1w",
+  "last_episode_id": "yt:OsweE0oFpH8",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "記憶體股票最後的機會，錯過，99%的人將要買在山頂。",
-    "published": "2026-09-07T11:59:41+00:00",
-    "url": "https://www.youtube.com/watch?v=5HEAo9a-y1w",
-    "id": "yt:5HEAo9a-y1w",
-    "checked_at": "2026-09-11T08:17:50+08:00"
+    "title": "投資新手來，冒死告訴你美股的核心邏輯：9月16日加息，就是你發財的機會。",
+    "published": "2026-09-11T11:24:48+00:00",
+    "url": "https://www.youtube.com/watch?v=OsweE0oFpH8",
+    "id": "yt:OsweE0oFpH8",
+    "checked_at": "2026-09-11T21:11:38+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
