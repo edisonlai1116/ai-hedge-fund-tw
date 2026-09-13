@@ -826,5 +826,14 @@
     "top_score": 76,
     "strong_buy": 13,
     "pick_count": 50
+  },
+  {
+    "date": "2026-09-13",
+    "generated_at": "2026-09-13T08:06:38+08:00",
+    "macro_score": 46,
+    "top_ticker": "DELL",
+    "top_score": 76,
+    "strong_buy": 11,
+    "pick_count": 50
   }
 ]
