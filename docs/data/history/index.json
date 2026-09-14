@@ -838,11 +838,11 @@
   },
   {
     "date": "2026-09-14",
-    "generated_at": "2026-09-14T08:20:16+08:00",
-    "macro_score": 46,
-    "top_ticker": "DELL",
+    "generated_at": "2026-09-14T23:38:14+08:00",
+    "macro_score": 48,
+    "top_ticker": "5876.TW",
     "top_score": 76,
-    "strong_buy": 11,
+    "strong_buy": 5,
     "pick_count": 50
   }
 ]
