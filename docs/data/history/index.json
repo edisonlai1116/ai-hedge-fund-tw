@@ -844,5 +844,14 @@
     "top_score": 76,
     "strong_buy": 5,
     "pick_count": 50
+  },
+  {
+    "date": "2026-09-15",
+    "generated_at": "2026-09-15T08:47:17+08:00",
+    "macro_score": 44,
+    "top_ticker": "5876.TW",
+    "top_score": 76,
+    "strong_buy": 6,
+    "pick_count": 50
   }
 ]
