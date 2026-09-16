@@ -853,5 +853,14 @@
     "top_score": 76,
     "strong_buy": 9,
     "pick_count": 50
+  },
+  {
+    "date": "2026-09-16",
+    "generated_at": "2026-09-16T08:37:55+08:00",
+    "macro_score": 36,
+    "top_ticker": "TXG",
+    "top_score": 75,
+    "strong_buy": 6,
+    "pick_count": 50
   }
 ]
