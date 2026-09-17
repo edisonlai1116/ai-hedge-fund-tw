@@ -865,11 +865,11 @@
   },
   {
     "date": "2026-09-17",
-    "generated_at": "2026-09-17T08:45:34+08:00",
-    "macro_score": 35,
-    "top_ticker": "IOVA",
-    "top_score": 76,
-    "strong_buy": 5,
+    "generated_at": "2026-09-17T22:05:45+08:00",
+    "macro_score": 47,
+    "top_ticker": "MU",
+    "top_score": 81,
+    "strong_buy": 10,
     "pick_count": 50
   }
 ]
