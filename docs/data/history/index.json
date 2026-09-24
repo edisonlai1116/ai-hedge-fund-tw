@@ -928,11 +928,11 @@
   },
   {
     "date": "2026-09-24",
-    "generated_at": "2026-09-24T08:40:39+08:00",
-    "macro_score": 52,
+    "generated_at": "2026-09-24T22:01:21+08:00",
+    "macro_score": 45,
     "top_ticker": "MU",
-    "top_score": 91,
-    "strong_buy": 15,
+    "top_score": 86,
+    "strong_buy": 13,
     "pick_count": 50
   }
 ]
