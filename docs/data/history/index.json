@@ -991,11 +991,11 @@
   },
   {
     "date": "2026-10-01",
-    "generated_at": "2026-10-01T09:24:42+08:00",
-    "macro_score": 54,
-    "top_ticker": "MU",
-    "top_score": 87,
-    "strong_buy": 14,
+    "generated_at": "2026-10-01T23:59:14+08:00",
+    "macro_score": 40,
+    "top_ticker": "TSM",
+    "top_score": 86,
+    "strong_buy": 10,
     "pick_count": 50
   }
 ]
