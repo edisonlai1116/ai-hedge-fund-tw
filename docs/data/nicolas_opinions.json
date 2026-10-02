@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:MYCuKwTXmrw",
+  "last_episode_id": "yt:VeIQL5jK5TY",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "做空記憶體！勝率81%的男人，看漲美光50%！怎麼辦？",
-    "published": "2026-09-28T11:30:23+00:00",
-    "url": "https://www.youtube.com/watch?v=MYCuKwTXmrw",
-    "id": "yt:MYCuKwTXmrw",
-    "checked_at": "2026-10-01T23:57:23+08:00"
+    "title": "美光法說會印證了，2030年前，必須持有的核心AI股票！這是最後的發財機會！",
+    "published": "2026-10-02T11:13:16+00:00",
+    "url": "https://www.youtube.com/watch?v=VeIQL5jK5TY",
+    "id": "yt:VeIQL5jK5TY",
+    "checked_at": "2026-10-02T23:17:49+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
