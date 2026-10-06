@@ -410,6 +410,9 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
 
     completed_trades = []
     active_trade = None
+    # Point-in-time（2026-10-07）：第 i 日收盤出訊號 → 第 i+1 日收盤成交（不在訊號當日收盤成交）
+    pending_entry = False
+    pending_exit = False
 
     for i in range(1, len(frame)):
         close = float(frame["Close"].iloc[i])
@@ -424,6 +427,21 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
         prev_close = float(frame["Close"].iloc[i-1])
         date_str = frame.index[i].strftime("%Y-%m-%d")
 
+        if active_trade is None and pending_entry:
+            pending_entry = False
+            active_trade = {"entry_idx": i, "entry_price": close, "entry_date": date_str, "peak_close": close, "days_held": 0}
+            continue
+        if active_trade is not None and pending_exit:
+            pending_exit = False
+            exit_ret = ((close / active_trade["entry_price"]) - 1) * 100
+            completed_trades.append({
+                "entry_date": active_trade["entry_date"], "exit_date": date_str,
+                "entry_price": round(active_trade["entry_price"], 2), "exit_price": round(close, 2),
+                "return_pct": round(exit_ret, 2), "days_held": active_trade["days_held"] + 1,
+                "outcome": "停損/退場" if exit_ret < 0 else "移動停利出場",
+            })
+            active_trade = None
+            continue
         if active_trade is None:
             macd_gold_cross = (macd > macd_sig) and (prev_macd <= prev_macd_sig)
             bullish_pullback = (close > ma50) and (close > ma20) and (rsi >= 40) and (rsi <= 62) and (macd > macd_sig)
@@ -431,13 +449,7 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
             ignition = prev_close > 0 and (close / prev_close - 1) * 100 >= IGNITION_MIN_GAIN_PCT and vr >= IGNITION_MIN_VOL_RATIO
 
             if macd_gold_cross or bullish_pullback or ignition:
-                active_trade = {
-                    "entry_idx": i,
-                    "entry_price": close,
-                    "entry_date": date_str,
-                    "peak_close": close,
-                    "days_held": 0
-                }
+                pending_entry = True
         else:
             active_trade["days_held"] += 1
             if close > active_trade["peak_close"]:
@@ -445,17 +457,7 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
 
             trailing_stop = active_trade["peak_close"] * trail_mult
             if close <= trailing_stop or (close < ma120 and active_trade["days_held"] > 30):
-                exit_ret = ((close / active_trade["entry_price"]) - 1) * 100
-                completed_trades.append({
-                    "entry_date": active_trade["entry_date"],
-                    "exit_date": date_str,
-                    "entry_price": round(active_trade["entry_price"], 2),
-                    "exit_price": round(close, 2),
-                    "return_pct": round(exit_ret, 2),
-                    "days_held": active_trade["days_held"],
-                    "outcome": "停損/退場" if exit_ret < 0 else "移動停利出場"
-                })
-                active_trade = None
+                pending_exit = True
 
     if active_trade is not None:
         last_row = frame.iloc[-1]

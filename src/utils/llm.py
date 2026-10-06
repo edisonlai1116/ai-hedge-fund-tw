@@ -7,6 +7,23 @@ from src.utils.progress import progress
 from src.graph.state import AgentState
 
 
+import threading as _threading
+import time as _time
+
+from src.llm.defaults import DEFAULT_MODEL_NAME, DEFAULT_MODEL_PROVIDER, MIN_INTERVAL_SEC
+
+_PACE_LOCK = _threading.Lock()
+_LAST_CALL = [0.0]
+
+
+def _pace() -> None:
+    with _PACE_LOCK:
+        wait = MIN_INTERVAL_SEC - (_time.time() - _LAST_CALL[0])
+        if wait > 0:
+            _time.sleep(wait)
+        _LAST_CALL[0] = _time.time()
+
+
 def call_llm(
     prompt: any,
     pydantic_model: type[BaseModel],
@@ -35,8 +52,8 @@ def call_llm(
         model_name, model_provider = get_agent_model_config(state, agent_name)
     else:
         # Use system defaults when no state or agent_name is provided
-        model_name = "gpt-4.1"
-        model_provider = "OPENAI"
+        model_name = DEFAULT_MODEL_NAME
+        model_provider = DEFAULT_MODEL_PROVIDER
 
     # Extract API keys from state if available
     api_keys = None
@@ -58,7 +75,8 @@ def call_llm(
     # Call the LLM with retries
     for attempt in range(max_retries):
         try:
-            # Call the LLM
+            # Call the LLM（免費額度：控制呼叫間隔，避免 429）
+            _pace()
             result = llm.invoke(prompt)
 
             # For non-JSON support models, we need to extract and parse the JSON manually
@@ -137,8 +155,8 @@ def get_agent_model_config(state, agent_name):
             return model_name, model_provider.value if hasattr(model_provider, 'value') else str(model_provider)
     
     # Fall back to global configuration (system defaults)
-    model_name = state.get("metadata", {}).get("model_name") or "gpt-4.1"
-    model_provider = state.get("metadata", {}).get("model_provider") or "OPENAI"
+    model_name = state.get("metadata", {}).get("model_name") or DEFAULT_MODEL_NAME
+    model_provider = state.get("metadata", {}).get("model_provider") or DEFAULT_MODEL_PROVIDER
     
     # Convert enum to string if necessary
     if hasattr(model_provider, 'value'):

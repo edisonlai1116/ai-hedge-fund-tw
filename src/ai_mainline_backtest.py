@@ -296,6 +296,8 @@ def run_ai_mainline_backtest(
         return total
 
     def _is_entry(sym: str, i: int) -> bool:
+        if i < 1:   # i-1 = -1 會在 numpy 繞回最後一列（未來資料）
+            return False
         a = aligned[sym]
         close, ma20, ma50 = a["Close"][i], a["MA20"][i], a["MA50"][i]
         rsi, macd, macd_sig = a["RSI14"][i], a["MACD"][i], a["MACD_Signal"][i]
@@ -314,7 +316,7 @@ def run_ai_mainline_backtest(
         return bool(macd_gold_cross or bullish_pullback or _is_ignition(sym, i))
 
     def _is_ignition(sym: str, i: int) -> bool:
-        if not ignition_entry:
+        if not ignition_entry or i < 0:
             return False
         a = aligned[sym]
         chg, vr = a["CHG_PCT"][i], a["VOL_RATIO"][i]
@@ -333,24 +335,27 @@ def run_ai_mainline_backtest(
     tp_mult = (1.0 + take_profit_pct / 100.0) if take_profit_pct else float("inf")
     trail_mult = 1.0 - trailing_stop_pct / 100.0
 
-    for i in range(n):
+    # Point-in-time（2026-10-07 修正）：出場/進場條件只看前一日（i-1）收盤的資料，於第 i 日收盤成交；
+    # 舊版用第 i 日收盤判斷又以同一個收盤成交。
+    for i in range(1, n):
         # 1) 出場檢查
         for sym in list(positions.keys()):
             px = close_ff[sym][i]
-            if np.isnan(px):
+            sig_px = close_ff[sym][i - 1]
+            if np.isnan(px) or np.isnan(sig_px):
                 continue
             pos = positions[sym]
             pos["days_held"] += 1
-            pos["peak"] = max(pos["peak"], px)
+            pos["peak"] = max(pos["peak"], sig_px)
             trailing_stop = max(pos["stop_loss"], pos["peak"] * trail_mult)
-            ma120 = aligned[sym]["MA120"][i]
+            ma120 = aligned[sym]["MA120"][i - 1]
 
             exit_reason: str | None = None
-            if px >= pos["take_profit"]:
+            if sig_px >= pos["take_profit"]:
                 exit_reason = f"獲利了結 (+{take_profit_pct:g}%)"
-            elif px <= trailing_stop:
+            elif sig_px <= trailing_stop:
                 exit_reason = "移動停利/停損"
-            elif (not np.isnan(ma120)) and px < ma120 and pos["days_held"] > 30:
+            elif (not np.isnan(ma120)) and sig_px < ma120 and pos["days_held"] > 30:
                 exit_reason = "跌破長線 MA120"
             elif max_holding_days and pos["days_held"] >= max_holding_days:
                 exit_reason = "達最長持有期"
@@ -381,10 +386,10 @@ def run_ai_mainline_backtest(
             candidates = [
                 sym
                 for sym in active_universe
-                if sym not in positions and _is_entry(sym, i)
+                if sym not in positions and _is_entry(sym, i - 1)
             ]
             # 點火股優先（事件研究證實有超額續航），其次依趨勢強度。
-            candidates.sort(key=lambda s: (_is_ignition(s, i), _trend_strength(s, i)), reverse=True)
+            candidates.sort(key=lambda s: (_is_ignition(s, i - 1), _trend_strength(s, i - 1)), reverse=True)
             equity_now = cash + holdings_value(i)
             slot_value = equity_now / max_positions
             for sym in candidates[:free_slots]:

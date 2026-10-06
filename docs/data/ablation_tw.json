@@ -1,0 +1,346 @@
+{
+ "market": "tw",
+ "universe_size": 55,
+ "params": {
+  "top": 20,
+  "keep": 30,
+  "rebalance_days": 21
+ },
+ "generated_at": "2026-10-07T01:23:08+08:00",
+ "execution_timing": "T-1 close signal → T open execution, open-to-open, cost 0.2%/trade",
+ "results": {
+  "A 原本 analyst voting": {
+   "全期": {
+    "CAGR": 41.5,
+    "Sharpe": 1.41,
+    "Sortino": 1.8,
+    "MaxDD": -31.9,
+    "WinRate": 50.6,
+    "ProfitFactor": 3.51,
+    "AvgHoldDays": 106.0,
+    "Trades": 555,
+    "TurnoverPerYear": 122.2,
+    "Alpha_vs_0050.TW": 32.2
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 30.0,
+    "Sharpe": 1.23,
+    "Sortino": 1.52,
+    "MaxDD": -28.1,
+    "WinRate": 48.7,
+    "ProfitFactor": 2.56,
+    "AvgHoldDays": 97.0,
+    "Trades": 277,
+    "Alpha_vs_0050.TW": 22.3
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 53.4,
+    "Sharpe": 1.56,
+    "Sortino": 2.06,
+    "MaxDD": -31.9,
+    "WinRate": 52.5,
+    "ProfitFactor": 4.44,
+    "AvgHoldDays": 115.0,
+    "Trades": 278,
+    "Alpha_vs_0050.TW": 41.5
+   }
+  },
+  "B 量化因子": {
+   "全期": {
+    "CAGR": 47.9,
+    "Sharpe": 1.48,
+    "Sortino": 1.93,
+    "MaxDD": -36.1,
+    "WinRate": 57.3,
+    "ProfitFactor": 7.72,
+    "AvgHoldDays": 220.0,
+    "Trades": 300,
+    "TurnoverPerYear": 67.0,
+    "Alpha_vs_0050.TW": 36.9
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 45.8,
+    "Sharpe": 1.58,
+    "Sortino": 2.04,
+    "MaxDD": -28.9,
+    "WinRate": 59.4,
+    "ProfitFactor": 7.26,
+    "AvgHoldDays": 219.0,
+    "Trades": 138,
+    "Alpha_vs_0050.TW": 34.3
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 50.5,
+    "Sharpe": 1.43,
+    "Sortino": 1.88,
+    "MaxDD": -36.1,
+    "WinRate": 55.6,
+    "ProfitFactor": 8.03,
+    "AvgHoldDays": 222.0,
+    "Trades": 162,
+    "Alpha_vs_0050.TW": 39.5
+   }
+  },
+  "C 量化 + 相對強度 + 過熱（無 catalyst）": {
+   "全期": {
+    "CAGR": 46.7,
+    "Sharpe": 1.47,
+    "Sortino": 1.89,
+    "MaxDD": -36.1,
+    "WinRate": 56.3,
+    "ProfitFactor": 6.98,
+    "AvgHoldDays": 213.0,
+    "Trades": 309,
+    "TurnoverPerYear": 69.0,
+    "Alpha_vs_0050.TW": 36.1
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 45.6,
+    "Sharpe": 1.58,
+    "Sortino": 2.03,
+    "MaxDD": -28.8,
+    "WinRate": 58.9,
+    "ProfitFactor": 7.07,
+    "AvgHoldDays": 215.0,
+    "Trades": 141,
+    "Alpha_vs_0050.TW": 34.5
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 48.1,
+    "Sharpe": 1.4,
+    "Sortino": 1.81,
+    "MaxDD": -36.1,
+    "WinRate": 54.2,
+    "ProfitFactor": 6.92,
+    "AvgHoldDays": 212.0,
+    "Trades": 168,
+    "Alpha_vs_0050.TW": 37.7
+   }
+  },
+  "D 完整（70% 低檔 + 30% 動能 + 輪動）": {
+   "全期": {
+    "CAGR": 42.1,
+    "Sharpe": 1.35,
+    "Sortino": 1.76,
+    "MaxDD": -39.5,
+    "WinRate": 60.7,
+    "ProfitFactor": 6.86,
+    "AvgHoldDays": 271.0,
+    "Trades": 336,
+    "TurnoverPerYear": 29.5,
+    "Alpha_vs_0050.TW": 32.6
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 40.9,
+    "Sharpe": 1.42,
+    "Sortino": 1.78,
+    "MaxDD": -36.6,
+    "WinRate": 62.0,
+    "ProfitFactor": 6.35,
+    "AvgHoldDays": 261.0,
+    "Trades": 158,
+    "Alpha_vs_0050.TW": 30.9
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 43.7,
+    "Sharpe": 1.31,
+    "Sortino": 1.78,
+    "MaxDD": -39.0,
+    "WinRate": 59.6,
+    "ProfitFactor": 7.3,
+    "AvgHoldDays": 280.0,
+    "Trades": 178,
+    "Alpha_vs_0050.TW": 34.3
+   }
+  },
+  "D1 只有低檔布局": {
+   "全期": {
+    "CAGR": 39.5,
+    "Sharpe": 1.25,
+    "Sortino": 1.66,
+    "MaxDD": -43.1,
+    "WinRate": 64.4,
+    "ProfitFactor": 8.51,
+    "AvgHoldDays": 379.0,
+    "Trades": 73,
+    "TurnoverPerYear": 16.9,
+    "Alpha_vs_0050.TW": 31.2
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 40.5,
+    "Sharpe": 1.36,
+    "Sortino": 1.71,
+    "MaxDD": -37.9,
+    "WinRate": 64.5,
+    "ProfitFactor": 7.42,
+    "AvgHoldDays": 378.0,
+    "Trades": 31,
+    "Alpha_vs_0050.TW": 30.9
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 39.0,
+    "Sharpe": 1.18,
+    "Sortino": 1.63,
+    "MaxDD": -42.6,
+    "WinRate": 64.3,
+    "ProfitFactor": 9.63,
+    "AvgHoldDays": 379.0,
+    "Trades": 42,
+    "Alpha_vs_0050.TW": 31.4
+   }
+  },
+  "D2 只有動能排名": {
+   "全期": {
+    "CAGR": 46.6,
+    "Sharpe": 1.42,
+    "Sortino": 1.84,
+    "MaxDD": -36.3,
+    "WinRate": 59.7,
+    "ProfitFactor": 6.39,
+    "AvgHoldDays": 241.0,
+    "Trades": 263,
+    "TurnoverPerYear": 59.0,
+    "Alpha_vs_0050.TW": 36.1
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 40.5,
+    "Sharpe": 1.39,
+    "Sortino": 1.77,
+    "MaxDD": -36.3,
+    "WinRate": 61.4,
+    "ProfitFactor": 6.0,
+    "AvgHoldDays": 232.0,
+    "Trades": 127,
+    "Alpha_vs_0050.TW": 30.9
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 53.1,
+    "Sharpe": 1.46,
+    "Sortino": 1.92,
+    "MaxDD": -35.9,
+    "WinRate": 58.1,
+    "ProfitFactor": 6.7,
+    "AvgHoldDays": 249.0,
+    "Trades": 136,
+    "Alpha_vs_0050.TW": 41.2
+   }
+  },
+  "同池等權持有": {
+   "全期": {
+    "CAGR": 41.8,
+    "Sharpe": 1.51,
+    "Sortino": 1.89,
+    "MaxDD": -31.1,
+    "TurnoverPerYear": 0,
+    "Alpha_vs_0050.TW": 31.4
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 35.7,
+    "Sharpe": 1.46,
+    "Sortino": 1.72,
+    "MaxDD": -29.3,
+    "Alpha_vs_0050.TW": 26.5
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 48.2,
+    "Sharpe": 1.57,
+    "Sortino": 2.05,
+    "MaxDD": -31.1,
+    "Alpha_vs_0050.TW": 36.1
+   }
+  },
+  "0050.TW 買進持有": {
+   "全期": {
+    "CAGR": 24.7,
+    "Sharpe": 1.2,
+    "Sortino": 1.64,
+    "MaxDD": -33.8,
+    "TurnoverPerYear": 0,
+    "Alpha_vs_0050.TW": -0.0
+   },
+   "In-sample 2017-2021": {
+    "CAGR": 17.8,
+    "Sharpe": 1.06,
+    "Sortino": 1.41,
+    "MaxDD": -28.2,
+    "Alpha_vs_0050.TW": -0.0
+   },
+   "Out-of-sample 2022-": {
+    "CAGR": 31.4,
+    "Sharpe": 1.31,
+    "Sortino": 1.85,
+    "MaxDD": -33.8,
+    "Alpha_vs_0050.TW": -0.0
+   }
+  }
+ },
+ "walk_forward": {
+  "metrics": {
+   "CAGR": 49.4,
+   "Sharpe": 1.42,
+   "Sortino": 1.89,
+   "MaxDD": -39.0,
+   "Alpha_vs_0050.TW": 37.8
+  },
+  "yearly_picks": {
+   "2020": "C 量化 + 相對強度 + 過熱（無 catalyst）",
+   "2021": "C 量化 + 相對強度 + 過熱（無 catalyst）",
+   "2022": "D 完整（70% 低檔 + 30% 動能 + 輪動）",
+   "2023": "B 量化因子",
+   "2024": "B 量化因子",
+   "2025": "A 原本 analyst voting",
+   "2026": "A 原本 analyst voting"
+  }
+ },
+ "yearly_returns_pct": {
+  "A 原本 analyst voting": {
+   "2018": -11.5,
+   "2019": 66.3,
+   "2020": 54.2,
+   "2021": 34.6,
+   "2022": -18.3,
+   "2023": 111.4,
+   "2024": 24.3,
+   "2025": 59.1,
+   "2026": 123.0
+  },
+  "B 量化因子": {
+   "2018": 5.2,
+   "2019": 69.5,
+   "2020": 61.9,
+   "2021": 49.9,
+   "2022": -18.7,
+   "2023": 104.9,
+   "2024": 25.7,
+   "2025": 55.0,
+   "2026": 112.1
+  },
+  "C 量化 + 相對強度 + 過熱（無 catalyst）": {
+   "2018": 11.8,
+   "2019": 72.2,
+   "2020": 57.0,
+   "2021": 43.7,
+   "2022": -18.7,
+   "2023": 91.3,
+   "2024": 27.1,
+   "2025": 57.0,
+   "2026": 105.7
+  },
+  "D 完整（70% 低檔 + 30% 動能 + 輪動）": {
+   "2018": -15.6,
+   "2019": 87.0,
+   "2020": 72.8,
+   "2021": 63.9,
+   "2022": -28.6,
+   "2023": 78.9,
+   "2024": 27.8,
+   "2025": 62.4,
+   "2026": 108.9
+  }
+ },
+ "notes": [
+  "Model C 無法納入 catalyst：歷史新聞沒有 point-in-time 來源（納入即作弊）。",
+  "Model A 只含舊系統可用歷史價格重算的部分；舊系統的 LLM 人設分析師無法回測（需付費 LLM 與歷史財報）。",
+  "股票池為今天的 AI 科技股（後見之明偏差），所有模型都被高估；請看相對差異。"
+ ]
+}

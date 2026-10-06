@@ -35,12 +35,21 @@ def _stats(eq: pd.Series) -> Dict:
 
 
 def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str = "2017-07-01",
-                 extra: Optional[Dict[str, pd.Series]] = None) -> Dict:
+                 extra: Optional[Dict[str, pd.Series]] = None, opens: Optional[pd.DataFrame] = None) -> Dict:
+    """時序（point-in-time）：T-1 收盤算分數 → T 開盤成交 → 持有報酬以開盤對開盤計算。
+    2026-10-07 修正：舊版用 T-1 收盤的分數、又從同一個 T-1 收盤開始計報酬（等於看完收盤價再用收盤價成交）。
+    未提供 opens 時退而用「T 收盤成交」（訊號後下一個收盤，仍不使用訊號當日的價格成交）。"""
     closes = closes.sort_index().ffill(limit=3)
     rets = closes.pct_change()
+    if opens is not None:
+        opens = opens.reindex(closes.index).ffill(limit=3)
+        hold_ret = (opens.shift(-1) / opens - 1)          # 第 i 天開盤買進，持有到第 i+1 天開盤
+    else:
+        hold_ret = rets.shift(-1)                          # 第 i 天收盤買進，賺第 i+1 天的報酬
     score = rets.rolling(LOOKBACK).mean() / rets.rolling(LOOKBACK).std()
     idx = closes.index[closes.index >= start]
     closes, rets, score = closes.loc[idx], rets.loc[idx].fillna(0.0), score.loc[idx]
+    hold_ret = hold_ret.loc[idx].fillna(0.0)
     bench = bench.reindex(idx).ffill()
 
     held: List[str] = []
@@ -62,7 +71,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
                 log.append({"date": idx[i].strftime("%Y-%m-%d"),
                             "buy": sorted(set(nxt) - set(held)), "sell": sorted(set(held) - set(nxt))})
             held = nxt
-        day = float(rets.iloc[i][held].mean()) if held else 0.0
+        day = float(hold_ret.iloc[i][held].mean()) if held else 0.0
         eq.append(eq[-1] * (1 + day - cost))
     eq_s = pd.Series(eq, index=idx)
     ew = (1 + rets.mean(axis=1).fillna(0.0)).cumprod()   # 同池等權（每日再平衡近似）
@@ -103,11 +112,18 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
     }
 
 
-def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int = 252) -> Tuple[pd.Series, List[Dict]]:
-    """長線低檔布局：T-1 收盤符合（3 年報酬 > 0 且距 52 週高點 ≤ -30%）→ T 收盤買進，持有 hold 日。
-    每檔 1/LOWENTRY_SLOTS 權重、空槽為現金；同檔出場後 60 日內不重複進場；依回落深度優先。"""
+def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int = 252,
+                     opens: Optional[pd.DataFrame] = None) -> Tuple[pd.Series, List[Dict]]:
+    """長線低檔布局：T-1 收盤符合（3 年報酬 > 0 且距 52 週高點 ≤ -30%）→ T 成交，持有 hold 日。
+    提供 opens 時：T 開盤成交、開盤對開盤計報酬（與動能回測同一時間基準，組合時才不會虛增分散效果）；
+    否則 T 收盤成交、收盤對收盤。每檔 1/LOWENTRY_SLOTS 權重、空槽為現金；同檔出場後 60 日內不重複進場。"""
     closes = closes.sort_index().ffill(limit=3)
-    rets = closes.pct_change()
+    if opens is not None:
+        px_exec = opens.reindex(closes.index).ffill(limit=3)
+        rets = (px_exec / px_exec.shift(1) - 1)            # 第 j 天的報酬 = 開盤(j-1) → 開盤(j)
+    else:
+        px_exec = closes
+        rets = closes.pct_change()
     dd = closes / closes.rolling(252, min_periods=200).max() - 1
     lt = closes / closes.shift(252 * LOWENTRY_LT_YEARS) - 1
     ok = (dd <= LOWENTRY_DD) & (lt > 0)
@@ -123,7 +139,7 @@ def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int 
             j0, p0 = pos[k]
             if j - j0 >= hold:
                 trades.append({"ticker": k, "entry": idx[j0].strftime("%Y-%m-%d"), "exit": d.strftime("%Y-%m-%d"),
-                               "return_pct": round((closes.at[d, k] / p0 - 1) * 100, 1)})
+                               "return_pct": round((px_exec.at[d, k] / p0 - 1) * 100, 1)})
                 del pos[k]
                 cool[k] = j + 60
                 cost += COST / LOWENTRY_SLOTS
@@ -131,8 +147,8 @@ def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int 
             row = ok.loc[prev]
             cands = sorted([k for k in row[row].index if k not in pos and cool.get(k, 0) <= j], key=lambda k: dd.at[prev, k])
             for k in cands[: LOWENTRY_SLOTS - len(pos)]:
-                if np.isfinite(closes.at[d, k]):
-                    pos[k] = (j, float(closes.at[d, k]))
+                if np.isfinite(px_exec.at[d, k]):
+                    pos[k] = (j, float(px_exec.at[d, k]))
                     cost += COST / LOWENTRY_SLOTS
         daily.append((d, r - cost))
     ser = pd.Series([x for _, x in daily], index=[d for d, _ in daily])
@@ -162,12 +178,15 @@ def build_backtest_report(period: str = "max") -> Dict:
             continue
         closes = pd.DataFrame({s: f["Close"] for s, f in pm.items()})
         closes = closes[closes.index >= "2013-01-01"]
-        res = run_backtest(m, closes, bench["Close"], extra=extra)
+        opens = pd.DataFrame({s: f["Open"] for s, f in pm.items() if "Open" in f}).reindex(closes.index)
+        res = run_backtest(m, closes, bench["Close"], extra=extra, opens=opens)
+        res["execution_timing"] = "兩條策略皆為 T-1 收盤訊號 → T 開盤成交，開盤對開盤計報酬；組合時兩者對齊同一時間區段"
         # 長線低檔布局與 70/30 組合（使用者設定的配置）
-        low_r, low_trades = lowentry_returns(closes)
+        low_r, low_trades = lowentry_returns(closes, opens=opens)
         eq_m = res.pop("_eq_daily")   # 必須用「每日」動能報酬組合，週取樣會讓波動/Sharpe 失真
         eq_m.index = pd.to_datetime(eq_m.index)
-        mom_r = eq_m.pct_change().reindex(low_r.index).fillna(0)
+        # 動能 eq_m 第 i 筆 = 開盤(i) → 開盤(i+1)；低檔 low_r 第 j 筆 = 開盤(j-1) → 開盤(j)：動能往後平移一格（shift(1)）對齊同一段時間
+        mom_r = eq_m.pct_change().shift(1).reindex(low_r.index).fillna(0)
         combo_r = ALLOCATION["lowentry"] * low_r + ALLOCATION["momentum"] * mom_r
         low_eq, combo_eq = (1 + low_r).cumprod(), (1 + combo_r).cumprod()
         b = bench["Close"].copy()
