@@ -364,148 +364,9 @@ def _to_float(value) -> float | None:
 def _build_holding_verdict(
     report, cost_basis: float | None
 ) -> tuple[str, str, str, str]:
-    # 依「未來半年（6 個月）統計期望報酬」決定 續抱 / 減碼 / 出場——以「半年內報酬最好」為準：
-    #   1) 風險閘門（跌破硬性保護停損 / 長線虧損閘門 / 半年期望報酬明顯為負）→ 賣出期望優於續抱 → 全數出場。
-    #   2) 半年上檔有限又短線過熱 → 分批鎖利（減碼比例看過熱程度）。
-    #   3) 半年期望報酬仍正向 → 續抱（續抱期望優於賣出）。
-    # 不再用均線幾何（MA20<MA50）或帳面獲利% 單獨觸發賣出，避免與「個股分析」結論互相矛盾。
-    close = report.latest_close
-    ma120 = getattr(report, "ma120", 0.0) or 0.0
-    rsi = report.rsi14
-    bias = report.bias
-    exit_action = getattr(report, "today_exit_action", "") or ""
-    pnl_pct = None if cost_basis in (None, 0) else ((close / cost_basis) - 1) * 100
-
-    # 未來半年（126 個交易日）統計期望報酬 %
-    pf = report.price_forecast if isinstance(getattr(report, "price_forecast", None), dict) else {}
-    exp6: float | None = None
-    for h in pf.get("horizons", []) or []:
-        if h.get("days") == 126:
-            exp6 = _to_float(h.get("expected_return_pct"))
-            break
-
-    ltr = report.long_term_risk if isinstance(getattr(report, "long_term_risk", None), dict) else {}
-    ltr_blocked = bool(ltr.get("blocked"))
-    exp12 = _to_float(ltr.get("expected_return_12m_pct"))
-
-    # 解析硬性保護停損價（防守底線；跌破代表下檔風險已吃掉半年期望報酬）。
-    stop_val = None
-    try:
-        if report.stop_loss and isinstance(report.stop_loss, str):
-            stop_val = float(report.stop_loss.split("-")[0].strip())
-        elif report.stop_loss:
-            stop_val = float(report.stop_loss)
-    except Exception:
-        stop_val = None
-    stop_broken = stop_val is not None and close < stop_val
-
-    overbought = rsi >= 75
-    extreme_ob = rsi >= 82
-
-    # 防抖動：股價仍站穩長線 MA120 且趨勢未轉空 → 結構健康。此時「軟性賣出訊號」(半年預測轉弱、
-    # 引擎當日偏空) 不應觸發全數出場，避免剛買進的部位因短線雜訊就被叫賣、用一堆小虧失血。
-    # 硬性風險(跌破保護停損、長線虧損閘門)仍照常全數出場——那是真正的防守底線。
-    structurally_intact = ma120 > 0 and close >= ma120 and bias != "偏空"
-
-    def _exit(reason_core: str) -> tuple[str, str, str, str]:
-        if pnl_pct is not None and pnl_pct < 0:
-            return ("停損出場", "高", "100%", "停損出場：" + reason_core)
-        return ("獲利了結", "高", "100%", "獲利了結：" + reason_core)
-
-    # ---- 1) 風險閘門 → 全數出場（賣出的期望報酬優於續抱）----
-    if stop_broken:
-        return _exit(
-            f"股價已跌破保護性停損價（{stop_val:.2f} 元），下檔風險已吃掉未來半年的期望報酬，先全數出場保存實力。"
-        )
-    if ltr_blocked:
-        return _exit(
-            f"長線虧損閘門觸發（{ltr.get('note', '12 個月統計期望報酬偏負')}），長抱半年以上仍難轉正，建議全數出場。"
-        )
-
-    # ---- 0.5) 強勢突破護欄（2026-07-06 檢討修正）----
-    # 偏多且貼近 60 日高點 = 持股最強的訊號。此時統計預測（半年期望報酬）多半仍被
-    # 更早的下跌歷史污染，不能拿舊帳當賣出理由——6409 在 1000 元創新高當天被判「獲利了結」，
-    # 7 個交易日後 1290（+29%）就是教訓。強勢股改用移動停利：收盤跌破 20 日均線再減碼。
-    dd60 = _to_float(getattr(report, "drawdown_from_high_pct", None))
-    ma20 = getattr(report, "ma20", 0.0) or 0.0
-    strong_breakout = bias == "偏多" and dd60 is not None and dd60 >= -2.0
-    if strong_breakout:
-        trail_ref = f"（約 {ma20:.2f} 元）" if ma20 > 0 else ""
-        if extreme_ob:
-            return (
-                "觀察減碼", "低", "20%",
-                f"股價貼近 60 日高點、動能強勁，但 RSI {rsi:.0f} 嚴重過熱——僅小幅減碼兩成鎖利，"
-                f"其餘部位改用移動停利續抱（收盤跌破 20 日均線{trail_ref}再減碼），不賣在突破點。",
-            )
-        return (
-            "強勢續抱", "低", "0%",
-            f"股價貼近 60 日高點、趨勢偏多（RSI {rsi:.0f}），突破創高是持股最強的訊號；"
-            f"統計預測若偏弱多為舊資料殘影，參考價值有限。改用移動停利保護——"
-            f"收盤跌破 20 日均線{trail_ref}或前波低點再處理，抱住強勢股讓獲利奔跑。",
-        )
-
-    if exp6 is not None and (exp6 <= -5 or (exp6 < 0 and exp12 is not None and exp12 < 0)):
-        if structurally_intact:
-            return (
-                "觀察減碼", "中", "30%",
-                f"未來半年統計期望報酬轉弱（{exp6:.1f}%），但股價仍站穩長線 MA120（{ma120:.2f} 元）、趨勢未轉空——"
-                f"先減碼約三成鎖風險、核心部位續抱，不必全數砍在可能只是短線雜訊的位置。",
-            )
-        return _exit(
-            f"未來半年統計期望報酬為 {exp6:.1f}%（偏負）、且已跌破長線生命線，續抱期望報酬低於賣出，建議全數出場、資金轉進更強標的。"
-        )
-
-    # ---- 2) 半年上檔有限又短線過熱 → 分批鎖利 ----
-    weak6 = exp6 is not None and exp6 < 4
-    if extreme_ob:
-        # 2026-07-06 檢討修正：半年期望報酬仍高（≥15%）時不砍半倉——過熱只防急回、減碼三成即可，
-        # 別把「上檔仍大」的持股在動能最強時砍掉一半。
-        if exp6 is not None and exp6 >= 15:
-            return (
-                "觀察減碼", "中", "30%",
-                f"RSI {rsi:.0f} 嚴重超買、短線隨時可能急回，但未來半年統計期望報酬仍有 {exp6:.1f}%——"
-                f"僅減碼約三成防守，其餘部位續抱讓獲利奔跑，跌破 20 日均線再進一步減碼。",
-            )
-        upside = f"、未來半年期望報酬僅 {exp6:.1f}% 上檔有限" if exp6 is not None else ""
-        return (
-            "分批減碼", "中", "50%",
-            f"RSI {rsi:.0f} 嚴重超買、短線過熱{upside}；先了結一半鎖利、降低急回風險，其餘隨趨勢續抱。",
-        )
-    if overbought and weak6:
-        return (
-            "觀察減碼", "中", "30%",
-            f"RSI {rsi:.0f} 偏熱且未來半年期望報酬僅 {exp6:.1f}%、上檔空間有限，"
-            f"小幅減碼約三成鎖利，核心部位續抱觀察。",
-        )
-
-    # ---- 3) 半年期望報酬仍正向 → 續抱（續抱期望優於賣出）----
-    caution = ""
-    if ma120 > 0 and close < ma120:
-        caution = f"　註：股價仍在長線 MA120（{ma120:.2f} 元）之下，屬中段整理，留意而非賣出訊號。"
-    if exp6 is not None and exp6 >= 15 and bias != "偏空":
-        return (
-            "強勢續抱", "低", "0%",
-            f"未來半年統計期望報酬高達 {exp6:.1f}%、趨勢未轉空，續抱期望報酬明顯優於賣出，抱牢即可。{caution}",
-        )
-    if exp6 is not None:
-        return (
-            "續抱觀察", "低", "0%",
-            f"未來半年統計期望報酬為 {exp6:.1f}%（仍正向或持平），續抱期望報酬優於賣出；"
-            f"無跌破停損、無長線虧損風險，續抱觀察、跌破保護價再處理。{caution}",
-        )
-
-    # ---- 4) 半年預測資料不足 → 回退引擎當日訊號，維持與個股分析一致 ----
-    if exit_action == "今天賣出":
-        if structurally_intact:
-            return (
-                "續抱觀察", "低", "0%",
-                "引擎當日訊號偏空，但股價仍站穩長線 MA120、趨勢未轉空，視為短線波動；續抱觀察、跌破保護停損再處理，"
-                "不在僅短線雜訊時砍出場。",
-            )
-        return _exit("引擎當日訊號為『今天賣出』（趨勢偏空且跌破生命線），且無半年預測可佐證續抱。")
-    if exit_action == "今天可小量賣":
-        return ("觀察減碼", "中", "30%", "引擎當日訊號為『今天可小量賣』（短線偏熱），小幅減碼鎖利、其餘續抱。")
-    return ("續抱觀察", "低", "0%", f"無明確賣出訊號（趨勢 {bias}、RSI {rsi:.0f}），續抱觀察、守住保護停損即可。")
+    # 規則集中在 src/holding_rules.py（與自動提醒共用；2026-10-06 改為回測一致的趨勢跟隨規則）。
+    from src.holding_rules import build_holding_verdict
+    return build_holding_verdict(report, cost_basis)
 
 
 # ── 籌碼面 + 催化/風險 helper（免 API Key，安全降級） ──────────────────────────
@@ -644,13 +505,8 @@ def review_holdings(request: HoldingReviewRequest) -> list[HoldingReviewResponse
         # 排序優先級需與 _build_holding_verdict 實際輸出的判語一致：
         #   出場(3) > 減碼(2) > 續抱(1)；同級再依帳面損益絕對值大小排。
         def _verdict_rank(verdict: str) -> int:
-            if verdict in {"停損出場", "獲利了結"}:
-                return 3
-            if verdict in {"分批減碼", "觀察減碼"}:
-                return 2
-            if verdict in {"強勢續抱", "續抱觀察"}:
-                return 1
-            return 0
+            from src.holding_rules import EXIT_RANK
+            return EXIT_RANK.get(verdict, 0)
 
         results.sort(
             key=lambda item: (

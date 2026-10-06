@@ -1,0 +1,76 @@
+name: Trade Alerts (盤中買賣提醒)
+
+# 盤中檢查「爆量長紅點火」買點與持股 加碼/減碼/出場，條件成立才推播（同訊號 5 天內不重複）。
+# 收盤後的完整提醒由 daily.yml 在產生每日報告後執行（--market all）。
+# 需在 repo Settings → Secrets and variables → Actions 設定：
+#   HOLDINGS（持股，每行「代號 成本 股數」）＋ 任一推播管道（NTFY_TOPIC / TELEGRAM_BOT_TOKEN+TELEGRAM_CHAT_ID /
+#   DISCORD_WEBHOOK_URL / SMTP_HOST+SMTP_PORT+SMTP_USER+SMTP_PASS+ALERT_EMAIL_TO）。
+on:
+  schedule:
+    # 台股盤中（台北 10:30、13:00）
+    - cron: "30 2 * * 1-5"
+    - cron: "0 5 * * 1-5"
+    # 美股盤中（UTC 14:45 / 17:30 / 19:30 ≈ 美東開盤後 1 小時、午盤、收盤前；夏令/冬令時間都落在盤中）
+    - cron: "45 14 * * 1-5"
+    - cron: "30 17 * * 1-5"
+    - cron: "30 19 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "auto / us / tw / all"
+        default: "auto"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trade-alerts
+  cancel-in-progress: false
+
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance feedparser requests pandas numpy beautifulsoup4 lxml
+
+      # 去重狀態放 Actions cache（不 commit 進公開 repo，也不觸發 Render 重新部署）
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: .alert_state
+          key: alert-state-${{ github.run_id }}
+          restore-keys: alert-state-
+
+      - name: Run alerts
+        env:
+          HOLDINGS: ${{ secrets.HOLDINGS }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: python -m src.pipeline.alerts --market "${{ github.event.inputs.market || 'auto' }}"
+
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .alert_state
+          key: alert-state-${{ github.run_id }}

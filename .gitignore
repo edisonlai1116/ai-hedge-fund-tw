@@ -78,3 +78,5 @@ agentic_sop/runs/
 !agentic_sop/requirements.txt
 !agentic_sop/example/inputs/sample_holdings.txt
 !agentic_sop/example/inputs/sample_readings.txt
+# 自動提醒去重狀態（存在 Actions cache，不進 repo）
+.alert_state/

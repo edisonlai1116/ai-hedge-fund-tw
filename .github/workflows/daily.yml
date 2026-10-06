@@ -39,6 +39,38 @@ jobs:
       - name: Generate daily report
         run: python -m src.pipeline.daily_report
 
+      # 收盤後買賣提醒（持股 加碼/減碼/出場 + 點火買點）；推播設定見 alerts.yml。
+      # 失敗不影響每日報告 commit。日誌公開，程式在 CI 中不會印出持股內容。
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: .alert_state
+          key: alert-state-${{ github.run_id }}
+          restore-keys: alert-state-
+
+      - name: Send trade alerts
+        continue-on-error: true
+        env:
+          HOLDINGS: ${{ secrets.HOLDINGS }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: python -m src.pipeline.alerts --market all
+
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .alert_state
+          key: alert-state-${{ github.run_id }}
+
       - name: Commit updated report
         run: |
           git config user.name  "github-actions[bot]"

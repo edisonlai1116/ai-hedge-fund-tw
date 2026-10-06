@@ -53,3 +53,25 @@ git push -u origin main
 
 ## 卡關時
 把畫面上的紅字訊息貼給我，我幫你看下一步。
+
+## 自動買賣提醒（GitHub Actions 推播）
+
+`src/pipeline/alerts.py` 會在台股盤中（10:30、13:00）、美股盤中（約開盤後 1 小時／午盤／收盤前）
+與每日報告產生後檢查：
+
+- **持股**：依 `src/holding_rules.py`（與網站「持股健檢」同一套）判斷 加碼／減碼／出場，並提醒單檔超過總資產 15%。
+- **買點**：AI 主線＋權值觀察池出現「爆量長紅點火」（單日 ≥+5%、量 ≥1.3 倍均量）。
+
+同一訊號 5 天內不重複推播。設定（repo → Settings → Secrets and variables → Actions → New repository secret）：
+
+| Secret | 說明 |
+|---|---|
+| `HOLDINGS` | 持股，每行 `代號 成本 股數`（同 股票成本.txt 格式；台股直接寫 2330） |
+| `NTFY_TOPIC` | 最簡單：手機裝 ntfy App，訂閱一個難猜的主題名（例：`edison-alerts-8f3k2q`），這裡填同名 |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | 或用 Telegram 機器人（較私密） |
+| `DISCORD_WEBHOOK_URL` | 或 Discord 頻道 Webhook |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` `ALERT_EMAIL_TO` | 或 Email（Gmail 需用應用程式密碼） |
+
+repo 是公開的：持股只放 Secret，程式在 Actions 日誌中不印出任何持股內容。
+設好後可到 Actions → Trade Alerts → Run workflow（market 選 all）立即測試一次。
+本機試跑（只印不推）：`python -m src.pipeline.alerts --market all --dry-run`

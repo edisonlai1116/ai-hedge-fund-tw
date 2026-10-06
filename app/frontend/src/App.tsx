@@ -156,8 +156,8 @@ function parseHoldingsInput(raw: string, market: 'us' | 'tw' | ''): HoldingRevie
 }
 
 function actionTone(action: string): string {
-  if (action.includes('買') || action.includes('偏多')) return 'text-emerald-700';
-  if (action.includes('賣') || action.includes('偏空')) return 'text-rose-700';
+  if (action.includes('買') || action.includes('偏多') || action.includes('加碼')) return 'text-emerald-700';
+  if (action.includes('賣') || action.includes('偏空') || action.includes('減碼') || action.includes('出場')) return 'text-rose-700';
   if (action.includes('續抱')) return 'text-sky-700';
   if (action.includes('回檔') || action.includes('觀察')) return 'text-amber-700';
   return 'text-slate-700';
