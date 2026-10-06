@@ -23,9 +23,32 @@ from src.agents.growth_agent import growth_analyst_agent
 from src.agents.gooaye_sentiment import gooaye_sentiment_agent
 from src.agents.macro_news_sentiment import macro_news_sentiment_agent
 from src.agents.nicolas_sentiment import nicolas_sentiment_agent
+from src.agents.quant_modules import (
+    ai_industry_macro_agent,
+    growth_earnings_agent,
+    news_catalyst_agent,
+    sentiment_positioning_agent,
+    technical_momentum_agent,
+    valuation_quality_agent,
+)
+
+# 六個量化模組（預設）：數字分數由 src.ranking 確定性計算，LLM 不參與打分。
+# 下方的人設型 LLM 分析師仍保留，可手動選用，但不再是預設。
+QUANT_MODULE_CONFIG = {
+    "valuation_quality": ("估值與品質", "Valuation & Quality", "依 A~F 類別使用不同估值框架（高成長用 PEG/EV/Sales、成熟用 DCF、循環用正常化獲利、電力用 EV/EBITDA）＋品質。", valuation_quality_agent),
+    "growth_earnings": ("成長與財報", "Growth & Earnings", "營收/EPS 成長與『是否正在加速』：成長加速度、利潤率擴張、surprise、預估上修。", growth_earnings_agent),
+    "technical_momentum": ("技術與動能", "Technical & Momentum", "核心為 6 個月風險調整動能排名（point-in-time 驗證）；相對強度、過熱為診斷。", technical_momentum_agent),
+    "sentiment_positioning": ("情緒與籌碼", "Sentiment & Positioning", "放空比例、分析師共識、近 90 天內部人淨買賣。", sentiment_positioning_agent),
+    "news_catalyst": ("新聞與催化", "News & Catalyst", "近 30 天事件的方向/強度/持續性/已反映程度，以及大跌原因診斷。", news_catalyst_agent),
+    "ai_industry_macro": ("AI 產業與總經", "AI Industry / Macro Regime", "AI 曝險、產業動能、AI 週期位置與市場狀態。", ai_industry_macro_agent),
+}
+DEFAULT_ANALYSTS = list(QUANT_MODULE_CONFIG)
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
+    **{key: {"display_name": zh, "description": en, "investing_style": desc, "agent_func": fn, "type": "analyst",
+             "order": -6 + i}
+       for i, (key, (zh, en, desc, fn)) in enumerate(QUANT_MODULE_CONFIG.items())},
     "aswath_damodaran": {
         "display_name": "Aswath Damodaran",
         "description": "The Dean of Valuation",

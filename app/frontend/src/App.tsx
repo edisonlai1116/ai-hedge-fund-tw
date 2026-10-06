@@ -26,13 +26,15 @@ import {
   type MarketRegimeSuggestion,
 } from './services/simple-signal-api';
 import { evaluateHoldings, fetchStrategyReport, type EvaluatedHolding, type RankRow } from './services/strategy-api';
+import { OpportunityPanel } from './OpportunityView';
 import { MyHoldingsPanel, StockLookupPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
 
-type TabKey = 'analyze' | 'daily' | 'holdings' | 'backtest' | 'portfolio';
+type TabKey = 'analyze' | 'daily' | 'opportunity' | 'holdings' | 'backtest' | 'portfolio';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
   { key: 'analyze', label: '個股查詢', icon: Search, hint: '查任一檔的策略排名' },
   { key: 'daily', label: '策略精選', icon: Sparkles, hint: '本月買進名單（單一策略）' },
+  { key: 'opportunity', label: '機會評分', icon: Gauge, hint: '跨股比較・進場區・輪動' },
   { key: 'holdings', label: '我的持股', icon: BriefcaseBusiness, hint: '加碼 / 減碼 / 換股提醒' },
   { key: 'backtest', label: '策略回測', icon: LineChart, hint: '對標 VOO / 0050' },
   { key: 'portfolio', label: '跟單對帳本', icon: Wallet, hint: '5 萬美金實單跟蹤 vs 大盤' },
@@ -87,6 +89,7 @@ export default function App() {
 
           {activeTab === 'analyze' ? <StockLookupPanel /> : null}
           {activeTab === 'daily' ? <StrategyPicksPanel /> : null}
+          {activeTab === 'opportunity' ? <OpportunityPanel /> : null}
           {activeTab === 'holdings' ? <MyHoldingsPanel /> : null}
           {activeTab === 'backtest' ? <StrategyBacktestPanel /> : null}
           {activeTab === 'portfolio' ? <PortfolioTab /> : null}

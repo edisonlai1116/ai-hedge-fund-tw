@@ -105,9 +105,10 @@ def create_workflow(selected_analysts=None):
     # Get analyst nodes from the configuration
     analyst_nodes = get_analyst_nodes()
 
-    # Default to all analysts if none selected
+    # 預設使用六個量化模組（人設型分析師需手動選）
     if selected_analysts is None:
-        selected_analysts = list(analyst_nodes.keys())
+        from src.utils.analysts import DEFAULT_ANALYSTS
+        selected_analysts = list(DEFAULT_ANALYSTS)
     # Add selected analyst nodes
     for analyst_key in selected_analysts:
         node_name, node_func = analyst_nodes[analyst_key]

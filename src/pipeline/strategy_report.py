@@ -13,6 +13,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 DATA_DIR = os.path.join(REPO_ROOT, "docs", "data")
 STRATEGY_JSON = os.path.join(DATA_DIR, "strategy.json")
 BACKTEST_JSON = os.path.join(DATA_DIR, "strategy_backtest.json")
+OPPORTUNITY_JSON = os.path.join(DATA_DIR, "opportunity.json")
+SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.jsonl")
+SIGNAL_ACCURACY_JSON = os.path.join(DATA_DIR, "signal_accuracy.json")
 BACKTEST_MAX_AGE_DAYS = 7
 
 
@@ -45,6 +48,26 @@ def main(argv=None) -> int:
     for m, d in report["markets"].items():
         top = ", ".join(r["symbol"] for r in d["rows"][:10])
         print(f"[strategy_report] {m}: {d['universe_size']} 檔；前 10：{top}")
+
+    # 機會評分卡（cross-sectional ranking）：驗收清單 + 各市場策略前 10 名；不含任何持股資訊。
+    try:
+        from src.ranking.engine import rank_stocks
+        from src.ranking.themes import ACCEPTANCE_TICKERS
+        from src.ranking import tracking
+        watch = list(ACCEPTANCE_TICKERS)
+        for m in ("us", "tw"):
+            watch += [r["symbol"] for r in report["markets"].get(m, {}).get("rows", [])[:10]]
+        watch = list(dict.fromkeys(watch))
+        opp = rank_stocks(watch)
+        for r in opp["ranking"]:   # 精簡：原始財報細節不輸出
+            for k in ("fundamentals",):
+                r.pop(k, None)
+        _write(opp, OPPORTUNITY_JSON)
+        n = tracking.log_signals(opp, SIGNAL_LOG)
+        _write(tracking.evaluate(SIGNAL_LOG), SIGNAL_ACCURACY_JSON)
+        print(f"[strategy_report] 機會評分 {len(opp['ranking'])} 檔（regime {opp['regime']['regime']}），新增訊號紀錄 {n} 筆")
+    except Exception as exc:
+        print(f"[strategy_report] 機會評分失敗（不影響策略排名）：{type(exc).__name__}: {exc}")
 
     if args.force_backtest or _backtest_stale():
         from src.strategy.backtest import build_backtest_report

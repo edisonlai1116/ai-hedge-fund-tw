@@ -1,13 +1,21 @@
-import json
-import time
-from langchain_core.messages import HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
+"""Portfolio Manager：先對全部股票做 cross-sectional ranking，再產生 buy / sell / hold。
 
-from src.graph.state import AgentState, show_agent_reasoning
+舊版每檔股票獨立丟給 LLM（只看到 signal + confidence）決定買賣；新版：
+  1. 由 src.ranking 取得同一批股票的完整評分表（現價、各模組分數、估值、成長、財報加速、AI 主題、
+     催化、技術、相對強度、過熱、風險、持股、成本、組合曝險）。
+  2. 決策是確定性的：先處理賣出/減碼/輪動（SELL A → BUY B），再依排名與目標權重買進。
+     BUY_ON_PULLBACK 只在價格進入進場區時成交（不追高）。
+  3. LLM（可選）只負責把表格寫成解讀文字，不改任何數字或動作。
+"""
+import json
+import os
+
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
+
+from src.graph.state import AgentState, show_agent_reasoning
 from src.utils.progress import progress
-from src.utils.llm import call_llm
 
 
 class PortfolioDecision(BaseModel):
@@ -23,284 +31,170 @@ class PortfolioManagerOutput(BaseModel):
 
 ##### Portfolio Management Agent #####
 def portfolio_management_agent(state: AgentState, agent_id: str = "portfolio_manager"):
-    """Makes final trading decisions and generates orders for multiple tickers"""
+    from src.agents.quant_modules import get_ranking
 
     portfolio = state["data"]["portfolio"]
     analyst_signals = state["data"]["analyst_signals"]
     tickers = state["data"]["tickers"]
+    end_date = state["data"]["end_date"]
 
-    position_limits = {}
-    current_prices = {}
-    max_shares = {}
-    signals_by_ticker = {}
-    for ticker in tickers:
-        progress.update_status(agent_id, ticker, "Processing analyst signals")
-
-        # Find the corresponding risk manager for this portfolio manager
-        if agent_id.startswith("portfolio_manager_"):
-            suffix = agent_id.split('_')[-1]
-            risk_manager_id = f"risk_management_agent_{suffix}"
-        else:
-            risk_manager_id = "risk_management_agent"  # Fallback for CLI
-
-        risk_data = analyst_signals.get(risk_manager_id, {}).get(ticker, {})
-        position_limits[ticker] = risk_data.get("remaining_position_limit", 0.0)
-        current_prices[ticker] = float(risk_data.get("current_price", 0.0))
-
-        # Calculate maximum shares allowed based on position limit and price
-        if current_prices[ticker] > 0:
-            max_shares[ticker] = int(position_limits[ticker] // current_prices[ticker])
-        else:
-            max_shares[ticker] = 0
-
-        # Compress analyst signals to {sig, conf}
-        ticker_signals = {}
-        for agent, signals in analyst_signals.items():
-            if not agent.startswith("risk_management_agent") and ticker in signals:
-                sig = signals[ticker].get("signal")
-                conf = signals[ticker].get("confidence")
-                # 資料不足的分析師不參與決策（不能被當成 neutral）
-                if sig is not None and conf is not None and sig != "insufficient_data":
-                    ticker_signals[agent] = {"sig": sig, "conf": conf}
-        signals_by_ticker[ticker] = ticker_signals
-
+    risk_manager_id = f"risk_management_agent_{agent_id.split('_')[-1]}" if agent_id.startswith("portfolio_manager_") else "risk_management_agent"
+    risk = analyst_signals.get(risk_manager_id, {})
+    current_prices, max_shares = {}, {}
+    for t in tickers:
+        rd = risk.get(t, {})
+        current_prices[t] = float(rd.get("current_price", 0.0))
+        lim = float(rd.get("remaining_position_limit", 0.0))
+        max_shares[t] = int(lim // current_prices[t]) if current_prices[t] > 0 else 0
     state["data"]["current_prices"] = current_prices
 
-    progress.update_status(agent_id, None, "Generating trading decisions")
+    progress.update_status(agent_id, None, "Cross-sectional ranking")
+    ranking = get_ranking(tickers, end_date, portfolio)
+    table = build_ranking_table(ranking, tickers, analyst_signals, portfolio, current_prices)
+    state["data"]["ranking_table"] = table
 
-    result = generate_trading_decision(
-        tickers=tickers,
-        signals_by_ticker=signals_by_ticker,
-        current_prices=current_prices,
-        max_shares=max_shares,
-        portfolio=portfolio,
-        agent_id=agent_id,
-        state=state,
-    )
-    message = HumanMessage(
-        content=json.dumps({ticker: decision.model_dump() for ticker, decision in result.decisions.items()}),
-        name=agent_id,
-    )
+    progress.update_status(agent_id, None, "Deciding (ranking → actions)")
+    decisions = decide_from_ranking(table, ranking, portfolio, current_prices, max_shares)
+    decisions = _add_llm_interpretation(decisions, table, ranking, state, agent_id)
+    result = PortfolioManagerOutput(decisions=decisions)
 
+    message = HumanMessage(content=json.dumps({t: d.model_dump() for t, d in result.decisions.items()}), name=agent_id)
     if state["metadata"]["show_reasoning"]:
-        show_agent_reasoning({ticker: decision.model_dump() for ticker, decision in result.decisions.items()},
-                             "Portfolio Manager")
-
+        show_agent_reasoning({"ranking": [{k: r[k] for k in ("rank", "ticker", "opportunity", "status")} for r in table],
+                              "rotations": ranking.get("rotations"),
+                              "decisions": {t: d.model_dump() for t, d in result.decisions.items()}}, "Portfolio Manager")
     progress.update_status(agent_id, None, "Done")
-
-    return {
-        "messages": state["messages"] + [message],
-        "data": state["data"],
-    }
+    return {"messages": state["messages"] + [message], "data": state["data"]}
 
 
-def compute_allowed_actions(
-        tickers: list[str],
-        current_prices: dict[str, float],
-        max_shares: dict[str, int],
-        portfolio: dict[str, float],
-) -> dict[str, dict[str, int]]:
-    """Compute allowed actions and max quantities for each ticker deterministically."""
-    allowed = {}
-    cash = float(portfolio.get("cash", 0.0))
+def build_ranking_table(ranking: dict, tickers: list[str], analyst_signals: dict, portfolio: dict,
+                        current_prices: dict) -> list[dict]:
+    """PM 一次看到全部股票的完整資訊（不是只有 signal + confidence）。"""
     positions = portfolio.get("positions", {}) or {}
-    margin_requirement = float(portfolio.get("margin_requirement", 0.5))
-    margin_used = float(portfolio.get("margin_used", 0.0))
-    equity = float(portfolio.get("equity", cash))
-
-    for ticker in tickers:
-        price = float(current_prices.get(ticker, 0.0))
-        pos = positions.get(
-            ticker,
-            {"long": 0, "long_cost_basis": 0.0, "short": 0, "short_cost_basis": 0.0},
-        )
-        long_shares = int(pos.get("long", 0) or 0)
-        short_shares = int(pos.get("short", 0) or 0)
-        max_qty = int(max_shares.get(ticker, 0) or 0)
-
-        # Start with zeros
-        actions = {"buy": 0, "sell": 0, "short": 0, "cover": 0, "hold": 0}
-
-        # Long side
-        if long_shares > 0:
-            actions["sell"] = long_shares
-        if cash > 0 and price > 0:
-            max_buy_cash = int(cash // price)
-            max_buy = max(0, min(max_qty, max_buy_cash))
-            if max_buy > 0:
-                actions["buy"] = max_buy
-
-        # Short side
-        if short_shares > 0:
-            actions["cover"] = short_shares
-        if price > 0 and max_qty > 0:
-            if margin_requirement <= 0.0:
-                # If margin requirement is zero or unset, only cap by max_qty
-                max_short = max_qty
-            else:
-                available_margin = max(0.0, (equity / margin_requirement) - margin_used)
-                max_short_margin = int(available_margin // price)
-                max_short = max(0, min(max_qty, max_short_margin))
-            if max_short > 0:
-                actions["short"] = max_short
-
-        # Hold always valid
-        actions["hold"] = 0
-
-        # Prune zero-capacity actions to reduce tokens, keep hold
-        pruned = {"hold": 0}
-        for k, v in actions.items():
-            if k != "hold" and v > 0:
-                pruned[k] = v
-
-        allowed[ticker] = pruned
-
-    return allowed
-
-
-def _compact_signals(signals_by_ticker: dict[str, dict]) -> dict[str, dict]:
-    """Keep only {agent: {sig, conf}} and drop empty agents."""
-    out = {}
-    for t, agents in signals_by_ticker.items():
-        if not agents:
-            out[t] = {}
-            continue
-        compact = {}
-        for agent, payload in agents.items():
-            sig = payload.get("sig") or payload.get("signal")
-            conf = payload.get("conf") if "conf" in payload else payload.get("confidence")
-            if sig is not None and conf is not None and sig != "insufficient_data":
-                compact[agent] = {"sig": sig, "conf": conf}
-        out[t] = compact
-    return out
-
-
-def calculate_kelly_position_pct(ticker_signals: dict, reward_ratio: float = 2.0) -> float:
-    """Consensus-based Kelly Criterion calculation."""
-    bullish_count = 0.0
-    bearish_count = 0.0
-    total_conf = 0.0
-    
-    for agent, sig_data in ticker_signals.items():
-        sig = sig_data.get("sig")
-        conf = sig_data.get("conf", 50) / 100.0
-        if sig == "bullish":
-            bullish_count += conf
-            total_conf += conf
-        elif sig == "bearish":
-            bearish_count += conf
-            total_conf += conf
-            
-    if total_conf == 0.0:
-        return 0.0
-        
-    p = 0.50 + 0.20 * (bullish_count - bearish_count) / total_conf
-    p = max(0.35, min(0.65, p))
-    
-    if reward_ratio > 0:
-        kelly_raw = p - (1.0 - p) / reward_ratio
-        return max(0.0, min(0.20, kelly_raw / 2.0))  # Half-Kelly, capped at 20%
-    return 0.0
-
-
-def generate_trading_decision(
-        tickers: list[str],
-        signals_by_ticker: dict[str, dict],
-        current_prices: dict[str, float],
-        max_shares: dict[str, int],
-        portfolio: dict[str, float],
-        agent_id: str,
-        state: AgentState,
-) -> PortfolioManagerOutput:
-    """Get decisions from the LLM with deterministic constraints, Kelly Criterion sizing, and a minimal prompt."""
-
-    # Deterministic constraints
-    allowed_actions_full = compute_allowed_actions(tickers, current_prices, max_shares, portfolio)
-
-    # Pre-fill pure holds to avoid sending them to the LLM at all
-    prefilled_decisions: dict[str, PortfolioDecision] = {}
-    tickers_for_llm: list[str] = []
+    equity = _equity(portfolio, current_prices)
+    by_ticker = {r["ticker"].split(".")[0]: r for r in ranking.get("ranking", [])}
+    rows = []
     for t in tickers:
-        aa = allowed_actions_full.get(t, {"hold": 0})
-        # If only 'hold' key exists, there is no trade possible
-        if set(aa.keys()) == {"hold"}:
-            prefilled_decisions[t] = PortfolioDecision(
-                action="hold", quantity=0, confidence=100.0, reasoning="No valid trade available"
-            )
-        else:
-            tickers_for_llm.append(t)
+        r = by_ticker.get(t.split(".")[0], {})
+        pos = positions.get(t, {})
+        long_sh = int(pos.get("long", 0) or 0)
+        px = current_prices.get(t) or r.get("price") or 0.0
+        modules = {a: {"signal": s.get(t, {}).get("signal"), "score": s.get(t, {}).get("score"),
+                       "confidence": s.get(t, {}).get("confidence")}
+                   for a, s in analyst_signals.items() if not a.startswith("risk_management_agent") and t in s}
+        rows.append({
+            "ticker": t, "rank": r.get("batch_rank"), "price": px, "opportunity": r.get("opportunity"),
+            "status": r.get("status", "WAIT"), "flags": r.get("flags", []), "scores": r.get("scores", {}),
+            "theme": r.get("theme"), "ai_cycle": (r.get("ai") or {}).get("cycle_position"),
+            "valuation_class": r.get("valuation_class"), "entry": r.get("entry", {}), "target_weight": r.get("target_weight", 0.0),
+            "narrative": r.get("narrative", {}), "modules": modules,
+            "position_shares": long_sh, "cost_basis": pos.get("long_cost_basis"),
+            "position_weight": (long_sh * px / equity) if equity > 0 else 0.0,
+        })
+    rows.sort(key=lambda x: (x["rank"] is None, x["rank"] or 0))
+    return rows
 
-    if not tickers_for_llm:
-        return PortfolioManagerOutput(decisions=prefilled_decisions)
 
-    # Build compact payloads only for tickers sent to LLM
-    compact_signals = _compact_signals({t: signals_by_ticker.get(t, {}) for t in tickers_for_llm})
-    
-    # Calculate Kelly Sizing and inject it into allowed actions payload as a guide
-    compact_allowed = {}
-    for t in tickers_for_llm:
-        aa = dict(allowed_actions_full[t])
-        
-        # Determine suggested quantity based on Kelly sizing
-        t_signals = compact_signals.get(t, {})
-        kelly_pct = calculate_kelly_position_pct(t_signals, reward_ratio=2.0)
-        t_max_shares = max_shares.get(t, 0)
-        kelly_qty = max(1, int(kelly_pct * t_max_shares)) if kelly_pct > 0 and t_max_shares > 0 else 0
-        
-        # Inject Kelly guidelines into the allowed actions payload
-        aa["kelly_suggested_qty"] = kelly_qty
-        aa["kelly_suggested_position_pct"] = f"{kelly_pct:.1%}"
-        compact_allowed[t] = aa
+def _equity(portfolio: dict, prices: dict) -> float:
+    eq = float(portfolio.get("cash", 0.0))
+    for t, p in (portfolio.get("positions") or {}).items():
+        px = prices.get(t, 0.0)
+        eq += (p.get("long", 0) or 0) * px - (p.get("short", 0) or 0) * px
+    return eq
 
-    # Minimal prompt template
-    template = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a portfolio manager.\n"
-                "Inputs per ticker: analyst signals, allowed actions with max qty, and kelly_suggested_qty (optimal risk-adjusted shares).\n"
-                "Pick one allowed action per ticker and a quantity ≤ the max. Use kelly_suggested_qty as a strong baseline/guide for optimal position sizing.\n"
-                "Keep reasoning very concise (max 100 chars). No cash or margin math. Return JSON only."
-            ),
-            (
-                "human",
-                "Signals:\n{signals}\n\n"
-                "Allowed:\n{allowed}\n\n"
-                "Format:\n"
-                "{{\n"
-                '  "decisions": {{\n'
-                '    "TICKER": {{"action":"...","quantity":int,"confidence":int,"reasoning":"..."}}\n'
-                "  }}\n"
-                "}}"
-            ),
-        ]
-    )
 
-    prompt_data = {
-        "signals": json.dumps(compact_signals, separators=(",", ":"), ensure_ascii=False),
-        "allowed": json.dumps(compact_allowed, separators=(",", ":"), ensure_ascii=False),
-    }
-    prompt = template.invoke(prompt_data)
+def decide_from_ranking(table: list[dict], ranking: dict, portfolio: dict, prices: dict, max_shares: dict) -> dict:
+    equity = _equity(portfolio, prices)
+    cash = float(portfolio.get("cash", 0.0))
+    decisions: dict[str, PortfolioDecision] = {}
+    rotations = ranking.get("rotations", [])
+    rot_sell: dict[str, float] = {}
+    for rot in rotations:
+        k = rot["sell"].split(".")[0]
+        rot_sell[k] = max(rot_sell.get(k, 0.0), rot["fraction_of_A"])
 
-    # Default factory fills remaining tickers as hold if the LLM fails
-    def create_default_portfolio_output():
-        # start from prefilled
-        decisions = dict(prefilled_decisions)
-        for t in tickers_for_llm:
-            decisions[t] = PortfolioDecision(
-                action="hold", quantity=0, confidence=0.0, reasoning="Default decision: hold"
-            )
-        return PortfolioManagerOutput(decisions=decisions)
+    # 1) 賣出 / 減碼 / 輪動（先釋放資金）
+    for row in table:
+        t, sh, px = row["ticker"], row["position_shares"], row["price"]
+        if sh <= 0 or px <= 0:
+            continue
+        frac, why = 0.0, ""
+        if row["status"] == "SELL":
+            frac, why = 1.0, "SELL：" + (row["narrative"].get("key_risk") or "機會分數與相對強度轉弱")
+        elif row["status"] == "PARTIAL_PROFIT":
+            frac, why = 0.33, "PARTIAL_PROFIT：短線過熱且估值不便宜，先了結三分之一"
+        if rot_sell.get(t.split(".")[0], 0.0) > frac:
+            pair = next(r for r in rotations if r["sell"].split(".")[0] == t.split(".")[0])
+            frac = rot_sell[t.split(".")[0]]
+            why = f"{pair['type']}：賣出 {t} → 買進 {pair['buy']}（rotation_score {pair['rotation_score']:+.3f}）"
+        qty = int(round(sh * frac))
+        if qty > 0:
+            decisions[t] = PortfolioDecision(action="sell", quantity=min(qty, sh), confidence=_conf(row), reasoning=_reason(row, why))
+            cash += qty * px
 
-    llm_out = call_llm(
-        prompt=prompt,
-        pydantic_model=PortfolioManagerOutput,
-        agent_name=agent_id,
-        state=state,
-        default_factory=create_default_portfolio_output,
-    )
+    # 2) 依排名買進（目標權重 × 權益，受風控上限與現金限制）
+    for row in table:
+        t, px = row["ticker"], row["price"]
+        if t in decisions or px <= 0:
+            continue
+        status, entry = row["status"], row.get("entry") or {}
+        want = (row.get("target_weight") or 0.0) * equity - row["position_shares"] * px
+        buyable = status == "BUY_NOW" or (status == "BUY_ON_PULLBACK" and _in_zone(px, entry))
+        if buyable and want > px and row["position_shares"] == 0:
+            qty = min(int(want // px), int(cash // px), max_shares.get(t, 0))
+            if qty > 0:
+                why = f"{status}：排名 #{row['rank']}、機會分數 {row['opportunity']}、目標權重 {row['target_weight']:.1%}"
+                decisions[t] = PortfolioDecision(action="buy", quantity=qty, confidence=_conf(row), reasoning=_reason(row, why))
+                cash -= qty * px
+                continue
+        why = {"BUY_ON_PULLBACK": f"等拉回：Zone 1 {(entry.get('zone_1') or {}).get('high')} 以下才買",
+               "WAIT": "機會分數不足，觀望", "HOLD": "續抱", "HOLD_CORE": "核心續抱"}.get(status, status)
+        decisions[t] = PortfolioDecision(action="hold", quantity=0, confidence=_conf(row), reasoning=_reason(row, why))
+    return decisions
 
-    # Merge prefilled holds with LLM results
-    merged = dict(prefilled_decisions)
-    merged.update(llm_out.decisions)
-    return PortfolioManagerOutput(decisions=merged)
+
+def _in_zone(px: float, entry: dict) -> bool:
+    z = entry.get("zone_1") or {}
+    return bool(z) and px <= z.get("high", 0)
+
+
+def _conf(row: dict) -> int:
+    o = row.get("opportunity")
+    return int(min(100, max(0, abs(o - 50) * 2))) if o is not None else 0
+
+
+def _reason(row: dict, why: str) -> str:
+    return (f"#{row['rank']} opp={row['opportunity']} {row['status']} | {why}")[:240]
+
+
+def _add_llm_interpretation(decisions: dict, table: list[dict], ranking: dict, state: AgentState, agent_id: str) -> dict:
+    """LLM 只寫解讀（衝突、情境），不改動作/數量。環境變數 PM_LLM_INTERPRET=0 可關閉。"""
+    if os.environ.get("PM_LLM_INTERPRET", "1") == "0":
+        return decisions
+    try:
+        from langchain_core.prompts import ChatPromptTemplate
+        from src.utils.llm import call_llm
+
+        class Notes(BaseModel):
+            notes: dict[str, str] = Field(description="ticker -> 1 sentence interpretation (<=80 chars)")
+
+        compact = [{"t": r["ticker"], "rank": r["rank"], "opp": r["opportunity"], "status": r["status"],
+                    "scores": {k: (round(v) if isinstance(v, (int, float)) else v) for k, v in (r["scores"] or {}).items()
+                               if k in ("momentum_rank", "earnings_acceleration", "valuation", "catalyst", "overextension", "risk")},
+                    "action": decisions[r["ticker"]].action} for r in table if r["ticker"] in decisions]
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You explain portfolio decisions. Numbers and actions are FINAL and computed by a quantitative model; "
+                       "do not change them. For each ticker write one short sentence (<=80 chars, Traditional Chinese) "
+                       "on the main conflict or scenario. Return JSON only."),
+            ("human", "Regime: {regime}\nRanking: {table}\nFormat: {{\"notes\": {{\"TICKER\": \"...\"}}}}"),
+        ]).invoke({"regime": ranking.get("regime", {}).get("regime"), "table": json.dumps(compact, ensure_ascii=False)})
+        out = call_llm(prompt=prompt, pydantic_model=Notes, agent_name=agent_id, state=state,
+                       default_factory=lambda: Notes(notes={}))
+        for t, note in (out.notes or {}).items():
+            if t in decisions and note:
+                d = decisions[t]
+                decisions[t] = PortfolioDecision(action=d.action, quantity=d.quantity, confidence=d.confidence,
+                                                 reasoning=(d.reasoning + " | " + note)[:300])
+    except Exception:
+        pass
+    return decisions

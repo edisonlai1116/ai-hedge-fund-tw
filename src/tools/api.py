@@ -31,6 +31,32 @@ _cache = get_cache()
 PUBLICATION_LAG_DAYS = {"quarterly": 45, "ttm": 45, "annual": 90}
 
 
+# 區間快取：回測逐日查詢的價格/內部人交易，若落在已抓過的日期區間內，直接在本機切片，
+# 避免同一份資料每天重打一次付費 API。只在「完全涵蓋」時使用，不會回傳範圍外資料。
+_RANGE_CACHE: dict[tuple, tuple[str, str, list[dict]]] = {}
+
+
+def _range_get(kind: str, ticker: str, start: str, end: str, date_field: str) -> list[dict] | None:
+    hit = _RANGE_CACHE.get((kind, ticker))
+    if not hit:
+        return None
+    s0, e0, rows = hit
+    if start < s0 or end > e0:
+        return None
+    return [r for r in rows if start <= str(r.get(date_field, ""))[:10] <= end]
+
+
+def _range_put(kind: str, ticker: str, start: str, end: str, rows: list[dict], date_field: str) -> None:
+    hit = _RANGE_CACHE.get((kind, ticker))
+    if hit and not (end < hit[0] or start > hit[1]):     # 重疊 → 合併
+        s0, e0, old = hit
+        merged = {str(r.get(date_field)): r for r in old}
+        merged.update({str(r.get(date_field)): r for r in rows})
+        _RANGE_CACHE[(kind, ticker)] = (min(start, s0), max(end, e0), sorted(merged.values(), key=lambda r: str(r.get(date_field))))
+    else:
+        _RANGE_CACHE[(kind, ticker)] = (start, end, rows)
+
+
 def pit_report_cutoff(end_date: str, period: str = "ttm", today: datetime.date | None = None) -> str:
     """回傳在 end_date 當下「已經公布」的財報所允許的最晚 report_period。"""
     today = today or datetime.date.today()
@@ -85,6 +111,29 @@ def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: d
         return response
 
 
+_FALLBACK_WARNED = set()
+
+
+def _yfinance_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
+    """financialdatasets 不可用（金鑰無效/額度用完/無資料）時的免費備援。歷史日線為 point-in-time 安全資料。"""
+    try:
+        import yfinance as yf
+        end_excl = (datetime.date.fromisoformat(end_date[:10]) + datetime.timedelta(days=1)).isoformat()
+        df = yf.download(ticker, start=start_date[:10], end=end_excl, interval="1d", auto_adjust=False, progress=False)
+        if df is None or df.empty:
+            return []
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        out = []
+        for d, r in df.dropna(subset=["Close"]).iterrows():
+            out.append(Price(open=float(r["Open"]), close=float(r["Close"]), high=float(r["High"]), low=float(r["Low"]),
+                             volume=int(r["Volume"]) if pd.notna(r["Volume"]) else 0, time=pd.Timestamp(d).strftime("%Y-%m-%d")))
+        return out
+    except Exception as e:
+        logger.warning("yfinance fallback failed for %s: %s", ticker, e)
+        return []
+
+
 def get_prices(ticker: str, start_date: str, end_date: str, api_key: str = None) -> list[Price]:
     """Fetch price data from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
@@ -93,6 +142,8 @@ def get_prices(ticker: str, start_date: str, end_date: str, api_key: str = None)
     # Check cache first - simple exact match
     if cached_data := _cache.get_prices(cache_key):
         return [Price(**price) for price in cached_data]
+    if (ranged := _range_get("prices", ticker, start_date[:10], end_date[:10], "time")) is not None:
+        return [Price(**price) for price in ranged]
 
     # If not in cache, fetch from API
     headers = {}
@@ -103,7 +154,14 @@ def get_prices(ticker: str, start_date: str, end_date: str, api_key: str = None)
     url = f"https://api.financialdatasets.ai/prices/?ticker={ticker}&interval=day&interval_multiplier=1&start_date={start_date}&end_date={end_date}"
     response = _make_api_request(url, headers)
     if response.status_code != 200:
-        return []
+        if response.status_code not in _FALLBACK_WARNED:
+            _FALLBACK_WARNED.add(response.status_code)
+            logger.warning("financialdatasets prices HTTP %s → 改用 yfinance 備援", response.status_code)
+        prices = _yfinance_prices(ticker, start_date, end_date)
+        if prices:
+            _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+            _range_put("prices", ticker, start_date[:10], end_date[:10], [p.model_dump() for p in prices], "time")
+        return prices
 
     # Parse response with Pydantic model
     try:
@@ -118,6 +176,7 @@ def get_prices(ticker: str, start_date: str, end_date: str, api_key: str = None)
 
     # Cache the results using the comprehensive cache key
     _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+    _range_put("prices", ticker, start_date[:10], end_date[:10], [p.model_dump() for p in prices], "time")
     return prices
 
 
@@ -221,6 +280,8 @@ def get_insider_trades(
     # Check cache first - simple exact match
     if cached_data := _cache.get_insider_trades(cache_key):
         return [InsiderTrade(**trade) for trade in cached_data]
+    if start_date and (ranged := _range_get("insider", ticker, start_date[:10], end_date[:10], "filing_date")) is not None:
+        return [InsiderTrade(**trade) for trade in ranged[:limit]]
 
     # If not in cache, fetch from API
     headers = {}
@@ -270,6 +331,8 @@ def get_insider_trades(
 
     # Cache the results using the comprehensive cache key
     _cache.set_insider_trades(cache_key, [trade.model_dump() for trade in all_trades])
+    if start_date:
+        _range_put("insider", ticker, start_date[:10], end_date[:10], [t.model_dump() for t in all_trades], "filing_date")
     return all_trades
 
 

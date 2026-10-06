@@ -70,3 +70,52 @@ def lookup(symbols: str = "") -> list[dict]:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"查詢失敗：{exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+# 機會評分（cross-sectional ranking）
+# ---------------------------------------------------------------------------
+class RankingRequest(BaseModel):
+    symbols: list[str] = Field(default_factory=list)
+    holdings: list[HoldingIn] = Field(default_factory=list)
+
+
+@router.get("/opportunity")
+def opportunity_report() -> dict:
+    """每日自動產生的機會評分卡（驗收清單 + 策略前段班）。"""
+    path = os.path.join(_DOCS, "opportunity.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"機會評分尚未產生：{exc}") from exc
+
+
+@router.get("/signal-accuracy")
+def signal_accuracy() -> dict:
+    path = os.path.join(_DOCS, "signal_accuracy.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"n_signals": 0, "note": "尚無訊號紀錄"}
+
+
+@router.post("/opportunity/live")
+def opportunity_live(request: RankingRequest) -> dict:
+    """即時對指定股票（含持股）做 cross-sectional ranking；持股會產生輪動建議。"""
+    from src.ranking.engine import rank_stocks
+    syms = [s.strip().upper() for s in request.symbols if s.strip()]
+    holdings = {h.ticker.strip().upper(): {"shares": h.shares, "cost": h.cost} for h in request.holdings if h.ticker.strip()}
+    syms = list(dict.fromkeys(syms + list(holdings)))
+    if not syms:
+        raise HTTPException(status_code=400, detail="請輸入股票代號。")
+    if len(syms) > 25:
+        raise HTTPException(status_code=400, detail="一次最多 25 檔。")
+    try:
+        out = rank_stocks(syms, holdings=holdings)
+        for r in out["ranking"]:
+            r.pop("fundamentals", None)
+        return out
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"評分失敗：{exc}") from exc

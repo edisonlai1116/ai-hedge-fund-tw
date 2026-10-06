@@ -100,7 +100,8 @@ class BacktestEngine:
         for ticker in self._tickers:
             get_prices(ticker, start_date_str, self._end_date)
             get_financial_metrics(ticker, self._end_date, limit=10)
-            get_insider_trades(ticker, self._end_date, start_date=self._start_date, limit=1000)
+            insider_start = (start_date_dt - relativedelta(days=100)).strftime("%Y-%m-%d")
+            get_insider_trades(ticker, self._end_date, start_date=insider_start, limit=1000)
             get_company_news(ticker, self._end_date, start_date=self._start_date, limit=1000)
         
         # Preload data for SPY for benchmark comparison
