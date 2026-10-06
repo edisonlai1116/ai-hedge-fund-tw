@@ -1036,11 +1036,11 @@
   },
   {
     "date": "2026-10-06",
-    "generated_at": "2026-10-06T02:06:28+08:00",
+    "generated_at": "2026-10-06T10:25:35+08:00",
     "macro_score": 56,
     "top_ticker": "TSM",
-    "top_score": 85,
-    "strong_buy": 18,
+    "top_score": 86,
+    "strong_buy": 26,
     "pick_count": 50
   }
 ]
