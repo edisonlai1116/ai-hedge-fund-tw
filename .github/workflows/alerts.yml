@@ -56,6 +56,7 @@ jobs:
       - name: Run alerts
         env:
           HOLDINGS: ${{ secrets.HOLDINGS }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

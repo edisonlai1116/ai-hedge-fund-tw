@@ -32,6 +32,23 @@ BASE_WEIGHTS = {
     "ai_exposure": 0.04,            # 未驗證（專家先驗）
 }
 VALIDATED_COMPONENTS = ("momentum_rank",)
+
+# 長線低檔布局（使用者風格：低檔為主 70%、動能 30%）
+LOW_ENTRY_DD = -0.30
+ALLOCATION = {"lowentry": 0.70, "momentum": 0.30}
+
+
+def low_entry_score(dd_52w: Optional[float], ret_3y: Optional[float], valuation: Optional[float] = None) -> Optional[float]:
+    """低檔布局分數 0~100：長線贏家（3 年報酬 > 0）距 52 週高點越深分數越高（-30% → 80、-50% → 100）；
+    非長線贏家打三折。估值（未經回測驗證）只做 ±10 分微調。"""
+    if dd_52w is None:
+        return None
+    depth = min(100.0, max(0.0, (-dd_52w) / 0.30 * 80 if dd_52w >= -0.30 else 80 + (-dd_52w - 0.30) / 0.20 * 20))
+    if ret_3y is None or ret_3y <= 0:
+        depth *= 0.3
+    if valuation is not None:
+        depth = depth * 0.9 + valuation * 0.1
+    return round(max(0.0, min(100.0, depth)), 1)
 DIAGNOSTIC_ONLY = ("relative_strength", "technical", "low_risk", "industry_momentum")
 # 過熱「不扣排名分數」（回測顯示扣分會降低報酬）；改由進場規則處理：
 # 排名夠前但過熱 ≥ OVEREXTENSION_WAIT → BUY_ON_PULLBACK，等降溫再進（回測：報酬約持平，±1%）。
@@ -82,7 +99,8 @@ def opportunity_panel(comp_panels: Dict[str, pd.DataFrame], overext: pd.DataFram
 # ---------------------------------------------------------------------------
 def decide_status(opp: Optional[float], overext: Optional[float], quality: Optional[float], risk: Optional[float],
                   valuation: Optional[float], relative_strength: Optional[float], held: bool,
-                  damage: Optional[float] = None, oversold: bool = False, above_avoid: bool = False) -> Dict:
+                  damage: Optional[float] = None, oversold: bool = False, above_avoid: bool = False,
+                  low_entry: bool = False, long_term_broken: bool = False) -> Dict:
     flags = []
     if opp is None:
         return {"status": "WAIT", "flags": ["INSUFFICIENT_DATA"], "why": "資料不足，無法評分"}
@@ -91,8 +109,16 @@ def decide_status(opp: Optional[float], overext: Optional[float], quality: Optio
         flags.append("POTENTIAL_OVERSOLD")
     if quality is not None and quality >= 70 and ox >= 60:
         flags += ["BUY_QUALITY", "WAIT_ENTRY"]
+    if low_entry:
+        flags.append("LOW_ENTRY_ZONE")
+    structural = damage is not None and damage >= 60
+    if low_entry and not structural:
+        # 已驗證規則：長線贏家回落 ≥30% → 低檔布局（持有 12 個月），不因動能弱而賣出
+        if held:
+            return {"status": "HOLD_CORE", "flags": flags, "why": "長線贏家落入低檔區：續抱並可分批加碼（低檔布局，持有 12 個月）"}
+        return {"status": "BUY_NOW", "flags": flags, "why": "長線贏家回落 ≥30%：低檔布局分批買進（回測勝率約 8 成），持有 12 個月"}
     if held:
-        if (opp < 30 and (relative_strength or 50) < 30) or (damage is not None and damage >= 60):
+        if (opp < 30 and (relative_strength or 50) < 30 and long_term_broken) or structural:
             return {"status": "SELL", "flags": flags, "why": "機會分數與相對強度同時轉弱，或基本面受損"}
         if ox >= 80 and (valuation is None or valuation < 50):
             return {"status": "PARTIAL_PROFIT", "flags": flags, "why": "短線過熱且估值不便宜，先分批獲利了結"}
@@ -100,7 +126,9 @@ def decide_status(opp: Optional[float], overext: Optional[float], quality: Optio
             return {"status": "HOLD_CORE", "flags": flags, "why": "高品質核心部位，機會分數仍在中上"}
         if opp >= 30:
             return {"status": "HOLD", "flags": flags, "why": "機會分數中性，續抱觀察"}
-        return {"status": "SELL", "flags": flags, "why": "機會分數偏低"}
+        if not long_term_broken:
+            return {"status": "HOLD", "flags": flags, "why": "短線動能弱，但 3 年長線趨勢未破壞：長線續抱、不加碼，等跌到低檔區再加碼"}
+        return {"status": "SELL", "flags": flags, "why": "機會分數偏低且 3 年長線趨勢已破壞"}
     if opp >= 55 and above_avoid:
         if "WAIT_ENTRY" not in flags:
             flags.append("WAIT_ENTRY")

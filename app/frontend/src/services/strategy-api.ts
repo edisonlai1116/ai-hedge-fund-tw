@@ -20,10 +20,18 @@ export type RankRow = {
   above_ma200: boolean | null;
   day_change_pct: number;
   ignition?: Ignition;
+  dd_52w_pct?: number | null;
+  ret_3y_pct?: number | null;
+  high_52w?: number;
+  low_entry?: boolean;
+  low_entry_watch?: boolean;
+  low_entry_price?: number | null;
 };
 
 export type MarketRanking = {
   universe_size: number;
+  low_entry?: string[];
+  low_entry_watch?: string[];
   top_n: number;
   keep_n: number;
   rows: RankRow[];
@@ -36,6 +44,8 @@ export type StrategyReport = {
     lookback_days: number;
     top_n: Record<string, number>;
     keep_n: Record<string, number>;
+    allocation?: { lowentry: number; momentum: number };
+    low_entry_rule?: string;
     rule: string;
     next_rebalance: string;
     in_rebalance_window: boolean;
@@ -44,7 +54,7 @@ export type StrategyReport = {
   disclaimer: string;
 };
 
-export type HoldingAction = '賣出換股' | '減碼' | '加碼' | '續抱' | '核心 ETF' | '資料不足';
+export type HoldingAction = '賣出換股' | '減碼' | '低檔加碼' | '加碼' | '續抱' | '核心 ETF' | '資料不足';
 
 export type EvaluatedHolding = {
   symbol: string;
@@ -85,6 +95,9 @@ export type EvaluateResult = {
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];
   new_buys: Record<'us' | 'tw', NewBuy[]>;
+  low_entry_buys?: Record<'us' | 'tw', { symbol: string; name: string; rank: number; close: number; dd_52w_pct: number; ret_3y_pct: number; high_52w: number; target_twd: number | null }[]>;
+  low_entry_target_twd?: Record<string, number>;
+  allocation?: { lowentry: number; momentum: number };
 };
 
 export type PeriodStats = { total_return_pct: number; cagr_pct: number; max_drawdown_pct: number; sharpe: number };
@@ -102,6 +115,9 @@ export type StrategyBacktest = {
   recent_rebalances: { date: string; buy: string[]; sell: string[] }[];
   rules: { lookback_days: number; top_n: number; keep_n: number; rebalance_days: number; cost_per_trade: number };
   caveat: string;
+  tracks?: Record<string, { name: string; periods: Record<string, { strategy: PeriodStats; benchmark: PeriodStats }>; win_rate_pct?: number; trades?: number;
+    recent_trades?: { ticker: string; entry: string; exit: string; return_pct: number }[] }>;
+  combo_curve?: { date: string; combo: number; lowentry: number; benchmark: number }[];
 };
 
 async function parse<T>(response: Response, fallback: string): Promise<T> {
@@ -182,6 +198,7 @@ export type OppRow = {
   shock?: { shock: { date: string; return: number; causes: string[] }; fundamental_damage_score: number; verdict: string | null; evidence: string[] } | null;
   catalyst?: { score: number | null; key_catalyst?: string; events?: { title: string; category: string; direction: number; priced_in: number | null; published: string }[] } | null;
   target_weight?: number;
+  sec_valuation?: { ps: number; ps_3y_median: number; relative_to_own_3y: number | null; pe: number | null } | null;
 };
 
 export type OpportunityReport = {

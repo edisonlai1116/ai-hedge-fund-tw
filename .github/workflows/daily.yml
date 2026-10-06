@@ -41,6 +41,8 @@ jobs:
 
       # 單一策略（Sharpe 動能輪動）排名 → docs/data/strategy.json；回測每 7 天重算 → strategy_backtest.json
       - name: Generate strategy ranking
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}   # SEC 規定的聯絡資訊（Secret，不寫進 repo）
         run: python -m src.pipeline.strategy_report
 
       # 收盤後買賣提醒（持股 加碼/減碼/出場 + 點火買點）；推播設定見 alerts.yml。

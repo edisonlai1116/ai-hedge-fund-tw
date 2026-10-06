@@ -120,6 +120,9 @@ def compute_features(
     F["drawdown_252"] = close / close.rolling(252, min_periods=60).max() - 1
     F["ret_1"] = rets
 
+    # 長線低檔布局（已驗證）：3 年報酬（長線贏家判定）
+    F["ret_756"] = close / close.shift(756) - 1
+
     # 已驗證的核心因子：6 個月風險調整動能
     F["sharpe_126"] = rets.rolling(126).mean() / rets.rolling(126).std()
     return F

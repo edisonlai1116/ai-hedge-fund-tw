@@ -65,6 +65,7 @@ const tone = (v: number | null | undefined) => (v == null ? 'text-slate-500' : v
 const ACTION_STYLE: Record<HoldingAction, string> = {
   賣出換股: 'bg-rose-100 text-rose-800 border-rose-200',
   減碼: 'bg-orange-100 text-orange-800 border-orange-200',
+  低檔加碼: 'bg-emerald-200 text-emerald-900 border-emerald-300',
   加碼: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   續抱: 'bg-sky-50 text-sky-800 border-sky-200',
   '核心 ETF': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -101,9 +102,9 @@ function MarketToggle({ value, onChange }: { value: Market; onChange: (m: Market
 function StrategyRuleNote({ report }: { report: StrategyReport | null }) {
   return (
     <div className="text-xs leading-relaxed text-slate-500">
-      單一策略「AI 科技股 Sharpe 動能輪動」：只在 AI／科技股票池內，依近 6 個月「漲幅 ÷ 波動」排名。
-      美股持有前 {report?.strategy.top_n.us ?? 10} 名、跌出前 {report?.strategy.keep_n.us ?? 50} 名才賣；
-      台股持有前 {report?.strategy.top_n.tw ?? 20} 名、跌出前 {report?.strategy.keep_n.tw ?? 30} 名才賣。等權、每月初檢查。
+      AI 科技股池，兩條策略：<b>長線低檔布局 {Math.round((report?.strategy.allocation?.lowentry ?? 0.7) * 100)}%</b>（3 年報酬為正的長線贏家，
+      自 52 週高點回落 ≥30% 就分批買、持有 12 個月）＋ <b>動能輪動 {Math.round((report?.strategy.allocation?.momentum ?? 0.3) * 100)}%</b>
+      （美股前 {report?.strategy.top_n.us ?? 10}／台股前 {report?.strategy.top_n.tw ?? 20} 名）。持股只有在動能轉弱「且」3 年長線趨勢破壞時才建議換股。
       回測見「策略回測」分頁（含倖存者偏差說明）。規則化訊號，非投資建議。
     </div>
   );
@@ -152,9 +153,10 @@ export function StrategyPicksPanel() {
 
       {data ? (
         <>
+          <LowEntrySection rows={rows} low={data.low_entry ?? []} watch={data.low_entry_watch ?? []} />
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 text-sm font-semibold text-slate-900">
-              前 {top} 名（買進區）<span className="ml-2 text-xs font-normal text-slate-500">共排名 {data.universe_size} 檔</span>
+              動能輪動（{Math.round((report?.strategy.allocation?.momentum ?? 0.3) * 100)}% 資金）· 前 {top} 名（買進區）<span className="ml-2 text-xs font-normal text-slate-500">共排名 {data.universe_size} 檔</span>
             </div>
             <RankTable rows={rows.slice(0, top)} />
           </div>
@@ -169,6 +171,63 @@ export function StrategyPicksPanel() {
             {found === 'none' ? <p className="text-sm text-slate-500">不在股票池內（可到「我的持股」輸入，系統會即時計算等效排名）。</p> : null}
             {found && found !== 'none' ? <RankTable rows={[found]} /> : null}
             {!found ? <RankTable rows={rows.slice(top, keep)} /> : null}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function LowEntrySection({ rows, low, watch }: { rows: StrategyReport['markets']['us']['rows']; low: string[]; watch: string[] }) {
+  const by = Object.fromEntries(rows.map((r) => [r.symbol, r]));
+  const list = (syms: string[]) => syms.map((s) => by[s]).filter(Boolean);
+  const Row = ({ r }: { r: (typeof rows)[number] }) => (
+    <tr className="border-b border-slate-100">
+      <td className="py-1.5 pr-2">
+        <span className="font-medium text-slate-900">{r.symbol.replace(/\.TWO?$/, '')}</span>
+        {r.name ? <span className="ml-1 text-xs text-slate-500">{r.name}</span> : null}
+      </td>
+      <td className="py-1.5 pr-2 text-right">{r.close}</td>
+      <td className="py-1.5 pr-2 text-right text-rose-700">{pct(r.dd_52w_pct ?? null, 0)}</td>
+      <td className="py-1.5 pr-2 text-right">{r.high_52w}</td>
+      <td className={`py-1.5 pr-2 text-right ${tone(r.ret_3y_pct ?? null)}`}>{pct(r.ret_3y_pct ?? null, 0)}</td>
+      <td className="py-1.5 text-right text-slate-600">{r.low_entry_price ?? '—'}</td>
+    </tr>
+  );
+  const head = (
+    <thead>
+      <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+        <th className="py-1.5 pr-2">標的</th>
+        <th className="py-1.5 pr-2 text-right">現價</th>
+        <th className="py-1.5 pr-2 text-right">距 52 週高</th>
+        <th className="py-1.5 pr-2 text-right">52 週高</th>
+        <th className="py-1.5 pr-2 text-right">3 年報酬</th>
+        <th className="py-1.5 text-right">低檔價（−30%）</th>
+      </tr>
+    </thead>
+  );
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
+      <div className="text-sm font-semibold text-slate-900">長線低檔布局（主力資金）· 現在可分批買進</div>
+      <div className="mb-2 text-xs text-slate-500">長線贏家（3 年報酬為正）自 52 週高點回落 ≥30%：回測勝率 81%（美股）。每檔約一成低檔資金，持有 12 個月。</div>
+      {list(low).length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px] text-sm">
+            {head}
+            <tbody>{list(low).map((r) => <Row key={r.symbol} r={r} />)}</tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-500">目前沒有股票落到低檔區（AI 族群普遍在高檔）。耐心等待正是低檔布局的一部分。</p>
+      )}
+      {list(watch).length ? (
+        <>
+          <div className="mb-1 mt-3 text-xs font-semibold text-slate-700">觀察名單（已回落 20~30%，接近低檔區）</div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              {head}
+              <tbody>{list(watch).map((r) => <Row key={r.symbol} r={r} />)}</tbody>
+            </table>
           </div>
         </>
       ) : null}
@@ -261,7 +320,7 @@ export function MyHoldingsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const actionable = (result?.holdings ?? []).filter((h) => ['賣出換股', '減碼', '加碼'].includes(h.action));
+  const actionable = (result?.holdings ?? []).filter((h) => ['賣出換股', '減碼', '低檔加碼', '加碼'].includes(h.action));
   const ignited = (result?.holdings ?? []).filter((h) => h.ignition && ['續抱', '加碼'].includes(h.action));
   const exportText = holdings
     .filter((h) => h.ticker && h.shares > 0)
@@ -448,10 +507,27 @@ export function MyHoldingsPanel() {
           </div>
 
           {(['us', 'tw'] as Market[]).map((m) =>
+            result.low_entry_buys?.[m]?.length ? (
+              <div key={`low-${m}`} className="mt-4">
+                <div className="mb-1 text-sm font-semibold text-slate-900">
+                  {m === 'us' ? '美股' : '台股'}低檔布局可買（你還沒有的）
+                  <span className="ml-2 text-xs font-normal text-slate-500">每檔目標約 {ntd(result.low_entry_target_twd?.[m])}，持有 12 個月</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.low_entry_buys[m].map((b) => (
+                    <span key={b.symbol} className="rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+                      {b.symbol.replace(/\.TWO?$/, '')}{b.name ? ` ${b.name}` : ''} · {b.close} · 距高點 {pct(b.dd_52w_pct, 0)} · 3 年 {pct(b.ret_3y_pct, 0)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null,
+          )}
+          {(['us', 'tw'] as Market[]).map((m) =>
             result.new_buys[m]?.length ? (
               <div key={m} className="mt-4">
                 <div className="mb-1 text-sm font-semibold text-slate-900">
-                  {m === 'us' ? '美股' : '台股'}新買進（買進區中你還沒有的）
+                  {m === 'us' ? '美股' : '台股'}動能新買進（買進區中你還沒有的）
                   <span className="ml-2 text-xs font-normal text-slate-500">每檔目標約 {ntd(result.target_per_name_twd[m])}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -521,10 +597,10 @@ export function MyHoldingsPanel() {
 }
 
 function notifyIfNeeded(r: EvaluateResult): void {
-  const items = r.holdings.filter((h) => ['賣出換股', '減碼', '加碼'].includes(h.action) || (h.ignition && h.action === '續抱'));
+  const items = r.holdings.filter((h) => ['賣出換股', '減碼', '低檔加碼', '加碼'].includes(h.action) || (h.ignition && h.action === '續抱'));
   if (!items.length || !('Notification' in window) || Notification.permission !== 'granted') return;
   // 只在「月調窗口」或「有點火」時跳通知，且同一組內容一天只跳一次。
-  const ignited = items.filter((h) => h.ignition);
+  const ignited = items.filter((h) => h.ignition || h.action === '低檔加碼');
   if (!r.in_rebalance_window && !ignited.length) return;
   const sig = `${new Date().toISOString().slice(0, 10)}|${items.map((h) => h.symbol + h.action).join(',')}`;
   try {
@@ -554,7 +630,7 @@ export function StrategyBacktestPanel() {
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-slate-900">策略回測 · AI 科技股動能輪動 vs {market === 'us' ? 'VOO / QQQ' : '0050'}</div>
+            <div className="text-sm font-semibold text-slate-900">策略回測 · 低檔布局 70% ＋ 動能 30% vs {market === 'us' ? 'VOO / QQQ' : '0050'}</div>
             <div className="text-xs text-slate-500">
               {bt ? `${bt.start_date} ~ ${bt.end_date} ・ 股票池 ${bt.universe_size} 檔 ・ 每年約換股 ${bt.trades_per_year} 次 ・ 每次成本 ${(bt.rules.cost_per_trade * 100).toFixed(1)}%` : '讀取中…'}
             </div>
@@ -601,6 +677,41 @@ export function StrategyBacktestPanel() {
                 </tbody>
               </table>
             </div>
+            {bt.tracks ? (
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                      <th className="py-1.5 pr-2">策略</th>
+                      {Object.keys(bt.periods).map((k) => (
+                        <th key={k} className="py-1.5 pr-2 text-right">{k} 年化／回撤</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="py-1.5 pr-2">動能輪動</td>
+                      {Object.values(bt.periods).map((p, i) => (
+                        <td key={i} className="py-1.5 pr-2 text-right">{p.strategy.cagr_pct}%／{p.strategy.max_drawdown_pct}%</td>
+                      ))}
+                    </tr>
+                    {Object.entries(bt.tracks).map(([k, t]) => (
+                      <tr key={k} className={`border-b border-slate-100 ${k === 'combo' ? 'font-semibold text-emerald-800' : ''}`}>
+                        <td className="py-1.5 pr-2">
+                          {t.name}
+                          {t.win_rate_pct != null ? <span className="ml-1 text-xs font-normal text-slate-500">（勝率 {t.win_rate_pct}%、{t.trades} 筆）</span> : null}
+                        </td>
+                        {Object.keys(bt.periods).map((lab) => (
+                          <td key={lab} className="py-1.5 pr-2 text-right">
+                            {t.periods[lab] ? `${t.periods[lab].strategy.cagr_pct}%／${t.periods[lab].strategy.max_drawdown_pct}%` : '—'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
             <BacktestCurve points={bt.equity_curve} benchmark={bt.benchmark_symbol} />
             <p className="mt-2 text-xs text-slate-500">
               「同池等權持有」＝把整個 AI 科技股池平均買進不動。策略要贏過它，才代表排名選股真的有加分，而不只是吃到 AI 族群本身的漲幅。
@@ -665,6 +776,8 @@ const VERDICT_STYLE: Record<string, string> = {
   可買進: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   '持有續抱，不新買': 'bg-sky-50 text-sky-800 border-sky-200',
   '不買／月初換股': 'bg-rose-100 text-rose-800 border-rose-200',
+  低檔布局可買: 'bg-emerald-200 text-emerald-900 border-emerald-300',
+  等低檔: 'bg-amber-50 text-amber-800 border-amber-200',
   '核心 ETF': 'bg-slate-100 text-slate-700 border-slate-200',
   資料不足: 'bg-slate-50 text-slate-500 border-slate-200',
 };
@@ -712,7 +825,7 @@ export function StockLookupPanel() {
           </Button>
         </div>
         <div className="mt-2 text-xs text-slate-500">
-          判斷只看一件事：近 6 個月「漲幅 ÷ 波動」在 AI 科技股池中的排名。買進區可買、續抱區可抱不新買、之外不買；非科技股會換算等效排名供參考。
+          兩條規則：①長線贏家回落 ≥30% → 低檔布局可買（主力）；②動能排名前段 → 動能可買。都不符合時顯示「等低檔」與低檔價。
         </div>
         {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
       </form>
@@ -739,6 +852,9 @@ export function StockLookupPanel() {
               <span className={tone(r.row.ret_1m_pct)}>近 1 月 {pct(r.row.ret_1m_pct, 0)}</span>
               <span className="text-slate-600">年化波動 {r.row.vol_ann_pct.toFixed(0)}%</span>
               <span className="text-slate-600">動能分數 {r.row.score.toFixed(2)}</span>
+              {r.row.dd_52w_pct != null ? <span className="text-rose-700">距 52 週高 {pct(r.row.dd_52w_pct, 0)}</span> : null}
+              {r.row.ret_3y_pct != null ? <span className={tone(r.row.ret_3y_pct)}>3 年 {pct(r.row.ret_3y_pct, 0)}</span> : null}
+              {r.row.low_entry_price ? <span className="text-slate-600">低檔價 {r.row.low_entry_price}</span> : null}
             </div>
           ) : null}
           <PriceLine closes={r.closes} />

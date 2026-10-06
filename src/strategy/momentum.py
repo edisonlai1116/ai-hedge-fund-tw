@@ -38,6 +38,18 @@ LOOKBACK = 126
 TOP_N = {"us": 10, "tw": 20}
 KEEP_N = {"us": 50, "tw": 30}
 UNDERWEIGHT_RATIO = 0.7   # 部位 < 目標 × 0.7 → 加碼
+
+# 長線低檔布局（2026-10-07 依使用者風格新增，point-in-time 回測驗證）：
+#   長線贏家（3 年報酬 > 0）自 52 週高點回落 ≥ 30% → 買進、持有 12 個月。
+#   美股 2017-2026：年化 44.3%、勝率 81%、Profit Factor 17.9（樣本內 40.2% / 樣本外 48.2%）；
+#   台股：39.5%（40.5% / 39.0%）。等待「止穩」或設 -35% 停損都會降低報酬（賣在低點），故不採用。
+#   CEG 2025-03-21、LITE 2026-07-30、AVGO 2025-04-09、VST 2025-03-14 皆會觸發。
+LOWENTRY_DD = -0.30
+LOWENTRY_WATCH_DD = -0.20
+LOWENTRY_LT_YEARS = 3
+LOWENTRY_HOLD_MONTHS = 12
+LOWENTRY_SLOTS = 10
+ALLOCATION = {"lowentry": 0.70, "momentum": 0.30}   # 使用者選擇：低檔布局為主
 CONCENTRATION_PCT = 20.0  # 單檔 > 總資產 20% → 減碼（集中度風險）
 TPE = timezone(timedelta(hours=8))
 
@@ -182,10 +194,28 @@ def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
         "above_ma200": (float(c.iloc[-1]) > ma200) if ma200 else None,
         "day_change_pct": round((float(c.iloc[-1]) / float(c.iloc[-2]) - 1) * 100, 2),
     }
+    hi252 = float(c.tail(252).max())
+    dd = float(c.iloc[-1]) / hi252 - 1 if hi252 > 0 else None
+    n3 = 252 * LOWENTRY_LT_YEARS
+    r3 = float(c.iloc[-1] / c.iloc[-n3 - 1] - 1) if len(c) > n3 else None
+    row["dd_52w_pct"] = round(dd * 100, 1) if dd is not None else None
+    row["ret_3y_pct"] = round(r3 * 100, 1) if r3 is not None else None
+    row["high_52w"] = round(hi252, 2)
+    lt_winner = r3 is not None and r3 > 0
+    row["low_entry"] = bool(lt_winner and dd is not None and dd <= LOWENTRY_DD)
+    row["low_entry_watch"] = bool(lt_winner and dd is not None and LOWENTRY_DD < dd <= LOWENTRY_WATCH_DD)
+    row["low_entry_price"] = round(hi252 * (1 + LOWENTRY_DD), 2) if lt_winner else None
+    row["long_term_broken"] = r3 is not None and r3 <= 0
     ign = _ignition(f)
     if ign:
         row["ignition"] = {k: ign.get(k) for k in ("ignition_days_ago", "ignition_gain_pct", "ignition_volume_ratio", "ignition_low")}
     return row
+
+
+def _pct(v, signed: bool = True) -> str:
+    if v is None:
+        return "—"
+    return f"{v:+.0f}%" if signed else f"{v:.0f}%"
 
 
 def zone_of(rank: int, market: str) -> str:
@@ -194,7 +224,7 @@ def zone_of(rank: int, market: str) -> str:
 
 def rank_market(market: str, price_map: Optional[Dict[str, pd.DataFrame]] = None) -> Dict:
     syms = universe(market)
-    price_map = price_map if price_map is not None else download_closes(syms)
+    price_map = price_map if price_map is not None else download_closes(syms, period="4y")
     rows = [r for s in syms if s in price_map for r in [score_row(s, price_map[s])] if r]
     rows.sort(key=lambda r: r["score"], reverse=True)
     for i, r in enumerate(rows, 1):
@@ -203,8 +233,12 @@ def rank_market(market: str, price_map: Optional[Dict[str, pd.DataFrame]] = None
     names = _names(market)
     for r in rows:
         r["name"] = names.get(r["symbol"].split(".")[0], "")
+    low = sorted([r for r in rows if r.get("low_entry")], key=lambda r: r["dd_52w_pct"])
+    watch = sorted([r for r in rows if r.get("low_entry_watch")], key=lambda r: r["dd_52w_pct"])
     return {
         "universe_size": len(rows),
+        "low_entry": [r["symbol"] for r in low],
+        "low_entry_watch": [r["symbol"] for r in watch],
         "top_n": TOP_N[market],
         "threshold_top": rows[TOP_N[market] - 1]["score"] if len(rows) >= TOP_N[market] else None,
         "keep_n": KEEP_N[market],
@@ -254,10 +288,13 @@ def build_strategy_report() -> Dict:
     return {
         "generated_at": now.isoformat(timespec="seconds"),
         "strategy": {
-            "name": "Sharpe 動能輪動",
-            "lookback_days": LOOKBACK, "top_n": TOP_N, "keep_n": KEEP_N,
-            "rule": (f"AI 科技股池依動能排名：美股持有前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；"
-                     f"台股持有前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣。等權、每月初檢查。"),
+            "name": "長線低檔布局 70% ＋ 動能輪動 30%",
+            "lookback_days": LOOKBACK, "top_n": TOP_N, "keep_n": KEEP_N, "allocation": ALLOCATION,
+            "low_entry_rule": (f"長線贏家（{LOWENTRY_LT_YEARS} 年報酬 > 0）自 52 週高點回落 ≥ {abs(LOWENTRY_DD):.0%} → 低檔布局買進，"
+                               f"持有 {LOWENTRY_HOLD_MONTHS} 個月；回落 {abs(LOWENTRY_WATCH_DD):.0%}~{abs(LOWENTRY_DD):.0%} 列入觀察。"),
+            "rule": (f"資金 {ALLOCATION['lowentry']:.0%} 給長線低檔布局、{ALLOCATION['momentum']:.0%} 給動能輪動"
+                     f"（美股前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；台股前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣）。"
+                     f"持股只有在動能也轉弱且 {LOWENTRY_LT_YEARS} 年長線趨勢破壞時才建議換股。"),
             "next_rebalance": next_rebalance(now.date()),
             "in_rebalance_window": is_rebalance_window(now.date()),
         },
@@ -305,9 +342,9 @@ def evaluate_holdings(
     prices = dict(extra_prices or {})
     missing = [s for s in need_price if s not in prices]
     if missing:
-        prices.update(download_closes(missing))
+        prices.update(download_closes(missing, period="4y"))
         for s in [s for s in missing if s not in prices and s.endswith(".TW")]:
-            alt = download_closes([s[:-3] + ".TWO"])
+            alt = download_closes([s[:-3] + ".TWO"], period="4y")
             if alt:
                 prices[s] = next(iter(alt.values()))
     for it in items:
@@ -329,7 +366,8 @@ def evaluate_holdings(
 
     total_twd = sum(it["value_twd"] for it in items) or 0.0
     sleeve = {m: sum(it["value_twd"] for it in items if it["market"] == m and not is_etf(it["symbol"])) for m in ("us", "tw")}
-    target = {m: (sleeve[m] / TOP_N[m] if sleeve[m] else 0.0) for m in sleeve}
+    target = {m: (sleeve[m] * ALLOCATION["momentum"] / TOP_N[m] if sleeve[m] else 0.0) for m in sleeve}
+    low_target = {m: (sleeve[m] * ALLOCATION["lowentry"] / LOWENTRY_SLOTS if sleeve[m] else 0.0) for m in sleeve}
 
     out_rows = []
     for it in items:
@@ -350,23 +388,32 @@ def evaluate_holdings(
             base["rank"] = base["score"] = None
         elif row is None:
             act, why = "資料不足", "上市未滿半年或抓不到報價，暫不評分。"
-        elif row["rank"] > KEEP_N[it["market"]]:
-            act = "賣出換股"
-            why = (f"動能排名第 {row['rank']} 名（{it['market'].upper()} 共 {markets.get(it['market'], {}).get('universe_size', '?')} 檔），"
-                   f"已跌出前 {KEEP_N[it['market']]} 名；依策略於月初賣出，資金換到前 {TOP_N[it['market']]} 名的新買進標的。")
         elif total_twd and it["value_twd"] / total_twd * 100 > CONCENTRATION_PCT:
             act = "減碼"
-            why = (f"排名第 {row['rank']} 名仍在名單內，但單檔佔總資產 {it['value_twd'] / total_twd:.0%}，"
-                   f"超過 {CONCENTRATION_PCT:.0f}% 集中度上限；減碼到 {CONCENTRATION_PCT:.0f}% 以下，資金分散到新買進標的。")
+            why = (f"單檔佔總資產 {it['value_twd'] / total_twd:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限；"
+                   f"減碼到 {CONCENTRATION_PCT:.0f}% 以下，資金分散到低檔布局/動能名單。")
+        elif row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
+            lt = low_target[it["market"]]
+            act = "低檔加碼"
+            why = (f"長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點回落 {_pct(abs(row['dd_52w_pct']) if row.get('dd_52w_pct') is not None else None, False)}，進入低檔布局區；"
+                   f"部位僅目標的 {it['value_twd'] / lt:.0%}，可分批加碼到約 NT${lt:,.0f}，持有 {LOWENTRY_HOLD_MONTHS} 個月。")
         elif row["rank"] <= TOP_N[it["market"]] and tgt and it["value_twd"] < tgt * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             act = "加碼"
-            why = f"排名第 {row['rank']} 名（前 {TOP_N[it['market']]} 名買進區），部位僅目標的 {it['value_twd'] / tgt:.0%}，加碼至每檔約 NT${tgt:,.0f}。"
+            why = f"動能排名第 {row['rank']} 名（前 {TOP_N[it['market']]} 名買進區），部位僅目標的 {it['value_twd'] / tgt:.0%}，加碼至約 NT${tgt:,.0f}。"
+        elif row["rank"] > KEEP_N[it["market"]] and row.get("long_term_broken"):
+            act = "賣出換股"
+            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名），且 {LOWENTRY_LT_YEARS} 年報酬 "
+                   f"{_pct(row.get('ret_3y_pct'))}（長線趨勢已破壞）——兩條策略都不支持續抱，建議月初換到低檔布局或動能名單。")
         else:
             act = "續抱"
-            why = (f"排名第 {row['rank']} 名，" + ("在買進區、部位已達目標。" if row["rank"] <= TOP_N[it["market"]]
-                                                 else f"在續抱區（{TOP_N[it['market']] + 1}~{KEEP_N[it['market']]} 名），不加碼也不賣。"))
-            if tgt and it["value_twd"] > tgt * 1.6:
-                why += f" 部位已是每檔目標的 {it['value_twd'] / tgt:.1f} 倍，新資金優先買其他名單股。"
+            if row.get("low_entry"):
+                why = f"在低檔布局區（距 52 週高點 {_pct(row.get('dd_52w_pct'), False)}、3 年 {_pct(row.get('ret_3y_pct'))}），部位已足，續抱 {LOWENTRY_HOLD_MONTHS} 個月。"
+            elif row["rank"] <= KEEP_N[it["market"]]:
+                why = f"動能排名第 {row['rank']} 名（前 {KEEP_N[it['market']]} 名內），續抱。"
+            else:
+                why = (f"動能排名第 {row['rank']} 名偏弱，但 {LOWENTRY_LT_YEARS} 年長線趨勢仍向上（{_pct(row.get('ret_3y_pct'))}）、"
+                       f"距高點 {_pct(row.get('dd_52w_pct'), False)}——長線續抱、不加碼；"
+                       + (f"跌到 {row.get('low_entry_price')}（回落 30%）才是低檔加碼點。" if row.get("low_entry_price") else ""))
         if row and row.get("outside_universe") and act not in ("核心 ETF", "資料不足"):
             why += " 註：此股不在 AI 科技股池，排名為換算參考；策略不會新買或加碼它。"
         if base["ignition"] and act in ("續抱", "加碼"):
@@ -382,8 +429,17 @@ def evaluate_holdings(
              "target_twd": round(target[m]) if target[m] else None}
             for r in rows[:TOP_N[m]] if r["symbol"] not in held
         ]
+    low_buys = {}
+    for m in ("us", "tw"):
+        mk = markets.get(m, {})
+        by = {r["symbol"]: r for r in mk.get("rows", [])}
+        low_buys[m] = [
+            {**{k: by[s_].get(k) for k in ("symbol", "name", "rank", "close", "dd_52w_pct", "ret_3y_pct", "high_52w")},
+             "target_twd": round(low_target[m]) if low_target[m] else None}
+            for s_ in mk.get("low_entry", [])[:LOWENTRY_SLOTS] if s_ in by and s_ not in held
+        ]
 
-    order = {"賣出換股": 0, "減碼": 1, "加碼": 2, "續抱": 3, "核心 ETF": 4, "資料不足": 5}
+    order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "續抱": 4, "核心 ETF": 5, "資料不足": 6}
     out_rows.sort(key=lambda r: (order.get(r["action"], 9), -(r["value_twd"] or 0)))
     return {
         "generated_at": report.get("generated_at"),
@@ -393,8 +449,11 @@ def evaluate_holdings(
         "total_twd": round(total_twd),
         "sleeve_twd": {m: round(v) for m, v in sleeve.items()},
         "target_per_name_twd": {m: round(v) for m, v in target.items()},
+        "low_entry_target_twd": {m: round(v) for m, v in low_target.items()},
+        "allocation": ALLOCATION,
         "holdings": out_rows,
         "new_buys": new_buys,
+        "low_entry_buys": low_buys,
     }
 
 
@@ -413,9 +472,9 @@ def usd_twd() -> float:
 def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
     """查任意代號在策略中的排名與結論（不在股票池者以分數換算等效排名），附近一年收盤供畫圖。"""
     syms = [to_yf(t) for t in tickers if str(t).strip()]
-    prices = download_closes(syms, period="1y")
+    prices = download_closes(syms, period="4y")
     for s in [s for s in syms if s not in prices and s.endswith(".TW")]:
-        alt = download_closes([s[:-3] + ".TWO"], period="1y")
+        alt = download_closes([s[:-3] + ".TWO"], period="4y")
         if alt:
             prices[s] = next(iter(alt.values()))
     out = []
@@ -436,6 +495,9 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
             verdict, detail = "核心 ETF", "ETF 屬核心部位，不套用個股動能輪動；適合長期持有。"
         elif row is None:
             verdict, detail = "資料不足", "抓不到報價或上市未滿半年，暫不評分。"
+        elif row.get("low_entry") and not row.get("outside_universe"):
+            verdict, detail = "低檔布局可買", (f"長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點 {row.get('high_52w')} 回落 "
+                                         f"{_pct(row.get('dd_52w_pct'), False)}：符合低檔布局規則，可分批買進、持有 {LOWENTRY_HOLD_MONTHS} 個月。")
         elif row["zone"] == "buy" and row.get("outside_universe"):
             verdict, detail = "持有續抱，不新買", f"不在 AI 科技股池；換算排名第 {row['rank']} 名，動能強但策略只買池內標的。已持有可續抱。"
         elif row["zone"] == "buy":
@@ -443,7 +505,12 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
         elif row["zone"] == "hold":
             verdict, detail = "持有續抱，不新買", f"排名第 {row['rank']} 名，在續抱區（{TOP_N[m] + 1}~{keep} 名）：已持有可續抱，沒持有則等它進前 {TOP_N[m]} 名。"
         else:
-            verdict, detail = "不買／月初換股", f"排名第 {row['rank']} 名，已在前 {keep} 名之外；不建議買進，已持有者依策略於月初賣出換股。"
+            if row.get("long_term_broken"):
+                verdict, detail = "不買／月初換股", f"動能排名第 {row['rank']} 名且 3 年長線趨勢已破壞；不建議買進。"
+            else:
+                lep = row.get("low_entry_price")
+                verdict, detail = "等低檔", (f"動能排名第 {row['rank']} 名偏弱、尚未跌到低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}）；"
+                                            + (f"跌到 {lep} 以下（回落 30%）才進入低檔布局區。已持有者長線續抱。" if lep else "觀望。"))
         closes = []
         if f is not None:
             c = f["Close"].dropna()

@@ -49,14 +49,15 @@ def main(argv=None) -> int:
         top = ", ".join(r["symbol"] for r in d["rows"][:10])
         print(f"[strategy_report] {m}: {d['universe_size']} 檔；前 10：{top}")
 
-    # 機會評分卡（cross-sectional ranking）：驗收清單 + 各市場策略前 10 名；不含任何持股資訊。
+    # 機會評分卡（cross-sectional ranking）：驗收清單 + 各市場低檔布局候選 + 動能前段；不含任何持股資訊。
     try:
         from src.ranking.engine import rank_stocks
         from src.ranking.themes import ACCEPTANCE_TICKERS
         from src.ranking import tracking
         watch = list(ACCEPTANCE_TICKERS)
         for m in ("us", "tw"):
-            watch += [r["symbol"] for r in report["markets"].get(m, {}).get("rows", [])[:10]]
+            watch += report["markets"].get(m, {}).get("low_entry", [])[:8]          # 低檔布局（主力 70%）
+            watch += [r["symbol"] for r in report["markets"].get(m, {}).get("rows", [])[:6]]   # 動能前段
         watch = list(dict.fromkeys(watch))
         opp = rank_stocks(watch)
         for r in opp["ranking"]:   # 精簡：原始財報細節不輸出

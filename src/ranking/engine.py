@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import math
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -98,7 +99,7 @@ def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, 
         live_fundamentals = live_news = False
 
     markets = {"us": [s for s in batch if not _is_tw(s)], "tw": [s for s in batch if _is_tw(s)]}
-    period = "3y" if asof is None else "10y"
+    period = "4y" if asof is None else "10y"
     from src.ranking.regime import TICKERS as REGIME_TICKERS
     rpm = _download(list(REGIME_TICKERS.values()), period)
     regime_inputs = {k: rpm[v]["Close"] for k, v in REGIME_TICKERS.items() if v in rpm}
@@ -162,6 +163,7 @@ def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, 
         "weights_used": sc.regime_weights(profile),
         "notes": [
             "Opportunity Score 衡量的是『現在』的風險報酬，不是公司好壞。",
+            "Opportunity = 70% 長線低檔分數（長線贏家距 52 週高點深度，已驗證）＋ 30% 動能機會分數（使用者設定）。",
             "基本面、新聞只有即時資料，沒有 point-in-time 歷史 → 不參與回測；回測只驗證價格模組。",
             "AI 曝險分數為專家先驗，不參與回測。",
             "權重依驗證結果：已驗證的動能排名占 61%；其餘模組未經回測驗證，每檔顯示 validated_share。",
@@ -212,6 +214,20 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
             company = ""
     else:
         company = ""
+    sec_val = None
+    if live_fund and not _is_tw(sym) and os.environ.get("SEC_USER_AGENT"):
+        try:   # SEC point-in-time：相對自身 3 年 P/S（資訊用；回測顯示當作篩選條件並未改善報酬）
+            from src.data.sec_fundamentals import pit_valuation
+            v = pit_valuation(sym, ohlcv["Close"].dropna())
+            if v is not None and v["ps"].notna().sum() > 300:
+                ps = v["ps"].dropna()
+                med = float(ps.tail(756).median())
+                sec_val = {"ps": round(float(ps.iloc[-1]), 2), "ps_3y_median": round(med, 2),
+                           "relative_to_own_3y": round(float(ps.iloc[-1]) / med, 2) if med > 0 else None,
+                           "pe": round(float(v["pe"].dropna().iloc[-1]), 1) if v["pe"].notna().any() else None,
+                           "source": "SEC XBRL（依申報日，point-in-time）"}
+        except Exception as exc:
+            sec_val = {"error": f"{type(exc).__name__}"}
     if live_news:
         try:
             from src.ranking.catalysts import catalyst_report
@@ -244,14 +260,24 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
 
     comp = {k: v for k, v in scores.items() if k in sc.BASE_WEIGHTS}
     weights = sc.regime_weights(profile)
-    opp = sc.opportunity_score(comp, scores["overextension"], weights)
+    mom_opp = sc.opportunity_score(comp, scores["overextension"], weights)
+    dd52, r3 = g("drawdown_252"), g("ret_756")
+    low_score = sc.low_entry_score(dd52, r3, scores.get("valuation"))
+    scores["low_entry"] = low_score
+    is_low = bool(dd52 is not None and dd52 <= sc.LOW_ENTRY_DD and r3 is not None and r3 > 0)
+    lt_broken = r3 is not None and r3 <= 0
+    opp = dict(mom_opp)
+    if mom_opp["score"] is not None and low_score is not None:
+        opp["score"] = round(sc.ALLOCATION["lowentry"] * low_score + sc.ALLOCATION["momentum"] * mom_opp["score"], 1)
+        opp["momentum_opportunity"], opp["low_entry_score"] = mom_opp["score"], low_score
     held = holding is not None
     damage = (shock_view or {}).get("fundamental_damage_score")
     oversold = bool(shock_view and shock_view.get("verdict") == "POTENTIAL_OVERSOLD")
     zones = sc.entry_zones(ohlcv, scores.get("valuation"), next_er)
     above_avoid = bool(zones.get("avoid_above") and zones.get("price") and zones["price"] > zones["avoid_above"])
     st = sc.decide_status(opp["score"], scores["overextension"], scores.get("quality"), scores["risk"],
-                          scores.get("valuation"), scores["relative_strength"], held, damage, oversold, above_avoid)
+                          scores.get("valuation"), scores["relative_strength"], held, damage, oversold, above_avoid,
+                          low_entry=is_low, long_term_broken=lt_broken)
     price = zones.get("price") or _num(ohlcv["Close"].dropna().iloc[-1])
     vol63 = g("vol_63")
     row = {
@@ -268,7 +294,8 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
                    "industry": scores.get("industry_momentum")},
         "ai": {"exposure": th.ai_exposure if th else None, "demand_sensitivity": th.ai_demand_sensitivity if th else None,
                "cycle_position": _cycle_position(F, sym, th)},
-        "returns": {f"{n}d": g(f"ret_{n}") for n in (5, 20, 60, 120, 252)},
+        "returns": {f"{n}d": g(f"ret_{n}") for n in (5, 20, 60, 120, 252, 756)},
+        "low_entry": {"in_zone": is_low, "dd_52w": dd52, "ret_3y": r3, "score": low_score, "long_term_broken": lt_broken},
         "relative": {f"vs_{b}_{n}d": g(f"rel_{b}_{n}") for b in ("SPY", "QQQ", "ind", "theme") for n in (20, 60, 120, 252)},
         "technical_detail": {"dist_ma20": g("dist_ma20"), "dist_ma50": g("dist_ma50"), "dist_52w_high": g("dist_52w_high"),
                              "rsi14": g("rsi14"), "volume_spike": g("vol_spike"), "up_volume_ratio": g("up_volume_ratio"),
@@ -276,6 +303,7 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
         "vol_63": vol63, "beta": g("beta_252"), "downside_risk": (abs(g("drawdown_252")) if g("drawdown_252") is not None else None),
         "coverage": opp["coverage"],
         "entry": zones, "fundamentals": fundamentals, "catalyst": catalyst, "positioning": positioning,
+        "sec_valuation": sec_val,
         "shock": shock_view, "holding": holding,
         "expected_excess_60d": sc.expected_excess_return(opp["score"], calibration),
     }
@@ -303,7 +331,7 @@ def _cycle_position(F, sym, th) -> Optional[str]:
     return "Mature"
 
 
-LABELS = {"momentum_rank": "動能排名", "quality": "品質", "growth": "成長", "earnings_acceleration": "財報加速", "valuation": "估值",
+LABELS = {"low_entry": "低檔分數", "momentum_rank": "動能排名", "quality": "品質", "growth": "成長", "earnings_acceleration": "財報加速", "valuation": "估值",
           "ai_exposure": "AI 曝險", "industry_momentum": "產業動能", "relative_strength": "相對強度",
           "catalyst": "催化", "technical": "技術"}
 
@@ -319,6 +347,13 @@ def _narrative(r: Dict) -> Dict[str, str]:
     shock = r.get("shock") or {}
     why_buy = ("、".join(strong) + "。" if strong else "沒有特別突出的強項。") + (
         "大跌主因非公司基本面，屬潛在超跌。" if "POTENTIAL_OVERSOLD" in r["flags"] else "")
+    le = r.get("low_entry") or {}
+    if le.get("in_zone"):
+        why_buy = f"長線贏家（3 年 {le['ret_3y']:+.0%}）已自 52 週高點回落 {abs(le['dd_52w']):.0%}，落入低檔布局區。" + why_buy
+    sv = r.get("sec_valuation") or {}
+    if sv.get("relative_to_own_3y") is not None:
+        rel = sv["relative_to_own_3y"]
+        why_buy += f" 估值為自身 3 年中位數的 {rel:.2f} 倍（P/S {sv['ps']}）" + ("，相對便宜。" if rel <= 0.85 else "。")
     why_not = []
     if ox is not None and ox >= 60:
         why_not.append(f"短線過熱 {ox:.0f}（RSI {r['technical_detail'].get('rsi14') or 0:.0f}、距 20 日線 {100 * (r['technical_detail'].get('dist_ma20') or 0):.0f}%）")
@@ -362,7 +397,7 @@ def format_card(r: Dict) -> str:
         f"  Quality: {f(s.get('quality'))}  Growth: {f(s.get('growth'))}  Earnings: {f(s.get('earnings_acceleration'))}  AI: {f(s.get('ai_exposure'))}",
         f"  Industry: {f(s.get('industry_momentum'))}  Valuation: {f(s.get('valuation'))}  Technical: {f(s.get('technical'))}  Catalyst: {f(s.get('catalyst'))}",
         f"  Relative Strength: {f(s.get('relative_strength'))}  Risk: {f(s.get('risk'))}  Overextension: {f(s.get('overextension'))}  "
-        f"Momentum rank（已驗證核心）: {f(s.get('momentum_rank'))}",
+        f"Momentum rank（已驗證）: {f(s.get('momentum_rank'))}  Low-entry（已驗證）: {f(s.get('low_entry'))}",
         f"  AI cycle: {r['ai'].get('cycle_position') or '-'}",
         "Entry:",
         f"  Zone 1: {zone('zone_1')}",

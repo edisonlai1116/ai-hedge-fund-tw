@@ -80,3 +80,6 @@ agentic_sop/runs/
 !agentic_sop/example/inputs/sample_readings.txt
 # 自動提醒去重狀態（存在 Actions cache，不進 repo）
 .alert_state/
+
+# SEC 等外部資料快取
+.cache/

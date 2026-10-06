@@ -6,12 +6,13 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from src.strategy.momentum import KEEP_N, LOOKBACK, TOP_N, download_closes, universe
+from src.strategy.momentum import (ALLOCATION, KEEP_N, LOOKBACK, LOWENTRY_DD, LOWENTRY_LT_YEARS, LOWENTRY_SLOTS, TOP_N,
+                                   download_closes, universe)
 
 REBALANCE_DAYS = 21
 COST = 0.002
@@ -93,6 +94,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
             {"date": d.strftime("%Y-%m-%d"), "strategy": round(float(v), 4), "benchmark": round(float(bm_weekly.loc[d]), 4)}
             for d, v in weekly.items()
         ],
+        "_eq_daily": eq_s,
         "current_holdings": held,
         "recent_rebalances": log[-6:],
         "rules": {"lookback_days": LOOKBACK, "top_n": TOP_N[market], "keep_n": KEEP_N[market],
@@ -101,7 +103,52 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
     }
 
 
-def build_backtest_report(period: str = "10y") -> Dict:
+def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int = 252) -> Tuple[pd.Series, List[Dict]]:
+    """長線低檔布局：T-1 收盤符合（3 年報酬 > 0 且距 52 週高點 ≤ -30%）→ T 收盤買進，持有 hold 日。
+    每檔 1/LOWENTRY_SLOTS 權重、空槽為現金；同檔出場後 60 日內不重複進場；依回落深度優先。"""
+    closes = closes.sort_index().ffill(limit=3)
+    rets = closes.pct_change()
+    dd = closes / closes.rolling(252, min_periods=200).max() - 1
+    lt = closes / closes.shift(252 * LOWENTRY_LT_YEARS) - 1
+    ok = (dd <= LOWENTRY_DD) & (lt > 0)
+    idx = closes.index[closes.index >= start]
+    pos: Dict[str, Tuple[int, float]] = {}
+    cool: Dict[str, int] = {}
+    daily, trades = [], []
+    for j in range(1, len(idx)):
+        d, prev = idx[j], idx[j - 1]
+        r = sum(float(rets.at[d, k]) for k in pos if np.isfinite(rets.at[d, k])) / LOWENTRY_SLOTS
+        cost = 0.0
+        for k in list(pos):
+            j0, p0 = pos[k]
+            if j - j0 >= hold:
+                trades.append({"ticker": k, "entry": idx[j0].strftime("%Y-%m-%d"), "exit": d.strftime("%Y-%m-%d"),
+                               "return_pct": round((closes.at[d, k] / p0 - 1) * 100, 1)})
+                del pos[k]
+                cool[k] = j + 60
+                cost += COST / LOWENTRY_SLOTS
+        if len(pos) < LOWENTRY_SLOTS:
+            row = ok.loc[prev]
+            cands = sorted([k for k in row[row].index if k not in pos and cool.get(k, 0) <= j], key=lambda k: dd.at[prev, k])
+            for k in cands[: LOWENTRY_SLOTS - len(pos)]:
+                if np.isfinite(closes.at[d, k]):
+                    pos[k] = (j, float(closes.at[d, k]))
+                    cost += COST / LOWENTRY_SLOTS
+        daily.append((d, r - cost))
+    ser = pd.Series([x for _, x in daily], index=[d for d, _ in daily])
+    return ser, trades
+
+
+def _period_stats(eq: pd.Series, bench: pd.Series) -> Dict:
+    out = {}
+    for lab, (a, z) in {"全期": (None, None), "2017-2021": (None, "2021-12-31"), "2022-今": (SPLIT_DATE, None)}.items():
+        e, b = eq[a:z], bench[a:z]
+        if len(e) > 30:
+            out[lab] = {"strategy": _stats(e), "benchmark": _stats(b)}
+    return out
+
+
+def build_backtest_report(period: str = "max") -> Dict:
     out = {}
     for m in ("us", "tw"):
         syms = universe(m)
@@ -114,6 +161,30 @@ def build_backtest_report(period: str = "10y") -> Dict:
         if bench is None or not pm:
             continue
         closes = pd.DataFrame({s: f["Close"] for s, f in pm.items()})
-        out[m] = run_backtest(m, closes, bench["Close"], extra=extra)
+        closes = closes[closes.index >= "2013-01-01"]
+        res = run_backtest(m, closes, bench["Close"], extra=extra)
+        # 長線低檔布局與 70/30 組合（使用者設定的配置）
+        low_r, low_trades = lowentry_returns(closes)
+        eq_m = res.pop("_eq_daily")   # 必須用「每日」動能報酬組合，週取樣會讓波動/Sharpe 失真
+        eq_m.index = pd.to_datetime(eq_m.index)
+        mom_r = eq_m.pct_change().reindex(low_r.index).fillna(0)
+        combo_r = ALLOCATION["lowentry"] * low_r + ALLOCATION["momentum"] * mom_r
+        low_eq, combo_eq = (1 + low_r).cumprod(), (1 + combo_r).cumprod()
+        b = bench["Close"].copy()
+        b.index = pd.to_datetime(b.index).tz_localize(None) if pd.to_datetime(b.index).tz is not None else pd.to_datetime(b.index)
+        b = b.reindex(low_r.index).ffill()
+        res["tracks"] = {
+            "lowentry": {"name": "長線低檔布局", "periods": _period_stats(low_eq, b),
+                         "recent_trades": low_trades[-8:], "trades": len(low_trades),
+                         "win_rate_pct": round(sum(1 for t in low_trades if t["return_pct"] > 0) / max(len(low_trades), 1) * 100, 1)},
+            "combo": {"name": f"組合：低檔 {ALLOCATION['lowentry']:.0%} ＋ 動能 {ALLOCATION['momentum']:.0%}",
+                      "periods": _period_stats(combo_eq, b)},
+        }
+        weekly = combo_eq.iloc[::5]
+        low_w = low_eq.reindex(weekly.index)
+        curve = {p["date"]: p for p in res["equity_curve"]}
+        res["combo_curve"] = [{"date": d.strftime("%Y-%m-%d"), "combo": round(float(v), 4), "lowentry": round(float(low_w.loc[d]), 4),
+                               "benchmark": round(float(b.loc[d] / b.iloc[0]), 4)} for d, v in weekly.items()]
+        out[m] = res
     from datetime import datetime, timedelta, timezone
     return {"generated_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"), "markets": out}

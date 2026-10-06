@@ -8,11 +8,16 @@ from src.strategy import momentum as m
 def _report(rows_us):
     rows = []
     for i, (sym, score) in enumerate(rows_us, 1):
+        broken = sym == "S120"
+        low = sym == "S080"
         rows.append({"symbol": sym, "name": "", "rank": i, "zone": m.zone_of(i, "us"), "score": score,
-                     "close": 100.0, "ret_6m_pct": 10.0})
+                     "close": 100.0, "ret_6m_pct": 10.0, "ret_3y_pct": -10.0 if broken else 50.0,
+                     "dd_52w_pct": -35.0 if low else -10.0, "high_52w": 150.0, "low_entry": low,
+                     "long_term_broken": broken, "low_entry_price": 105.0})
     return {"generated_at": "2026-10-06T00:00:00+08:00",
             "strategy": {"next_rebalance": "2026-11-02", "in_rebalance_window": False},
-            "markets": {"us": {"universe_size": len(rows), "rows": rows}, "tw": {"universe_size": 0, "rows": []}}}
+            "markets": {"us": {"universe_size": len(rows), "rows": rows, "low_entry": [r["symbol"] for r in rows if r["low_entry"]]},
+                        "tw": {"universe_size": 0, "rows": []}}}
 
 
 def test_sharpe_momentum_prefers_smooth_uptrend():
@@ -37,15 +42,18 @@ def test_evaluate_holdings_actions():
     syms = [(f"S{i:03d}", 5 - i * 0.01) for i in range(150)]
     rep = _report(syms)
     holdings = [
-        {"ticker": "S000", "cost": 50, "shares": 1},     # 第 1 名、部位很小 → 加碼
+        {"ticker": "S000", "cost": 50, "shares": 0.5},   # 第 1 名、部位很小 → 加碼
         {"ticker": "S030", "cost": 50, "shares": 10},    # 第 31 名 → 續抱
-        {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名（> 50）→ 賣出換股
-        {"ticker": "VOO", "cost": 400, "shares": 10},    # ETF → 核心（也讓單檔佔比 < 20%）
+        {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名且 3 年趨勢破壞 → 賣出換股
+        {"ticker": "S090", "cost": 50, "shares": 10},    # 第 91 名但長線趨勢仍向上 → 長線續抱（不賣）
+        {"ticker": "S080", "cost": 50, "shares": 1},     # 低檔布局區、部位小 → 低檔加碼
+        {"ticker": "VOO", "cost": 400, "shares": 20},    # ETF → 核心（也讓單檔佔比 < 20%）
     ]
     ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0,
                              extra_prices={"VOO": pd.DataFrame({"Close": [500.0] * 10})})
     acts = {h["symbol"]: h["action"] for h in ev["holdings"]}
-    assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "VOO": "核心 ETF"}
+    assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "S090": "續抱", "S080": "低檔加碼", "VOO": "核心 ETF"}
+    assert [b["symbol"] for b in ev["low_entry_buys"]["us"]] == []          # 唯一低檔股已持有
     assert [b["symbol"] for b in ev["new_buys"]["us"]][:2] == ["S001", "S002"]
 
 

@@ -179,3 +179,20 @@ def test_above_avoid_forces_pullback_and_mid_score_buys_on_pullback():
     assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False)["status"] == "BUY_NOW"
     assert sc.decide_status(60, 20, 70, 50, 50, 60, held=False)["status"] == "BUY_ON_PULLBACK"
     assert sc.decide_status(45, 20, 70, 50, 50, 60, held=False)["status"] == "WAIT"
+
+
+# ---------------- 長線低檔布局 ----------------
+def test_low_entry_score_and_status():
+    assert sc.low_entry_score(-0.30, 0.5) == pytest.approx(80.0)
+    assert sc.low_entry_score(-0.50, 0.5) == pytest.approx(100.0)
+    assert sc.low_entry_score(-0.30, -0.1) == pytest.approx(24.0)      # 非長線贏家打三折
+    assert sc.low_entry_score(None, 0.5) is None
+    # 長線贏家落入低檔區：沒持有 → BUY_NOW；持有 → HOLD_CORE（不因動能弱賣出）
+    st = sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True)
+    assert st["status"] == "BUY_NOW" and "LOW_ENTRY_ZONE" in st["flags"]
+    assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True)["status"] == "HOLD_CORE"
+    # 基本面結構性受損時不套低檔規則
+    assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True, damage=70)["status"] == "SELL"
+    # 動能弱但長線趨勢未破壞 → 不賣
+    assert sc.decide_status(25, 10, 50, 60, 50, 20, held=True, long_term_broken=False)["status"] == "HOLD"
+    assert sc.decide_status(25, 10, 50, 60, 50, 20, held=True, long_term_broken=True)["status"] == "SELL"

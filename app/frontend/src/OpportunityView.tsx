@@ -27,6 +27,7 @@ const REGIME_TEXT: Record<string, string> = {
   RISK_ON_ROTATION: '資金輪動：電力/能源相對科技走強',
 };
 const COLS: [string, string][] = [
+  ['low_entry', '低檔★'],
   ['momentum_rank', '動能排名★'],
   ['quality', '品質'],
   ['growth', '成長'],
@@ -185,7 +186,7 @@ export function OpportunityPanel() {
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-slate-500">★ 動能排名是唯一通過 point-in-time 回測驗證的核心（權重 61%）；其餘模組沒有歷史時點資料，未經回測驗證。點任一列看完整評分卡。</p>
+          <p className="mt-2 text-xs text-slate-500">★ 已驗證：低檔分數（長線贏家距 52 週高點深度，占 70%）與動能排名（占 30% 中的 61%）。其餘模組無歷史時點資料或驗證未改善，僅供參考。點任一列看完整評分卡。</p>
           <ul className="mt-1 list-disc pl-5 text-[11px] text-slate-500">
             {data.notes.map((n) => (
               <li key={n}>{n}</li>
@@ -220,6 +221,9 @@ function OppCard({ r }: { r: OppRow }) {
         <div>Zone 1：{zone('zone_1')}</div>
         <div>Zone 2：{zone('zone_2')}</div>
         <div>Zone 3：{zone('zone_3')}</div>
+        {r.sec_valuation?.relative_to_own_3y != null ? (
+          <div>SEC 估值：P/S {r.sec_valuation.ps}（自身 3 年中位數 {r.sec_valuation.ps_3y_median}，{r.sec_valuation.relative_to_own_3y} 倍）{r.sec_valuation.pe ? `・P/E ${r.sec_valuation.pe}` : ''}</div>
+        ) : null}
         <div>Avoid Above：{z.avoid_above ?? '—'}{z.notes?.length ? `（${z.notes.join('；')}）` : ''}</div>
         <div>
           Better than：{r.rotation_view?.better_than?.join('、') || '—'}　Worse than：{r.rotation_view?.worse_than?.join('、') || '—'}

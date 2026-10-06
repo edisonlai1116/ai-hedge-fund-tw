@@ -114,11 +114,17 @@ def build_alerts(holdings: List[Dict], report: Dict, markets: set, fractions: Di
 
     if rebalance:
         for h in ev["holdings"]:
-            if h["market"] in markets and h["action"] in ("賣出換股", "減碼", "加碼"):
+            if h["market"] in markets and h["action"] in ("賣出換股", "減碼", "低檔加碼", "加碼"):
                 alerts.append({"group": "rebalance", "symbol": h["symbol"], "action": h["action"],
                                "price": h["price"], "pnl": h["pnl_pct"], "weight": h["weight_pct"],
                                "reason": h["reason"], "key": f"reb:{month}:{h['symbol']}:{h['action']}"})
         for m in markets:
+            for b in (ev.get("low_entry_buys") or {}).get(m, []):
+                tgt = f"，目標約 NT${b['target_twd']:,.0f}" if b.get("target_twd") else ""
+                alerts.append({"group": "rebalance", "symbol": b["symbol"], "action": "低檔布局買進",
+                               "price": b["close"], "pnl": None, "weight": None,
+                               "reason": f"長線贏家（3 年 {b['ret_3y_pct']:+.0f}%）距 52 週高點 {b['dd_52w_pct']:.0f}%{tgt}，持有 12 個月。",
+                               "key": f"reb:{month}:{b['symbol']}:low"})
             for b in ev["new_buys"].get(m, []):
                 tgt = f"，目標約 NT${b['target_twd']:,.0f}" if b.get("target_twd") else ""
                 alerts.append({"group": "rebalance", "symbol": b["symbol"], "action": "新買進",
@@ -126,9 +132,23 @@ def build_alerts(holdings: List[Dict], report: Dict, markets: set, fractions: Di
                                "reason": f"動能排名第 {b['rank']} 名（近 6 個月 {b['ret_6m_pct']:+.0f}%）{tgt}。",
                                "key": f"reb:{month}:{b['symbol']}:new"})
 
+    # 低檔事件（不等月初）：持股或股票池個股「剛進入」低檔布局區 → 立即提醒（同檔 30 天內不重複）
+    held_syms = {h["symbol"] for h in ev["holdings"]}
+    for h in ev["holdings"]:
+        if h["action"] == "低檔加碼" and h["market"] in markets:
+            alerts.append({"group": "event", "symbol": h["symbol"], "action": "低檔加碼", "price": h["price"],
+                           "pnl": h["pnl_pct"], "weight": h["weight_pct"], "reason": h["reason"], "key": f"low:{h['symbol']}"})
+    for m in markets:
+        for b in (ev.get("low_entry_buys") or {}).get(m, []):
+            if b["symbol"] not in held_syms:
+                alerts.append({"group": "event", "symbol": b["symbol"], "action": "進入低檔區", "price": b["close"],
+                               "pnl": None, "weight": None,
+                               "reason": f"3 年 {b['ret_3y_pct']:+.0f}% 的長線贏家已自高點 {b['high_52w']} 回落 {b['dd_52w_pct']:.0f}%，符合低檔布局規則（回測勝率約 8 成）。",
+                               "key": f"low:{b['symbol']}"})
+
     # 點火事件：持股中仍在名單內者 + 前 10 名
     watch = {h["symbol"]: "持股" for h in ev["holdings"]
-             if h["action"] in ("續抱", "加碼") and h["market"] in markets}
+             if h["action"] in ("續抱", "加碼", "低檔加碼") and h["market"] in markets}
     for m in markets:
         for r in report.get("markets", {}).get(m, {}).get("rows", [])[:TOP_N[m]]:
             watch.setdefault(r["symbol"], f"前 {TOP_N[m]} 名")
@@ -164,12 +184,13 @@ def save_state(state: Dict[str, str]) -> None:
 
 
 def filter_new(alerts: List[Dict], state: Dict[str, str]) -> List[Dict]:
-    """月調提醒的 key 含月份（每月一次）；點火事件 5 天內不重複。"""
+    """月調提醒的 key 含月份（每月一次）；點火事件 5 天、低檔事件 30 天內不重複。"""
     cutoff = (datetime.now(TPE) - timedelta(days=EVENT_DEDUP_DAYS)).isoformat()
+    low_cutoff = (datetime.now(TPE) - timedelta(days=30)).isoformat()
     out = []
     for a in alerts:
         seen = state.get(_hash(a["key"]), "")
-        if seen and (a["key"].startswith("reb:") or seen >= cutoff):
+        if seen and (a["key"].startswith("reb:") or seen >= (low_cutoff if a["key"].startswith("low:") else cutoff)):
             continue
         out.append(a)
     return out
@@ -183,14 +204,14 @@ def format_message(alerts: List[Dict], report: Dict) -> str:
     ev = [a for a in alerts if a["group"] == "event"]
     if reb:
         lines.append("\n【每月調整】")
-        for label in ("賣出換股", "減碼", "加碼", "新買進"):
+        for label in ("賣出換股", "減碼", "低檔加碼", "加碼", "低檔布局買進", "新買進"):
             for a in [x for x in reb if x["action"] == label]:
                 pnl = f"，損益 {a['pnl']:+.1f}%" if a.get("pnl") is not None else ""
                 wt = f"，佔 {a['weight']:.0f}%" if a.get("weight") is not None else ""
                 lines.append(f"• {label} {a['symbol']}｜現價 {a['price']}{pnl}{wt}")
                 lines.append(f"  {a['reason']}")
     if ev:
-        lines.append("\n【點火事件】")
+        lines.append("\n【低檔 / 點火事件】")
         for a in ev:
             lines.append(f"• {a['action']} {a['symbol']}｜現價 {a['price']}")
             lines.append(f"  {a['reason']}")
