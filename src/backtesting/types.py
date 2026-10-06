@@ -101,5 +101,6 @@ class PerformanceMetrics(TypedDict, total=False):
     long_short_ratio: Optional[float]
     gross_exposure: Optional[float]
     net_exposure: Optional[float]
+    execution_timing: str
 
 

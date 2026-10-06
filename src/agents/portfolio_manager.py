@@ -59,7 +59,8 @@ def portfolio_management_agent(state: AgentState, agent_id: str = "portfolio_man
             if not agent.startswith("risk_management_agent") and ticker in signals:
                 sig = signals[ticker].get("signal")
                 conf = signals[ticker].get("confidence")
-                if sig is not None and conf is not None:
+                # 資料不足的分析師不參與決策（不能被當成 neutral）
+                if sig is not None and conf is not None and sig != "insufficient_data":
                     ticker_signals[agent] = {"sig": sig, "conf": conf}
         signals_by_ticker[ticker] = ticker_signals
 
@@ -168,7 +169,7 @@ def _compact_signals(signals_by_ticker: dict[str, dict]) -> dict[str, dict]:
         for agent, payload in agents.items():
             sig = payload.get("sig") or payload.get("signal")
             conf = payload.get("conf") if "conf" in payload else payload.get("confidence")
-            if sig is not None and conf is not None:
+            if sig is not None and conf is not None and sig != "insufficient_data":
                 compact[agent] = {"sig": sig, "conf": conf}
         out[t] = compact
     return out

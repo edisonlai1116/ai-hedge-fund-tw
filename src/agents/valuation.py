@@ -12,6 +12,11 @@ from langchain_core.messages import HumanMessage
 from src.graph.state import AgentState, show_agent_reasoning
 from src.utils.progress import progress
 from src.utils.api_key import get_api_key_from_state
+from src.agents.cost_of_capital import (
+    beta_asof,
+    calculate_wacc as calculate_wacc_components,
+    risk_free_rate_asof,
+)
 from src.tools.api import (
     get_financial_metrics,
     get_market_cap,
@@ -92,14 +97,19 @@ def valuation_analyst_agent(state: AgentState, agent_id: str = "valuation_analys
         # Enhanced Discounted Cash Flow with WACC and scenarios
         progress.update_status(agent_id, ticker, "Calculating WACC and enhanced DCF")
         
-        # Calculate WACC
-        wacc = calculate_wacc(
+        # WACC：信用利差模型 + point-in-time beta + 當時 10 年期美債殖利率（見 cost_of_capital.py）
+        rf, rf_source = risk_free_rate_asof(end_date)
+        beta, beta_source = beta_asof(ticker, end_date, api_key=api_key)
+        wacc_detail = calculate_wacc_components(
             market_cap=most_recent_metrics.market_cap or 0,
             total_debt=getattr(li_curr, 'total_debt', None),
             cash=getattr(li_curr, 'cash_and_equivalents', None),
             interest_coverage=most_recent_metrics.interest_coverage,
-            debt_to_equity=most_recent_metrics.debt_to_equity,
+            beta=beta,
+            risk_free_rate=rf,
         )
+        wacc = wacc_detail["wacc"]
+        wacc_detail.update({"risk_free_source": rf_source, "beta_source": beta_source})
         
         # Prepare FCF history for enhanced DCF
         fcf_history = []
@@ -211,6 +221,7 @@ def valuation_analyst_agent(state: AgentState, agent_id: str = "valuation_analys
                 "base_case": f"${dcf_results['scenarios']['base']:,.2f}",  
                 "bull_case": f"${dcf_results['upside']:,.2f}",
                 "wacc_used": f"{wacc:.1%}",
+                "wacc_detail": {k: (round(v, 4) if isinstance(v, float) else v) for k, v in wacc_detail.items()},
                 "fcf_periods_analyzed": len(fcf_history)
             }
             
@@ -353,44 +364,6 @@ def calculate_residual_income_value(
 ####################################
 # Enhanced DCF Helper Functions
 ####################################
-
-def calculate_wacc(
-    market_cap: float,
-    total_debt: float | None,
-    cash: float | None,
-    interest_coverage: float | None,
-    debt_to_equity: float | None,
-    beta_proxy: float = 1.0,
-    risk_free_rate: float = 0.045,
-    market_risk_premium: float = 0.06
-) -> float:
-    """Calculate WACC using available financial data."""
-    
-    # Cost of Equity (CAPM)
-    cost_of_equity = risk_free_rate + beta_proxy * market_risk_premium
-    
-    # Cost of Debt - estimate from interest coverage
-    if interest_coverage and interest_coverage > 0:
-        # Higher coverage = lower cost of debt
-        cost_of_debt = max(risk_free_rate + 0.01, risk_free_rate + (10 / interest_coverage))
-    else:
-        cost_of_debt = risk_free_rate + 0.05  # Default spread
-    
-    # Weights
-    net_debt = max((total_debt or 0) - (cash or 0), 0)
-    total_value = market_cap + net_debt
-    
-    if total_value > 0:
-        weight_equity = market_cap / total_value
-        weight_debt = net_debt / total_value
-        
-        # Tax shield (assume 25% corporate tax rate)
-        wacc = (weight_equity * cost_of_equity) + (weight_debt * cost_of_debt * 0.75)
-    else:
-        wacc = cost_of_equity
-    
-    return min(max(wacc, 0.06), 0.20)  # Floor 6%, cap 20%
-
 
 def calculate_fcf_volatility(fcf_history: list[float]) -> float:
     """Calculate FCF volatility as coefficient of variation."""

@@ -150,6 +150,7 @@ def main() -> int:
         start_value = values[0]["Portfolio Value"]
         total_return = (last_value / start_value - 1.0) * 100.0 if start_value else 0.0
         print(f"Total Return: {Fore.GREEN if total_return >= 0 else Fore.RED}{total_return:.2f}%{Style.RESET_ALL}")
+    print(f"Execution timing: {engine.execution_timing}")
     if metrics.get("sharpe_ratio") is not None:
         print(f"Sharpe: {metrics['sharpe_ratio']:.2f}")
     if metrics.get("sortino_ratio") is not None:

@@ -82,57 +82,36 @@ def technical_analyst_agent(state: AgentState, agent_id: str = "technical_analys
         progress.update_status(agent_id, ticker, "Statistical analysis")
         stat_arb_signals = calculate_stat_arb_signals(prices_df)
 
-        # Combine all signals using a weighted ensemble approach
-        strategy_weights = {
-            "trend": 0.25,
-            "mean_reversion": 0.20,
-            "momentum": 0.25,
-            "volatility": 0.15,
-            "stat_arb": 0.15,
-        }
-
         progress.update_status(agent_id, ticker, "Combining signals")
-        combined_signal = weighted_signal_combination(
-            {
-                "trend": trend_signals,
-                "mean_reversion": mean_reversion_signals,
-                "momentum": momentum_signals,
-                "volatility": volatility_signals,
-                "stat_arb": stat_arb_signals,
-            },
-            strategy_weights,
-        )
+        components = {
+            "trend": trend_signals,
+            "mean_reversion": mean_reversion_signals,
+            "momentum": momentum_signals,
+            "volatility": volatility_signals,
+            "stat_arb": stat_arb_signals,
+        }
+        combined_signal = weighted_signal_combination(components, TECHNICAL_WEIGHTS)
 
-        # Generate detailed analysis report for this ticker
+        def _view(sig):
+            return {
+                "signal": sig["signal"],
+                "confidence": round(sig["confidence"] * 100),
+                "score": sig.get("score"),
+                "metrics": normalize_pandas(sig["metrics"]),
+            }
+
         technical_analysis[ticker] = {
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
+            "technical_score": combined_signal["score"],
+            "bars_available": len(prices_df),
             "reasoning": {
-                "trend_following": {
-                    "signal": trend_signals["signal"],
-                    "confidence": round(trend_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(trend_signals["metrics"]),
-                },
-                "mean_reversion": {
-                    "signal": mean_reversion_signals["signal"],
-                    "confidence": round(mean_reversion_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(mean_reversion_signals["metrics"]),
-                },
-                "momentum": {
-                    "signal": momentum_signals["signal"],
-                    "confidence": round(momentum_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(momentum_signals["metrics"]),
-                },
-                "volatility": {
-                    "signal": volatility_signals["signal"],
-                    "confidence": round(volatility_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(volatility_signals["metrics"]),
-                },
-                "statistical_arbitrage": {
-                    "signal": stat_arb_signals["signal"],
-                    "confidence": round(stat_arb_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(stat_arb_signals["metrics"]),
-                },
+                "trend_score": _view(trend_signals),
+                "momentum_score": _view(momentum_signals),
+                "mean_reversion_score": _view(mean_reversion_signals),
+                "volatility_regime_score": {**_view(volatility_signals), "note": "無方向，僅供部位大小/風控"},
+                "statistical_experimental": {**_view(stat_arb_signals), "note": "experimental，不計入總分"},
+                "components_used": combined_signal["components_used"],
             },
         }
         progress.update_status(agent_id, ticker, "Done", analysis=json.dumps(technical_analysis, indent=4))
@@ -157,280 +136,201 @@ def technical_analyst_agent(state: AgentState, agent_id: str = "technical_analys
     }
 
 
+INSUFFICIENT = "insufficient_data"
+
+# 各子訊號所需的最少 K 線數（不足就回 insufficient_data，不得偷偷給方向、也不當 neutral 參與加權）。
+MIN_BARS = {
+    "trend": 110,           # EMA55 需約 2 倍週期暖機；ADX/MACD 也需要
+    "mean_reversion": 60,   # MA50 / 50 日標準差 + 緩衝
+    "momentum": 127,        # 126 日複利報酬
+    "volatility": 85,       # 21 日波動 + 63 日均值
+    "stat_arb": 64,         # 63 日偏態/峰態
+}
+
+# 正式總分只用有方向意義的子模組；volatility 只描述環境（無方向）、stat_arb(Hurst) 標記 experimental。
+TECHNICAL_WEIGHTS = {"trend": 0.40, "momentum": 0.40, "mean_reversion": 0.20}
+
+
+def _insufficient(needed: int, have: int) -> dict:
+    return {
+        "signal": INSUFFICIENT,
+        "confidence": 0.0,
+        "score": None,
+        "metrics": {"bars_required": needed, "bars_available": have},
+    }
+
+
+def _score_to_signal(score: float) -> tuple[str, float]:
+    """0~100 分 → 方向與信心（50 為中性；距離 50 越遠信心越高）。"""
+    if score >= 60:
+        return "bullish", min(1.0, (score - 50) / 50)
+    if score <= 40:
+        return "bearish", min(1.0, (50 - score) / 50)
+    return "neutral", 0.5
+
+
+def compounded_return(close: pd.Series, n: int) -> float | None:
+    """(1+r1)(1+r2)...(1+rn)-1，等同 close[-1]/close[-n-1]-1。資料不足回 None。"""
+    c = close.dropna()
+    if len(c) < n + 1:
+        return None
+    return float(c.iloc[-1] / c.iloc[-n - 1] - 1.0)
+
+
 def calculate_trend_signals(prices_df):
-    """
-    Advanced trend following strategy using multiple timeframes and indicators
-    """
-    # Calculate EMAs for multiple timeframes
+    """趨勢：EMA8/21/55 排列 + MACD + ADX 強度 → trend_score 0~100。"""
+    n = len(prices_df)
+    if n < MIN_BARS["trend"]:
+        return _insufficient(MIN_BARS["trend"], n)
     ema_8 = calculate_ema(prices_df, 8)
     ema_21 = calculate_ema(prices_df, 21)
     ema_55 = calculate_ema(prices_df, 55)
-
-    # Calculate ADX for trend strength
-    adx = calculate_adx(prices_df, 14)
-
-    # Calculate MACD for crossover confirmation
+    adx = calculate_adx(prices_df.copy(), 14)
     macd_line, signal_line, _ = calculate_macd(prices_df)
-    macd_bullish = macd_line.iloc[-1] > signal_line.iloc[-1]
 
-    # Determine trend direction and strength
-    short_trend = ema_8 > ema_21
-    medium_trend = ema_21 > ema_55
-
-    # Combine signals with confidence weighting
-    trend_strength = adx["adx"].iloc[-1] / 100.0
-
-    if short_trend.iloc[-1] and medium_trend.iloc[-1] and macd_bullish:
-        signal = "bullish"
-        confidence = min(trend_strength + 0.1, 1.0)
-    elif not short_trend.iloc[-1] and not medium_trend.iloc[-1] and not macd_bullish:
-        signal = "bearish"
-        confidence = min(trend_strength + 0.1, 1.0)
-    elif short_trend.iloc[-1] and macd_bullish:
-        signal = "bullish"
-        confidence = 0.60
-    elif not short_trend.iloc[-1] and not macd_bullish:
-        signal = "bearish"
-        confidence = 0.60
-    else:
-        signal = "neutral"
-        confidence = 0.5
-
+    close = float(prices_df["close"].iloc[-1])
+    points = 0.0
+    points += 1.0 if ema_8.iloc[-1] > ema_21.iloc[-1] else -1.0
+    points += 1.0 if ema_21.iloc[-1] > ema_55.iloc[-1] else -1.0
+    points += 1.0 if close > ema_55.iloc[-1] else -1.0
+    points += 1.0 if macd_line.iloc[-1] > signal_line.iloc[-1] else -1.0
+    adx_val = safe_float(adx["adx"].iloc[-1], 0.0)
+    strength = min(adx_val / 40.0, 1.0)            # ADX 40 以上視為強趨勢
+    # 方向（-4~+4）× 強度（0.5~1.0）→ 0~100
+    score = 50 + (points / 4.0) * 50 * (0.5 + 0.5 * strength)
+    signal, confidence = _score_to_signal(score)
     return {
         "signal": signal,
         "confidence": confidence,
+        "score": round(score, 1),
         "metrics": {
-            "adx": safe_float(adx["adx"].iloc[-1]),
-            "trend_strength": safe_float(trend_strength),
-            "macd_bullish": bool(macd_bullish),
+            "adx": adx_val,
+            "ema_alignment_points": points,
+            "close_vs_ema55_pct": safe_float((close / ema_55.iloc[-1] - 1) * 100),
+            "macd_bullish": bool(macd_line.iloc[-1] > signal_line.iloc[-1]),
         },
     }
 
 
 def calculate_mean_reversion_signals(prices_df):
-    """
-    Mean reversion strategy using statistical measures and Bollinger Bands
-    """
-    # Calculate z-score of price relative to moving average
-    ma_50 = prices_df["close"].rolling(window=50).mean()
-    std_50 = prices_df["close"].rolling(window=50).std()
-    z_score = (prices_df["close"] - ma_50) / std_50
-
-    # Calculate Bollinger Bands
+    """均值回歸：只在極端（z-score 超過 ±2 且在布林帶外緣）時給方向，其餘 50。"""
+    n = len(prices_df)
+    if n < MIN_BARS["mean_reversion"]:
+        return _insufficient(MIN_BARS["mean_reversion"], n)
+    close = prices_df["close"]
+    ma_50 = close.rolling(50).mean()
+    std_50 = close.rolling(50).std()
+    z = safe_float(((close - ma_50) / std_50).iloc[-1])
     bb_upper, bb_lower = calculate_bollinger_bands(prices_df)
+    width = bb_upper.iloc[-1] - bb_lower.iloc[-1]
+    price_vs_bb = safe_float((close.iloc[-1] - bb_lower.iloc[-1]) / width, 0.5) if width else 0.5
+    rsi_14 = safe_float(calculate_rsi(prices_df, 14).iloc[-1], 50.0)
 
-    # Calculate RSI with multiple timeframes
-    rsi_14 = calculate_rsi(prices_df, 14)
-    rsi_28 = calculate_rsi(prices_df, 28)
-
-    # Mean reversion signals
-    price_vs_bb = (prices_df["close"].iloc[-1] - bb_lower.iloc[-1]) / (bb_upper.iloc[-1] - bb_lower.iloc[-1])
-
-    # Combine signals
-    if z_score.iloc[-1] < -2 and price_vs_bb < 0.2:
-        signal = "bullish"
-        confidence = min(abs(z_score.iloc[-1]) / 4, 1.0)
-    elif z_score.iloc[-1] > 2 and price_vs_bb > 0.8:
-        signal = "bearish"
-        confidence = min(abs(z_score.iloc[-1]) / 4, 1.0)
-    else:
-        signal = "neutral"
-        confidence = 0.5
-
+    score = 50.0
+    if z < -2 and price_vs_bb < 0.2:
+        score = 50 + min(abs(z) / 4, 1.0) * 40
+    elif z > 2 and price_vs_bb > 0.8:
+        score = 50 - min(abs(z) / 4, 1.0) * 40
+    signal, confidence = _score_to_signal(score)
     return {
         "signal": signal,
         "confidence": confidence,
-        "metrics": {
-            "z_score": safe_float(z_score.iloc[-1]),
-            "price_vs_bb": safe_float(price_vs_bb),
-            "rsi_14": safe_float(rsi_14.iloc[-1]),
-            "rsi_28": safe_float(rsi_28.iloc[-1]),
-        },
+        "score": round(score, 1),
+        "metrics": {"z_score": z, "price_vs_bb": price_vs_bb, "rsi_14": rsi_14},
     }
 
 
 def calculate_momentum_signals(prices_df):
-    """
-    Multi-factor momentum strategy with MACD and Candlestick confirmation
-    """
-    # Price momentum
-    returns = prices_df["close"].pct_change()
-    mom_1m = returns.rolling(21).sum()
-    mom_3m = returns.rolling(63).sum()
-    mom_6m = returns.rolling(126).sum()
-
-    # Volume momentum
+    """動能：1/3/6 個月「複利」報酬（不是日報酬加總）+ 量能確認 → momentum_score 0~100。"""
+    n = len(prices_df)
+    if n < MIN_BARS["momentum"]:
+        return _insufficient(MIN_BARS["momentum"], n)
+    close = prices_df["close"]
+    mom_1m = compounded_return(close, 21)
+    mom_3m = compounded_return(close, 63)
+    mom_6m = compounded_return(close, 126)
+    blended = 0.35 * mom_1m + 0.25 * mom_3m + 0.40 * mom_6m
     volume_ma = prices_df["volume"].rolling(21).mean()
-    volume_momentum = prices_df["volume"] / volume_ma
+    volume_momentum = safe_float((prices_df["volume"] / volume_ma).iloc[-1], 1.0)
 
-    # Calculate MACD Histogram momentum
-    _, _, macd_hist = calculate_macd(prices_df)
-    macd_momentum_bullish = macd_hist.iloc[-1] > macd_hist.iloc[-2]
-
-    # Candlestick Reversal pattern
-    candlestick_reversal = detect_reversal_patterns(prices_df)
-
-    # Calculate momentum score
-    momentum_score = (0.35 * mom_1m + 0.25 * mom_3m + 0.25 * mom_6m).iloc[-1]
-    if macd_momentum_bullish:
-        momentum_score += 0.02
-    else:
-        momentum_score -= 0.02
-
-    # Volume confirmation
-    volume_confirmation = volume_momentum.iloc[-1] > 1.0
-
-    if (momentum_score > 0.04 and volume_confirmation) or candlestick_reversal == "bullish":
-        signal = "bullish"
-        confidence = min(abs(momentum_score) * 5 + (0.1 if candlestick_reversal == "bullish" else 0.0), 1.0)
-    elif (momentum_score < -0.04 and volume_confirmation) or candlestick_reversal == "bearish":
-        signal = "bearish"
-        confidence = min(abs(momentum_score) * 5 + (0.1 if candlestick_reversal == "bearish" else 0.0), 1.0)
-    else:
-        signal = "neutral"
-        confidence = 0.5
-
+    # ±40% 的混合報酬對應 0/100；量能放大時把分數往方向推 10%。
+    score = 50 + max(-1.0, min(1.0, blended / 0.40)) * 50
+    if volume_momentum > 1.2:
+        score = 50 + (score - 50) * 1.1
+    score = max(0.0, min(100.0, score))
+    signal, confidence = _score_to_signal(score)
     return {
         "signal": signal,
         "confidence": confidence,
+        "score": round(score, 1),
         "metrics": {
-            "momentum_1m": safe_float(mom_1m.iloc[-1]),
-            "momentum_3m": safe_float(mom_3m.iloc[-1]),
-            "momentum_6m": safe_float(mom_6m.iloc[-1]),
-            "volume_momentum": safe_float(volume_momentum.iloc[-1]),
-            "macd_momentum_bullish": bool(macd_momentum_bullish),
-            "candlestick_reversal": candlestick_reversal,
+            "momentum_1m": mom_1m,
+            "momentum_3m": mom_3m,
+            "momentum_6m": mom_6m,
+            "volume_momentum": volume_momentum,
+            "method": "compounded",
         },
     }
 
 
 def calculate_volatility_signals(prices_df):
-    """
-    Volatility-based trading strategy with Bollinger Band Width Squeezes
-    """
-    # Calculate various volatility metrics
+    """波動環境（無方向）：只描述現在是低/正常/高波動，供部位大小與風控使用，
+    signal 永遠是 neutral，不參與 bullish/bearish 加權。高波動 ≠ 看空。"""
+    n = len(prices_df)
+    if n < MIN_BARS["volatility"]:
+        return _insufficient(MIN_BARS["volatility"], n)
     returns = prices_df["close"].pct_change()
-
-    # Historical volatility
     hist_vol = returns.rolling(21).std() * math.sqrt(252)
-
-    # Volatility regime detection
     vol_ma = hist_vol.rolling(63).mean()
-    vol_regime = hist_vol / vol_ma
-
-    # Volatility mean reversion
-    vol_z_score = (hist_vol - vol_ma) / hist_vol.rolling(63).std()
-
-    # ATR ratio
-    atr = calculate_atr(prices_df)
-    atr_ratio = atr / prices_df["close"]
-
-    # Bollinger Band Width Squeeze detection
-    bb_upper, bb_lower = calculate_bollinger_bands(prices_df)
-    ma_20 = prices_df["close"].rolling(20).mean()
-    bb_width = (bb_upper - bb_lower) / ma_20.replace(0, np.nan)
-    bb_width_squeezed = bb_width.iloc[-1] < bb_width.rolling(20).mean().iloc[-1]
-
-    # Generate signal based on volatility regime
-    current_vol_regime = vol_regime.iloc[-1]
-    vol_z = vol_z_score.iloc[-1]
-
-    if current_vol_regime < 0.8 and vol_z < -1:
-        signal = "bullish"  # Low vol regime, potential for expansion (squeeze play)
-        confidence = min(abs(vol_z) / 2.5, 1.0)
-    elif current_vol_regime > 1.2 and vol_z > 1:
-        signal = "bearish"  # High vol regime, potential for contraction
-        confidence = min(abs(vol_z) / 2.5, 1.0)
-    else:
-        signal = "neutral"
-        confidence = 0.5
-
+    vol_regime = safe_float((hist_vol / vol_ma).iloc[-1], 1.0)
+    atr_ratio = safe_float((calculate_atr(prices_df) / prices_df["close"]).iloc[-1])
+    regime = "low" if vol_regime < 0.8 else ("high" if vol_regime > 1.2 else "normal")
+    # volatility_regime_score：100 = 非常平靜，0 = 非常動盪（給風控/部位用，不是多空）
+    regime_score = max(0.0, min(100.0, 100 - (vol_regime - 0.5) * 66.7))
     return {
-        "signal": signal,
-        "confidence": confidence,
+        "signal": "neutral",
+        "confidence": 0.0,
+        "score": round(regime_score, 1),
+        "directional": False,
         "metrics": {
             "historical_volatility": safe_float(hist_vol.iloc[-1]),
-            "volatility_regime": safe_float(current_vol_regime),
-            "volatility_z_score": safe_float(vol_z),
-            "atr_ratio": safe_float(atr_ratio.iloc[-1]),
-            "bb_width": safe_float(bb_width.iloc[-1]),
-            "bb_width_squeezed": bool(bb_width_squeezed),
+            "volatility_regime": vol_regime,
+            "regime": regime,
+            "atr_ratio": atr_ratio,
         },
     }
 
 
 def calculate_stat_arb_signals(prices_df):
-    """
-    Statistical arbitrage signals based on price action analysis
-    """
-    # Calculate price distribution statistics
+    """統計特徵（EXPERIMENTAL）：Hurst 估計未經嚴謹驗證，只報告數值、不影響正式總分。"""
+    n = len(prices_df)
+    if n < MIN_BARS["stat_arb"]:
+        return _insufficient(MIN_BARS["stat_arb"], n)
     returns = prices_df["close"].pct_change()
-
-    # Skewness and kurtosis
-    skew = returns.rolling(63).skew()
-    kurt = returns.rolling(63).kurt()
-
-    # Test for mean reversion using Hurst exponent
-    hurst = calculate_hurst_exponent(prices_df["close"])
-
-    # Correlation analysis
-    # (would include correlation with related securities in real implementation)
-
-    # Generate signal based on statistical properties
-    if hurst < 0.4 and skew.iloc[-1] > 1:
-        signal = "bullish"
-        confidence = (0.5 - hurst) * 2
-    elif hurst < 0.4 and skew.iloc[-1] < -1:
-        signal = "bearish"
-        confidence = (0.5 - hurst) * 2
-    else:
-        signal = "neutral"
-        confidence = 0.5
-
     return {
-        "signal": signal,
-        "confidence": confidence,
+        "signal": "neutral",
+        "confidence": 0.0,
+        "score": None,
+        "experimental": True,
         "metrics": {
-            "hurst_exponent": safe_float(hurst),
-            "skewness": safe_float(skew.iloc[-1]),
-            "kurtosis": safe_float(kurt.iloc[-1]),
+            "hurst_exponent_experimental": safe_float(calculate_hurst_exponent(prices_df["close"])),
+            "skewness": safe_float(returns.rolling(63).skew().iloc[-1]),
+            "kurtosis": safe_float(returns.rolling(63).kurt().iloc[-1]),
         },
     }
 
 
 def weighted_signal_combination(signals, weights):
-    """
-    Combines multiple trading signals using a weighted approach
-    """
-    # Convert signals to numeric values
-    signal_values = {"bullish": 1, "neutral": 0, "bearish": -1}
-
-    weighted_sum = 0
-    total_confidence = 0
-
-    for strategy, signal in signals.items():
-        numeric_signal = signal_values[signal["signal"]]
-        weight = weights[strategy]
-        confidence = signal["confidence"]
-
-        weighted_sum += numeric_signal * weight * confidence
-        total_confidence += weight * confidence
-
-    # Normalize the weighted sum
-    if total_confidence > 0:
-        final_score = weighted_sum / total_confidence
-    else:
-        final_score = 0
-
-    # Convert back to signal
-    if final_score > 0.2:
-        signal = "bullish"
-    elif final_score < -0.2:
-        signal = "bearish"
-    else:
-        signal = "neutral"
-
-    return {"signal": signal, "confidence": abs(final_score)}
+    """只合併「有分數」的方向性子模組；insufficient_data 直接排除並重新正規化權重，
+    不會被當成 neutral 稀釋。全部不足 → insufficient_data。"""
+    usable = {k: v for k, v in signals.items() if k in weights and v.get("score") is not None
+              and v.get("signal") != INSUFFICIENT}
+    if not usable:
+        return {"signal": INSUFFICIENT, "confidence": 0.0, "score": None, "components_used": []}
+    total_w = sum(weights[k] for k in usable)
+    score = sum(usable[k]["score"] * weights[k] for k in usable) / total_w
+    signal, confidence = _score_to_signal(score)
+    return {"signal": signal, "confidence": confidence, "score": round(score, 1), "components_used": sorted(usable)}
 
 
 def normalize_pandas(obj):

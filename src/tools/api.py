@@ -25,6 +25,31 @@ from src.data.models import (
 # Global cache instance
 _cache = get_cache()
 
+# Point-in-time：財報 report_period 是「期末日」，不是公布日。10-Q 通常期末後 ~40 天、10-K ~60-90 天才公布。
+# 回測（end_date 在過去）時，只允許使用「期末日 + 公布延遲」已經過去的財報，避免偷看尚未公布的數字。
+# 即時分析（end_date = 今天）不套延遲：資料商只會有已公布的財報。
+PUBLICATION_LAG_DAYS = {"quarterly": 45, "ttm": 45, "annual": 90}
+
+
+def pit_report_cutoff(end_date: str, period: str = "ttm", today: datetime.date | None = None) -> str:
+    """回傳在 end_date 當下「已經公布」的財報所允許的最晚 report_period。"""
+    today = today or datetime.date.today()
+    end = datetime.date.fromisoformat(end_date[:10])
+    if end >= today:
+        return end_date[:10]
+    lag = PUBLICATION_LAG_DAYS.get(period, 90)
+    return (end - datetime.timedelta(days=lag)).isoformat()
+
+
+def _filter_point_in_time(items: list, cutoff: str) -> list:
+    """防禦性過濾：剔除 report_period 晚於 cutoff 的財報（資料商若沒照參數過濾也擋得住）。"""
+    out = []
+    for it in items:
+        rp = str(getattr(it, "report_period", "") or "")[:10]
+        if not rp or rp <= cutoff:
+            out.append(it)
+    return out
+
 
 def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: dict = None, max_retries: int = 3) -> requests.Response:
     """
@@ -105,7 +130,8 @@ def get_financial_metrics(
 ) -> list[FinancialMetrics]:
     """Fetch financial metrics from cache or API."""
     # Create a cache key that includes all parameters to ensure exact matches
-    cache_key = f"{ticker}_{period}_{end_date}_{limit}"
+    cutoff = pit_report_cutoff(end_date, period)
+    cache_key = f"{ticker}_{period}_{cutoff}_{limit}"
     
     # Check cache first - simple exact match
     if cached_data := _cache.get_financial_metrics(cache_key):
@@ -117,7 +143,7 @@ def get_financial_metrics(
     if financial_api_key:
         headers["X-API-KEY"] = financial_api_key
 
-    url = f"https://api.financialdatasets.ai/financial-metrics/?ticker={ticker}&report_period_lte={end_date}&limit={limit}&period={period}"
+    url = f"https://api.financialdatasets.ai/financial-metrics/?ticker={ticker}&report_period_lte={cutoff}&limit={limit}&period={period}"
     response = _make_api_request(url, headers)
     if response.status_code != 200:
         return []
@@ -125,7 +151,7 @@ def get_financial_metrics(
     # Parse response with Pydantic model
     try:
         metrics_response = FinancialMetricsResponse(**response.json())
-        financial_metrics = metrics_response.financial_metrics
+        financial_metrics = _filter_point_in_time(metrics_response.financial_metrics, cutoff)
     except Exception as e:
         logger.warning("Failed to parse financial metrics response for %s: %s", ticker, e)
         return []
@@ -155,10 +181,11 @@ def search_line_items(
 
     url = "https://api.financialdatasets.ai/financials/search/line-items"
 
+    cutoff = pit_report_cutoff(end_date, period)
     body = {
         "tickers": [ticker],
         "line_items": line_items,
-        "end_date": end_date,
+        "end_date": cutoff,
         "period": period,
         "limit": limit,
     }
@@ -169,7 +196,7 @@ def search_line_items(
     try:
         data = response.json()
         response_model = LineItemResponse(**data)
-        search_results = response_model.search_results
+        search_results = _filter_point_in_time(response_model.search_results, cutoff)
     except Exception as e:
         logger.warning("Failed to parse line items response for %s: %s", ticker, e)
         return []

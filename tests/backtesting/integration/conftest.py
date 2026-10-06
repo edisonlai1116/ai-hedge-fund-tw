@@ -41,8 +41,9 @@ def _load_price_df_from_fixture(ticker: str, start: str, end: str) -> pd.DataFra
     df.sort_index(inplace=True)
     # Filter by requested window
     start_ts = pd.to_datetime(start).tz_localize('UTC')
-    end_ts = pd.to_datetime(end).tz_localize('UTC')
-    df = df.loc[(df.index >= start_ts) & (df.index <= end_ts)]
+    # end 以「日曆日」計（含當天整天）：K 線時間戳是當天 05:00Z，若用午夜比較會把當天 K 線漏掉。
+    end_ts = pd.to_datetime(end).tz_localize('UTC') + pd.Timedelta(days=1)
+    df = df.loc[(df.index >= start_ts) & (df.index < end_ts)]
     return df[["open", "close", "high", "low", "volume"]]
 
 
