@@ -59,10 +59,12 @@ git push -u origin main
 `src/pipeline/alerts.py` 會在台股盤中（10:30、13:00）、美股盤中（約開盤後 1 小時／午盤／收盤前）
 與每日報告產生後檢查：
 
-- **持股**：依 `src/holding_rules.py`（與網站「持股健檢」同一套）判斷 加碼／減碼／出場，並提醒單檔超過總資產 15%。
-- **買點**：AI 主線＋權值觀察池出現「爆量長紅點火」（單日 ≥+5%、量 ≥1.3 倍均量）。
+規則來源是 `src/strategy/momentum.py`（單一策略「Sharpe 動能輪動」，與網站「我的持股」同一套）：
 
-同一訊號 5 天內不重複推播。設定（repo → Settings → Secrets and variables → Actions → New repository secret）：
+- **每月調整**（每月前 3 個平日）：持股 加碼／減碼／賣出換股，以及前 10 名中尚未持有的「新買進」。
+- **點火事件**（盤中也檢查）：持股中仍在名單內、或前 10 名的股票出現爆量長紅（單日 ≥+5%、量 ≥1.3 倍均量）。
+
+月調提醒每月一次、點火事件 5 天內不重複。設定（repo → Settings → Secrets and variables → Actions → New repository secret）：
 
 | Secret | 說明 |
 |---|---|

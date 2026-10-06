@@ -74,7 +74,14 @@ def _load_sentiment():
     _status["sentiment"] = "ok"
 
 
+def _load_strategy():
+    from app.backend.routes.strategy import router as r
+    app.include_router(r)
+    _status["strategy"] = "ok"
+
+
 _safe("db", _init_db)
+_safe("strategy", _load_strategy)
 _safe("simple_signals", _load_simple_signals)
 _safe("sentiment", _load_sentiment)
 

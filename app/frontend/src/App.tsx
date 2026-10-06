@@ -51,6 +51,7 @@ import {
   type SP500DailyScanResponse,
   type SimpleSignalResult,
 } from './services/simple-signal-api';
+import { MyHoldingsPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
 
 type DetailResult = SimpleSignalResult | SP500DailyPick;
 
@@ -181,9 +182,9 @@ type TabKey = 'analyze' | 'daily' | 'holdings' | 'backtest' | 'portfolio';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
   { key: 'analyze', label: '個股分析', icon: Search, hint: '單股或多股技術＋AI 評分' },
-  { key: 'daily', label: '每日掃描', icon: Sparkles, hint: '當日最佳買點 Top 50' },
-  { key: 'holdings', label: '持股健檢', icon: BriefcaseBusiness, hint: '判斷續抱 / 減碼 / 賣出' },
-  { key: 'backtest', label: 'AI 主線長線回測', icon: LineChart, hint: '產業鏈投組投報率驗證' },
+  { key: 'daily', label: '策略精選', icon: Sparkles, hint: '本月買進名單（單一策略）' },
+  { key: 'holdings', label: '我的持股', icon: BriefcaseBusiness, hint: '加碼 / 減碼 / 換股提醒' },
+  { key: 'backtest', label: '策略回測', icon: LineChart, hint: '對標 VOO / 0050' },
   { key: 'portfolio', label: '跟單對帳本', icon: Wallet, hint: '5 萬美金實單跟蹤 vs 大盤' },
 ];
 
@@ -200,7 +201,7 @@ export default function App() {
   const [backtestMarket, setBacktestMarket] = useState<'us' | 'tw'>('us');
   const [backtestPeriod, setBacktestPeriod] = useState('5y');
 
-  const [activeTab, setActiveTab] = useState<TabKey>('analyze');
+  const [activeTab, setActiveTab] = useState<TabKey>('holdings');
 
   const [loading, setLoading] = useState(false);
   const [holdingsLoading, setHoldingsLoading] = useState(false);
@@ -339,7 +340,7 @@ export default function App() {
               </span>
               <div>
                 <div className="text-sm font-semibold leading-tight text-slate-900">AI 主線投資儀表板</div>
-                <div className="text-xs text-slate-500">技術 + AI 評分 ・ 每日掃描 ・ 持股健檢 ・ 長線回測</div>
+                <div className="text-xs text-slate-500">Sharpe 動能策略 ・ 我的持股提醒 ・ 對標 VOO / 0050</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -431,121 +432,11 @@ export default function App() {
             </div>
           ) : null}
 
-          {activeTab === 'daily' ? (
-            <div className="space-y-5">
-              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">每日候選掃描</div>
-                    <div className="text-xs text-slate-500">以 agent 投票、回測、風控排序，挑出當日最佳買點</div>
-                  </div>
-                  <Sparkles className="h-5 w-5 text-slate-400" />
-                </div>
-                <div className="grid gap-2 sm:grid-cols-[160px_160px_auto] sm:items-end">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">市場</span>
-                    <select value={scanMarket} onChange={(event) => setScanMarket(event.target.value as 'us' | 'tw')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
-                      <option value="us">美股</option>
-                      <option value="tw">台股</option>
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">掃描模式</span>
-                    <select value={scanType} onChange={(event) => setScanType(event.target.value as 'optimal' | 'lagging_value' | 'explosive_growth')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
-                      <option value="optimal">強勢看漲（近期買點＋後續大漲）</option>
-                      <option value="explosive_growth">早期飆股雷達（AI 蛋糕·發動前）</option>
-                      <option value="lagging_value">低估補漲（價值落後股）</option>
-                    </select>
-                  </label>
-                  <Button className="h-10 bg-slate-950 text-white hover:bg-slate-800 sm:w-44" disabled={scanLoading} onClick={handleDailyScan} type="button">
-                    {scanLoading ? '掃描中' : '掃描 Top 50'}
-                  </Button>
-                </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  {scanType === 'optimal'
-                    ? '強勢看漲：找「近期就是好買點、且看好未來半年會大漲」的股票。綜合進場健康度＋近一個月相對強度＋6 個月上漲空間排序，不再只看今天能不能進場（差一點回檔的強勢股也會入選）。'
-                    : scanType === 'explosive_growth'
-                    ? '早期飆股雷達：鎖定黃仁勳「AI 算力蛋糕」各層（算力／記憶體／光通訊／製造設備／資料中心電力散熱／IP軟體），並自動併入股癌最近點名的個股（每日更新）。找「打底量縮、剛轉強、貼近突破但還沒乖離追高」的早期標的——目標是在它變飆股『之前』抓到（如當初的 ALAB／MRVL），並對已經噴一波的扣分。⚠️候選非保證，僅供研究、務必設停損。'
-                    : '低估補漲：找「基本面好但股價暫時落後、被低估」的價值股，等待它補漲。以 F-Score／葛拉漢價／本益比為主，並用相對強度確認已開始落底回升、避免接落下的刀。'}
-                </p>
-                {dailyError ? <p className="mt-2 text-sm text-rose-600">{dailyError}</p> : null}
-              </div>
+          {activeTab === 'daily' ? <StrategyPicksPanel /> : null}
 
-              {dailyScan?.market_regime ? <MarketRegimeCard regime={dailyScan.market_regime} /> : null}
+          {activeTab === 'holdings' ? <MyHoldingsPanel /> : null}
 
-              <ErrorBoundary key={`daily-${result?.symbol ?? 'none'}`}>
-                <SignalInsight
-                  result={result}
-                  lists={
-                    dailyScan?.picks?.length ? (
-                      <SignalList
-                        title={`${scanMarket === 'us' ? 'S&P 500' : '台股'} 今日 Top 50`}
-                        items={dailyScan.picks}
-                        onSelect={(item) => {
-                          setSelectedHolding(null);
-                          setResult(item);
-                        }}
-                        selectedSymbol={result?.symbol}
-                        gooayeMap={gooayeMap}
-                        nicolasMap={nicolasMap}
-                      />
-                    ) : null
-                  }
-                />
-              </ErrorBoundary>
-            </div>
-          ) : null}
-
-          {activeTab === 'holdings' ? (
-            <HoldingsManager useAiCommittee={useAiCommittee} committeeModel={committeeModel} gooayeMap={gooayeMap} nicolasMap={nicolasMap} />
-          ) : null}
-
-          {activeTab === 'backtest' ? (
-            <div className="space-y-5">
-              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <LineChart className="h-4 w-4 text-slate-500" />
-                      AI 主線投組長線回測
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      以 AI 產業鏈主線股做趨勢跟隨：不設固定停利、不設持有期限，只用移動停利（自持有期高點回落 30%）或跌破 MA120 出場，並納入「爆量長紅點火」進場。經 5/10 年回測，報酬明顯優於舊版 +35% 停利／6 個月上限；對標 VOO／0050。
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-[160px_160px_auto] sm:items-end">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">市場</span>
-                    <select value={backtestMarket} onChange={(event) => setBacktestMarket(event.target.value as 'us' | 'tw')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
-                      <option value="us">美股 AI 主線</option>
-                      <option value="tw">台股 AI 主線</option>
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">回看期間</span>
-                    <select value={backtestPeriod} onChange={(event) => setBacktestPeriod(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
-                      <option value="3y">3 年</option>
-                      <option value="5y">5 年</option>
-                      <option value="10y">10 年</option>
-                    </select>
-                  </label>
-                  <Button className="h-10 bg-slate-950 text-white hover:bg-slate-800 sm:w-44" disabled={backtestLoading} onClick={handleAiMainlineBacktest} type="button">
-                    {backtestLoading ? '回測中' : '執行長線回測'}
-                  </Button>
-                </div>
-                {backtestError ? <p className="mt-2 text-sm text-rose-600">{backtestError}</p> : null}
-              </div>
-
-              {backtest ? (
-                <AiMainlineBacktestPanel data={backtest} />
-              ) : (
-                <div className="flex min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-sm text-slate-500">
-                  {backtestLoading ? '回測進行中，需下載多檔歷史資料，請稍候…' : '選擇市場與期間後，按「執行長線回測」檢視整體投報率與分層貢獻。'}
-                </div>
-              )}
-            </div>
-          ) : null}
+          {activeTab === 'backtest' ? <StrategyBacktestPanel /> : null}
 
           {activeTab === 'portfolio' ? (
             <PortfolioTab
