@@ -547,9 +547,10 @@ export async function runAiMainlineBacktest(
       tickers: payload.tickers && payload.tickers.length ? payload.tickers : undefined,
       initial_capital: payload.initialCapital ?? 100000,
       max_positions: payload.maxPositions ?? 8,
-      take_profit_pct: payload.takeProfitPct ?? 35,
-      trailing_stop_pct: payload.trailingStopPct ?? 18,
-      max_holding_days: payload.maxHoldingDays ?? 126,
+      // 不設固定停利/持有期限：未指定時送 null，由後端套用移動停利（預設 30%）。
+      take_profit_pct: payload.takeProfitPct ?? null,
+      trailing_stop_pct: payload.trailingStopPct ?? null,
+      max_holding_days: payload.maxHoldingDays ?? null,
     }),
   });
   return parseResponse<AiMainlineBacktestResult>(response, 'AI 主線長線回測失敗。');

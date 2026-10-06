@@ -20,6 +20,14 @@ SIGNAL_CACHE_TTL_MINUTES = 10
 _SIGNAL_CACHE: dict[str, tuple[datetime, "SignalReport"]] = {}
 _FUNDAMENTAL_CACHE: dict[str, tuple[datetime, dict]] = {}
 FUNDAMENTAL_CACHE_TTL_MINUTES = 60  # 基本面資料快取 60 分鐘
+# 趨勢跟隨出場（2026-10-06）：不設固定停利/持有期限，只用自高點回落的移動停利。
+TRAILING_STOP_PCT_US = 30.0
+TRAILING_STOP_PCT_TW = 30.0
+# 爆量長紅點火：單日漲幅 % 與量能倍數門檻（事件研究：次日進場 60 日平均勝同池 +2.5~3.8%）。
+IGNITION_MIN_GAIN_PCT = 6.0
+IGNITION_MIN_VOL_RATIO = 1.3
+# 即時/每日訊號用較寬的 +5% 門檻（事件研究 +5%/1.3x：60 日 +2.5% 超額，樣本更多）。
+IGNITION_ALERT_GAIN_PCT = 5.0
 FUNDAMENTAL_FETCH_TIMEOUT = 10       # 基本面 API 最多等 10 秒
 _DOWNLOAD_LOCK = threading.Lock()
 
@@ -97,6 +105,10 @@ class SignalReport:
     long_term_risk: dict | None = None
     ma120: float = 0.0  # 長線生命線（波段策略的長線出場依據）
     drawdown_from_high_pct: float = 0.0  # 距 60 日高點回落 %（0 = 貼近新高；持股健檢判斷強勢突破用）
+    day_change_pct: float = 0.0  # 最新一根 K 線漲跌幅 %
+    volume_ratio: float = 0.0  # 最新量 / 前 20 日均量
+    ignition_days_ago: int | None = None  # 近 3 日內爆量長紅點火距今幾天（0=今天；None=無）
+    ignition_note: str = ""
 
 
 
@@ -311,6 +323,11 @@ def _clone_report(report: SignalReport) -> SignalReport:
         price_forecast=dict(report.price_forecast) if report.price_forecast else None,
         long_term_risk=dict(report.long_term_risk) if report.long_term_risk else None,
         ma120=report.ma120,
+        drawdown_from_high_pct=report.drawdown_from_high_pct,
+        day_change_pct=report.day_change_pct,
+        volume_ratio=report.volume_ratio,
+        ignition_days_ago=report.ignition_days_ago,
+        ignition_note=report.ignition_note,
     )
 
 
@@ -375,6 +392,9 @@ def detect_candlestick(open_s: pd.Series, high_s: pd.Series, low_s: pd.Series, c
 
 
 def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
+    """個股趨勢跟隨回測（2026-10-06 改版）：不設固定 +35% 停利、不設持有天數上限。
+    出場只看趨勢：自持有期高點回落 30% 移動停利，或持有 >30 日後跌破 MA120。
+    進場：MACD 黃金交叉、多頭回檔，或爆量長紅點火（單日 +6% 且量 ≥ 1.3 倍 20 日均量）。"""
     if len(frame) < 10:
         return {
             "total_trades": 0,
@@ -383,14 +403,16 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
             "cumulative_return": 0.0,
             "trades_log": []
         }
-        
+
+    is_tw = symbol.upper().endswith((".TW", ".TWO"))
+    trail_mult = 1.0 - (TRAILING_STOP_PCT_TW if is_tw else TRAILING_STOP_PCT_US) / 100.0
+    vol_ratio = (frame["Volume"] / frame["Volume"].shift(1).rolling(20).mean()) if "Volume" in frame.columns else None
+
     completed_trades = []
     active_trade = None
-    
+
     for i in range(1, len(frame)):
         close = float(frame["Close"].iloc[i])
-        low = float(frame["Low"].iloc[i])
-        high = float(frame["High"].iloc[i])
         ma20 = float(frame["MA20"].iloc[i])
         ma50 = float(frame["MA50"].iloc[i])
         ma120 = float(frame["MA120"].iloc[i]) if "MA120" in frame.columns and not pd.isna(frame["MA120"].iloc[i]) else ma50
@@ -399,25 +421,20 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
         macd_sig = float(frame["MACD_Signal"].iloc[i])
         prev_macd = float(frame["MACD"].iloc[i-1])
         prev_macd_sig = float(frame["MACD_Signal"].iloc[i-1])
-        atr = float(frame["ATR14"].iloc[i])
+        prev_close = float(frame["Close"].iloc[i-1])
         date_str = frame.index[i].strftime("%Y-%m-%d")
-        
+
         if active_trade is None:
             macd_gold_cross = (macd > macd_sig) and (prev_macd <= prev_macd_sig)
             bullish_pullback = (close > ma50) and (close > ma20) and (rsi >= 40) and (rsi <= 62) and (macd > macd_sig)
-            
-            if macd_gold_cross or bullish_pullback:
-                entry_price = close
-                # Strategic Mid-to-Long term target: 35% minimum wave gain
-                take_profit = entry_price * 1.35
-                # Protective wide initial stop: 18% below entry to withstand medium-term noise
-                stop_loss = entry_price * 0.82
+            vr = float(vol_ratio.iloc[i]) if vol_ratio is not None and not pd.isna(vol_ratio.iloc[i]) else 0.0
+            ignition = prev_close > 0 and (close / prev_close - 1) * 100 >= IGNITION_MIN_GAIN_PCT and vr >= IGNITION_MIN_VOL_RATIO
+
+            if macd_gold_cross or bullish_pullback or ignition:
                 active_trade = {
                     "entry_idx": i,
-                    "entry_price": entry_price,
+                    "entry_price": close,
                     "entry_date": date_str,
-                    "take_profit": take_profit,
-                    "stop_loss": stop_loss,
                     "peak_close": close,
                     "days_held": 0
                 }
@@ -425,53 +442,21 @@ def compute_timeline_backtest(symbol: str, frame: pd.DataFrame) -> dict:
             active_trade["days_held"] += 1
             if close > active_trade["peak_close"]:
                 active_trade["peak_close"] = close
-                
-            # 移動停損：自波段高點回落 18%（與 AI 主線回測勝出的波段參數一致：讓獲利奔跑）
-            trailing_stop = max(active_trade["stop_loss"], active_trade["peak_close"] * 0.82)
 
-            # 1. 出場：觸及移動停損，或持有 >30 日後跌破長線 MA120
+            trailing_stop = active_trade["peak_close"] * trail_mult
             if close <= trailing_stop or (close < ma120 and active_trade["days_held"] > 30):
-                exit_price = close
-                exit_ret = ((exit_price / active_trade["entry_price"]) - 1) * 100
+                exit_ret = ((close / active_trade["entry_price"]) - 1) * 100
                 completed_trades.append({
                     "entry_date": active_trade["entry_date"],
                     "exit_date": date_str,
                     "entry_price": round(active_trade["entry_price"], 2),
-                    "exit_price": round(exit_price, 2),
+                    "exit_price": round(close, 2),
                     "return_pct": round(exit_ret, 2),
                     "days_held": active_trade["days_held"],
-                    "outcome": "停損/退場" if exit_ret < 0 else "獲利"
+                    "outcome": "停損/退場" if exit_ret < 0 else "移動停利出場"
                 })
                 active_trade = None
-            # 2. Take profit hit (close rises by 35%+)
-            elif close >= active_trade["take_profit"]:
-                exit_price = close
-                exit_ret = ((exit_price / active_trade["entry_price"]) - 1) * 100
-                completed_trades.append({
-                    "entry_date": active_trade["entry_date"],
-                    "exit_date": date_str,
-                    "entry_price": round(active_trade["entry_price"], 2),
-                    "exit_price": round(exit_price, 2),
-                    "return_pct": round(exit_ret, 2),
-                    "days_held": active_trade["days_held"],
-                    "outcome": "獲利"
-                })
-                active_trade = None
-            # 3. 達最長持有期（126 交易日 ≈ 6 個月；回測最佳波段上限）
-            elif active_trade["days_held"] >= 126:
-                exit_price = close
-                exit_ret = ((exit_price / active_trade["entry_price"]) - 1) * 100
-                completed_trades.append({
-                    "entry_date": active_trade["entry_date"],
-                    "exit_date": date_str,
-                    "entry_price": round(active_trade["entry_price"], 2),
-                    "exit_price": round(exit_price, 2),
-                    "return_pct": round(exit_ret, 2),
-                    "days_held": active_trade["days_held"],
-                    "outcome": "獲利" if exit_ret >= 0 else "停損/退場"
-                })
-                active_trade = None
-                
+
     if active_trade is not None:
         last_row = frame.iloc[-1]
         last_close = float(last_row["Close"])
@@ -1250,6 +1235,7 @@ def evaluate_long_term_risk(
     fundamental_score: int | None = None,
     bias: str | None = None,
     valuation_gap_pct: float | None = None,
+    ai_mainline: bool = False,
 ) -> dict:
     """判斷長線是否「真的」會虧損 → blocked=True 才不建議買進。
 
@@ -1279,7 +1265,9 @@ def evaluate_long_term_risk(
     long_uptrend = (latest_close is not None and ma_long is not None and ma_long > 0
                     and latest_close >= ma_long)
     quality = fundamental_score is not None and fundamental_score >= 6
-    protected = long_uptrend or quality
+    # 2026-10-06：AI 主線對照表（人工精選）個股也受保護——VST 10/5 在底部整理、隔天 +9% 點火，
+    # 卻因「過去一年下跌的漂移外推 -6%」被硬否決。漂移外推對主線股的轉折沒有預測力，改為只提示審慎。
+    protected = long_uptrend or quality or ai_mainline
     bearish_structure = bias == "偏空" or (
         latest_close is not None and ma_long is not None and ma_long > 0 and latest_close < ma_long * 0.92
     )
@@ -1433,6 +1421,56 @@ def enforce_position_value(
     return buy_zone, sell_zone, stop_loss, buy_strength, reason
 
 
+def detect_ignition(frame: pd.DataFrame, lookback: int = 3, min_gain_pct: float | None = None) -> dict:
+    """爆量長紅點火偵測（2026-10-06 新增，CEG/VST 檢討）。
+
+    事件研究（75 檔 AI/大型股、2017~2026、與同日等權池比較、次日收盤進場）：
+      單日 >=+5% 且量 >=1.3 倍 20 日均量 -> 後 60 日平均超額 +2.5%；>=+8% -> +5.5%。
+      對照：「窄幅整理後突破」型態超額為負，故不採用。
+    點火後 lookback 日內、收盤仍守住點火日漲幅的一半以上，都視為「點火續航中」。
+    """
+    gain_th = IGNITION_ALERT_GAIN_PCT if min_gain_pct is None else min_gain_pct
+    out = {"day_change_pct": 0.0, "volume_ratio": 0.0, "ignition_days_ago": None,
+           "ignition_gain_pct": None, "ignition_low": None, "ignition_close": None,
+           "ignition_volume_ratio": None}
+    if frame is None or len(frame) < 25 or "Volume" not in frame.columns:
+        return out
+    close = frame["Close"].astype(float)
+    vol = frame["Volume"].astype(float)
+    chg = close.pct_change() * 100.0
+    vr = vol / vol.shift(1).rolling(20).mean()
+    out["day_change_pct"] = round(float(chg.iloc[-1]), 2) if not pd.isna(chg.iloc[-1]) else 0.0
+    out["volume_ratio"] = round(float(vr.iloc[-1]), 2) if not pd.isna(vr.iloc[-1]) else 0.0
+    last_close = float(close.iloc[-1])
+    for k in range(min(lookback, len(frame) - 2)):
+        idx = len(frame) - 1 - k
+        g, v = chg.iloc[idx], vr.iloc[idx]
+        if pd.isna(g) or pd.isna(v) or g < gain_th or v < IGNITION_MIN_VOL_RATIO:
+            continue
+        ign_close = float(close.iloc[idx])
+        prev_close = float(close.iloc[idx - 1])
+        # 點火後須守住點火日漲幅的一半以上，否則視為點火失敗（不追）。
+        if k > 0 and last_close < prev_close + 0.5 * (ign_close - prev_close):
+            break
+        out.update({
+            "ignition_days_ago": k,
+            "ignition_gain_pct": round(float(g), 2),
+            "ignition_low": round(float(frame["Low"].iloc[idx]), 2),
+            "ignition_close": round(ign_close, 2),
+            "ignition_volume_ratio": round(float(v), 2),
+        })
+        break
+    return out
+
+
+def _ignition_note(ignition: dict) -> str:
+    days = ignition.get("ignition_days_ago")
+    if days is None:
+        return ""
+    when = "今天" if days == 0 else f"{days} 天前"
+    return f"爆量長紅點火（{when} +{ignition.get('ignition_gain_pct')}%、量 {ignition.get('ignition_volume_ratio')} 倍）"
+
+
 def derive_today_plan(
     latest_close: float,
     ma50: float,
@@ -1454,6 +1492,7 @@ def derive_today_plan(
     fundamentals_available: bool = True,
     ma120_rising: bool = False,
     drop_3d_pct: float = 0.0,
+    ignition: dict | None = None,
 ) -> tuple[str, str, str, str, str, str, float, float, int, str, float]:
     buy_low, buy_high = parse_range(buy_zone)
     sell_low, sell_high = parse_range(sell_zone)
@@ -1531,7 +1570,39 @@ def derive_today_plan(
 
     candle_bonus = f" (偵測到K線訊號: {candlestick_pattern})" if candlestick_pattern != "無" else ""
 
-    if long_term_blocked:
+    ign = ignition or {}
+    ign_days = ign.get("ignition_days_ago")
+    # 深度空頭（跌破年線 15% 以上）的反彈長紅不追——多半是逃命波。
+    ignition_buyable = ign_days is not None and not (ma120 > 0 and latest_close < ma120 * 0.85)
+
+    if ignition_buyable:
+        # === 爆量長紅點火（2026-10-06 CEG/VST 檢討新增）===
+        # 10/6 CEG +13%、VST +9% 爆量長紅，系統卻判「不要買／小量」——點火後的續航是
+        # 事件研究中少數有超額報酬的型態；舊長線閘門的個股回測（+35% 停利）又低估了這類股。
+        # 點火訊號優先於長線閘門；倉位比照追突破（小、分批），停損設點火日低點。
+        today_action = BUY_SMALL if ign_days == 0 else BUY_NOW
+        ign_low = float(ign.get("ignition_low") or (latest_close - 2 * atr14))
+        ign_kelly = max(min(kelly_position_pct, 0.10), 0.05)
+        entry_zone = format_range(
+            max(latest_close - 0.6 * atr14, ign_low),
+            min(latest_close * 1.005, latest_close + 0.1 * atr14),
+        )
+        entry_mid = range_mid(entry_zone)
+        expected_return_pct = ((target_mid / entry_mid) - 1) * 100 if entry_mid > 0 else 0.0
+        risk_pct = ((entry_mid - ign_low) / entry_mid) * 100 if entry_mid > 0 else 0.0
+        reward_ratio = expected_return_pct / risk_pct if risk_pct > 0 else 0.0
+        if ign_days == 0:
+            when = "今天"
+            how = f"今天先買第一批（約 {ign_kelly:.0%}），隔天回測不破點火日低點再加碼"
+        else:
+            when = f"{ign_days} 天前"
+            how = f"點火後仍守住漲幅，可分批進場（約 {ign_kelly:.0%}）"
+        today_note = (
+            f"🔥 爆量長紅點火：{when}單日 +{float(ign.get('ignition_gain_pct') or 0):.1f}%、"
+            f"量 {float(ign.get('ignition_volume_ratio') or 0):.1f} 倍均量。歷史回測顯示點火後 1~3 個月"
+            f"平均跑贏同族群，{how}；停損設點火日低點 {ign_low:.2f}，收盤跌破就走。{candle_bonus}"
+        )
+    elif long_term_blocked:
         # 長線期望值為負（長抱仍虧損）：即使短線超跌也不承接，把資金留給長線向上的好股。
         today_action = NO_BUY
         today_note = f"⚠️ 長線期望值為負，即使短線大跌也不建議承接，請優先布局長線向上的標的。{candle_bonus}"
@@ -1678,7 +1749,7 @@ def derive_today_plan(
     # 2026-07-06 檢討修正：強勢突破（偏多且貼近 60 日高點）時，高 RSI 是「動能強」的表現而非賣點。
     # 6409 在 1000 元創 60 日新高當天被判「可小量賣」，其後 7 個交易日再漲 +29%——
     # 強勢股的賣出紀律改用移動停利（收盤跌破 20 日均線再處理），不賣在突破點。
-    strong_breakout = bias == "偏多" and drawdown_from_high_pct >= -2.0
+    strong_breakout = (bias == "偏多" and drawdown_from_high_pct >= -2.0) or ignition_buyable
     if bias == "偏空" and latest_close < ma50:
         exit_action = SELL_NOW
         exit_zone = format_range(max(latest_close * 0.997, latest_close - 0.2 * atr14), max(latest_close * 1.006, latest_close))
@@ -1941,6 +2012,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
     ma120_rising = len(ma120_series) > 21 and float(ma120_series.iloc[-1]) > float(ma120_series.iloc[-21])
     close_series = frame["Close"]
     drop_3d_pct = ((latest_close / float(close_series.iloc[-4])) - 1) * 100 if len(close_series) > 4 else 0.0
+    ignition = detect_ignition(frame)
 
     # Fundamental analysis via yfinance info（帶快取 + timeout 保護）
     fundamental_score = 0
@@ -2160,6 +2232,9 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
     elif rsi14 <= 50:
         value_boost += 5
         value_notes.append(f"回檔整理中(RSI: {rsi14:.1f})")
+    elif ignition.get("ignition_days_ago") is not None:
+        value_boost += 8
+        value_notes.append(f"爆量長紅點火(+{ignition.get('ignition_gain_pct')}%、量 {ignition.get('ignition_volume_ratio')} 倍)")
     elif rsi14 > 60 and trend_up and _dd60_pct >= -2.0:
         value_boost += 3
         value_notes.append(f"突破創高動能(RSI: {rsi14:.1f})")
@@ -2204,6 +2279,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
             latest_close=latest_close, ma_long=ma120,
             fundamental_score=fundamental_score, bias=bias,
             valuation_gap_pct=valuation_gap_pct,
+            ai_mainline=ai_chain_layer is not None,
         )
         if long_term_risk.get("blocked"):
             buy_strength = "不建議進場"
@@ -2246,6 +2322,7 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         fundamentals_available=bool(info),
         ma120_rising=ma120_rising,
         drop_3d_pct=drop_3d_pct,
+        ignition=ignition,
     )
 
     # Re-use pre-fetched Investing.com data from early scan
@@ -2336,6 +2413,10 @@ def build_report(symbol: str, data: pd.DataFrame, fetch_fundamentals: bool = Tru
         long_term_risk=long_term_risk,
         ma120=round(ma120, 2),
         drawdown_from_high_pct=round(((latest_close / close_high60) - 1) * 100, 2) if close_high60 > 0 else 0.0,
+        day_change_pct=ignition.get("day_change_pct", 0.0),
+        volume_ratio=ignition.get("volume_ratio", 0.0),
+        ignition_days_ago=ignition.get("ignition_days_ago"),
+        ignition_note=_ignition_note(ignition),
     )
 
     report.decision_assistance = generate_decision_assistance(report)

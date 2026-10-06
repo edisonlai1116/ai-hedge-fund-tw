@@ -1268,7 +1268,7 @@ def enrich_candidate(
             buy_strength = enriched_report.buy_strength
             reason = enriched_report.reason
             
-            from src.simple_signal import enforce_position_value, derive_today_plan
+            from src.simple_signal import enforce_position_value, derive_today_plan, detect_ignition
             
             buy_zone, sell_zone, stop_loss, buy_strength, reason = enforce_position_value(
                 buy_zone=buy_zone,
@@ -1312,6 +1312,7 @@ def enrich_candidate(
                     ((enriched_report.latest_close / float(frame.tail(60)["High"].max())) - 1) * 100
                     if len(frame) >= 1 and float(frame.tail(60)["High"].max()) > 0 else 0.0
                 ),
+                ignition=detect_ignition(frame),
             )
 
             # Update report fields
@@ -1511,7 +1512,11 @@ def enrich_candidate(
     is_strong_value = (f_score >= 5 and val_gap is not None and val_gap >= 10.0)
     # 好股大跌承接：today_action 已由 derive_today_plan 判為買進（含 quality-dip 路徑），
     # 且非長線虧損閘門否決者，視為 dip-buy，讓建議強度與「今天可買」一致、不互相矛盾。
-    _lt_blocked = bool(enriched_report.long_term_risk and enriched_report.long_term_risk.get("blocked"))
+    # 爆量長紅點火（2026-10-06）：事件研究有正向超額，排名加分並優先於長線閘門（與 derive_today_plan 一致）。
+    _ignited = getattr(enriched_report, "ignition_days_ago", None) is not None
+    if _ignited:
+        daily_score = _clamp_int(daily_score + 6)
+    _lt_blocked = bool(enriched_report.long_term_risk and enriched_report.long_term_risk.get("blocked")) and not _ignited
     is_dip_buy = (enriched_report.today_action in (BUY_NOW, BUY_SMALL)) and not _lt_blocked
     action_label, buy_urgency, position_sizing = decide_action_label(
         daily_score=daily_score,
@@ -1525,7 +1530,7 @@ def enrich_candidate(
     # 長線虧損閘門：即使長抱仍可能虧損的股票，一律不建議買進。
     long_term_risk = enriched_report.long_term_risk
     long_term_block_note = ""
-    if long_term_risk and long_term_risk.get("blocked"):
+    if long_term_risk and long_term_risk.get("blocked") and not _ignited:
         action_label = "長線恐虧損 不建議買進"
         buy_urgency = "迴避"
         position_sizing = "不建議建倉"
@@ -1671,6 +1676,16 @@ def get_sp500_daily_top_picks(
     # 強勢看漲/低估補漲）。放在截斷之後 → 股癌點名一律納入掃描、不會被市值截斷砍掉。
     if scan_type != "explosive_growth":
         _existing = {c.yf_symbol.upper() for c in constituents}
+        # 2026-10-06：AI 主線核心股（含 CEG/VST 電力股）一律納入——雲端版只掃市值前 40 檔，
+        # 中型主線股從未被掃到，10/6 CEG +13%、VST +9% 點火時「每日掃描」完全看不到。
+        try:
+            from src.ai_mainline_backtest import AI_MAINLINE_UNIVERSE
+            for sym in AI_MAINLINE_UNIVERSE.get(market, []):
+                if sym.upper() not in _existing:
+                    _existing.add(sym.upper())
+                    constituents.append(SP500Constituent(symbol=sym, yf_symbol=sym, company_name=sym.split(".")[0], sector="AI 主線"))
+        except Exception as e:
+            print(f"[sp500_daily] AI 主線併入失敗：{e}")
         for c in _gooaye_named_constituents(market):
             if c.yf_symbol.upper() not in _existing:
                 _existing.add(c.yf_symbol.upper())

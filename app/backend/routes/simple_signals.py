@@ -171,9 +171,10 @@ class AiMainlineBacktestRequest(BaseModel):
     )
     initial_capital: float = Field(default=100000.0, gt=0, description="Starting capital")
     max_positions: int = Field(default=8, ge=1, le=20, description="Max concurrent holdings")
-    take_profit_pct: float = Field(default=35.0, gt=0, le=200, description="Target take-profit percentage")
-    trailing_stop_pct: float = Field(default=18.0, gt=0, le=60, description="Trailing stop percentage")
-    max_holding_days: int = Field(default=126, ge=60, le=900, description="Max holding days (~6 months default; backtest-optimal band)")
+    # 2026-10-06：預設不設固定停利、不設持有期限（None），只靠移動停利/跌破 MA120 出場。
+    take_profit_pct: float | None = Field(default=None, gt=0, le=500, description="Optional fixed take-profit %; None = disabled (let winners run)")
+    trailing_stop_pct: float | None = Field(default=None, gt=0, le=60, description="Trailing stop %; None = default 30%")
+    max_holding_days: int | None = Field(default=None, ge=20, le=5000, description="Optional max holding days; None = no time limit")
 
 
 class AiMainlineTradeResponse(BaseModel):

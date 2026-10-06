@@ -43,6 +43,15 @@ from src.simple_signal import (
 
 
 # 預設 AI 產業鏈主線宇宙（皆可對應到 8 層 AI 產業鏈定位）。
+# 移動停利預設（自持有期高點回落 %）：2026-10-06 無停利/無期限回測，15/18/22/25/30/45% 中
+# 30% 在美/台 × 5/10 年四組皆報酬最高、回撤相近（更寬的 45% 反而變差）。
+DEFAULT_TRAILING_STOP_PCT: dict[str, float] = {"us": 30.0, "tw": 30.0}
+
+# 爆量長紅點火：單日漲幅門檻與量能倍數（相對前 20 日均量）。
+# 事件研究（75 檔、2017~2026、次日收盤進場）：+6%/1.3x 後 60 日平均勝同日等權池 +3.8%。
+IGNITION_MIN_GAIN_PCT = 6.0
+IGNITION_MIN_VOL_RATIO = 1.3
+
 AI_MAINLINE_UNIVERSE: dict[str, list[str]] = {
     "us": [
         "NVDA", "AVGO", "AMD", "TSM", "ASML", "AMAT", "LRCX", "KLAC",
@@ -55,7 +64,8 @@ AI_MAINLINE_UNIVERSE: dict[str, list[str]] = {
     ],
 }
 
-BENCHMARK_INDEX: dict[str, str] = {"us": "SPY", "tw": "^TWII"}
+# 2026-10-06：對標改為可直接買進的 ETF——美股 VOO、台股 0050。
+BENCHMARK_INDEX: dict[str, str] = {"us": "VOO", "tw": "0050.TW"}
 
 TRADING_DAYS_PER_YEAR = 252
 
@@ -163,6 +173,8 @@ def _enrich(frame: pd.DataFrame) -> pd.DataFrame:
     f["MACD"] = macd_line
     f["MACD_Signal"] = signal_line
     f["ATR14"] = compute_atr(f, 14)
+    f["CHG_PCT"] = f["Close"].pct_change() * 100.0
+    f["VOL_RATIO"] = f["Volume"] / f["Volume"].shift(1).rolling(20).mean()
     return f
 
 
@@ -201,21 +213,26 @@ def run_ai_mainline_backtest(
     period: str = "3y",
     initial_capital: float = 100000.0,
     max_positions: int = 8,
-    take_profit_pct: float = 35.0,
-    trailing_stop_pct: float = 18.0,
-    max_holding_days: int = 126,
+    take_profit_pct: float | None = None,
+    trailing_stop_pct: float | None = None,
+    max_holding_days: int | None = None,
+    ignition_entry: bool = True,
 ) -> dict[str, Any]:
-    """執行 AI 主線投組波段回測，回傳可序列化的結果字典。
+    """執行 AI 主線投組趨勢回測，回傳可序列化的結果字典。
 
-    策略（讓獲利奔跑、持有上限 6 個月；回測實測平均持有約 47 個交易日）：
-    - 進場：MACD 黃金交叉，或多頭回檔（站上 MA20/MA50、RSI 40-62、MACD 多頭）。
-    - 出場：達 +35% 目標報酬、自高點回落 18% 移動停利、跌破長線 MA120（持有>30日），
-      或達 6 個月(126 交易日)最長持有期。
+    策略（2026-10-06 改版：不設固定停利、不設持有天數上限，讓趨勢自己決定出場）：
+    - 進場：MACD 黃金交叉、多頭回檔（站上 MA20/MA50、RSI 40-62、MACD 多頭），
+      或「爆量長紅點火」（單日 +6% 以上且量 ≥ 1.3 倍 20 日均量）。點火股優先補位。
+    - 出場：只看趨勢——自持有期高點回落 trailing_stop_pct 的移動停利/停損，
+      或持有 >30 日後跌破長線 MA120。take_profit_pct / max_holding_days 預設 None（不啟用），
+      仍可傳數字做對照實驗。
+    - 移動停利預設 30%（自持有期高點回落；15~45% 掃描後四組回測皆最佳）。
     - 資金：等權配置，最多同時持有 max_positions 檔，採市值動態切分。
 
-    說明：經 5 年/10 年回測，「寬鬆停利(35%/18%)讓獲利奔跑」勝過「3–6 月緊縮(20%/10%)」；
-    且持有上限 126 天(6 月)優於 378 天(18 月)——多數部位在達標/停損前 ~47 日就出場，
-    縮短上限只清掉極少數卡住的爛單，年化更高、回撤略降。
+    說明（2026-10-06 回測，AI 主線池）：拿掉 +35% 停利與 126 日上限、加入點火進場、移動停利 30% 後，
+    美股 10 年總報酬 +2180% → +4184%；台股 10 年 +1564% → +4778%，最大回撤相近。
+    固定停利會把 MU/AMD/DELL 這類主升段股票在 +35% 就賣掉，錯過後段。
+    注意：主線池是「事後挑選的贏家」，有倖存者偏差，對 VOO/0050 的超額報酬會被高估。
     """
     market = "tw" if str(market).lower() == "tw" else "us"
     # 雲端免費機：把回看期間夾到上限（AI_BACKTEST_MAX_PERIOD，例如 5y），避免下載過久逾時回 HTML。
@@ -232,6 +249,8 @@ def run_ai_mainline_backtest(
         raise ValueError("AI 主線回測需要至少一檔股票。")
 
     max_positions = max(1, min(int(max_positions), len(universe)))
+    if trailing_stop_pct is None:
+        trailing_stop_pct = DEFAULT_TRAILING_STOP_PCT[market]
 
     price_map = _download_price_map(universe, period)
     enriched: dict[str, pd.DataFrame] = {}
@@ -254,7 +273,7 @@ def run_ai_mainline_backtest(
     n = len(unified_index)
 
     # 各欄位對齊到統一索引的 numpy 陣列，缺值以 NaN 表示。
-    cols = ["Close", "MA20", "MA50", "MA120", "RSI14", "MACD", "MACD_Signal"]
+    cols = ["Close", "MA20", "MA50", "MA120", "RSI14", "MACD", "MACD_Signal", "CHG_PCT", "VOL_RATIO"]
     aligned: dict[str, dict[str, np.ndarray]] = {}
     close_ff: dict[str, np.ndarray] = {}
     for symbol, f in enriched.items():
@@ -292,7 +311,17 @@ def run_ai_mainline_backtest(
         bullish_pullback = (
             close > ma50 and close > ma20 and 40.0 <= rsi <= 62.0 and macd > macd_sig
         )
-        return bool(macd_gold_cross or bullish_pullback)
+        return bool(macd_gold_cross or bullish_pullback or _is_ignition(sym, i))
+
+    def _is_ignition(sym: str, i: int) -> bool:
+        if not ignition_entry:
+            return False
+        a = aligned[sym]
+        chg, vr = a["CHG_PCT"][i], a["VOL_RATIO"][i]
+        return bool(
+            not np.isnan(chg) and not np.isnan(vr)
+            and chg >= IGNITION_MIN_GAIN_PCT and vr >= IGNITION_MIN_VOL_RATIO
+        )
 
     def _trend_strength(sym: str, i: int) -> float:
         a = aligned[sym]
@@ -301,7 +330,7 @@ def run_ai_mainline_backtest(
             return -1e9
         return close / ma50 - 1.0
 
-    tp_mult = 1.0 + take_profit_pct / 100.0
+    tp_mult = (1.0 + take_profit_pct / 100.0) if take_profit_pct else float("inf")
     trail_mult = 1.0 - trailing_stop_pct / 100.0
 
     for i in range(n):
@@ -318,12 +347,12 @@ def run_ai_mainline_backtest(
 
             exit_reason: str | None = None
             if px >= pos["take_profit"]:
-                exit_reason = "獲利了結 (+35%)"
+                exit_reason = f"獲利了結 (+{take_profit_pct:g}%)"
             elif px <= trailing_stop:
                 exit_reason = "移動停利/停損"
             elif (not np.isnan(ma120)) and px < ma120 and pos["days_held"] > 30:
                 exit_reason = "跌破長線 MA120"
-            elif pos["days_held"] >= max_holding_days:
+            elif max_holding_days and pos["days_held"] >= max_holding_days:
                 exit_reason = "達最長持有期"
 
             if exit_reason:
@@ -354,7 +383,8 @@ def run_ai_mainline_backtest(
                 for sym in active_universe
                 if sym not in positions and _is_entry(sym, i)
             ]
-            candidates.sort(key=lambda s: _trend_strength(s, i), reverse=True)
+            # 點火股優先（事件研究證實有超額續航），其次依趨勢強度。
+            candidates.sort(key=lambda s: (_is_ignition(s, i), _trend_strength(s, i)), reverse=True)
             equity_now = cash + holdings_value(i)
             slot_value = equity_now / max_positions
             for sym in candidates[:free_slots]:
@@ -504,7 +534,7 @@ def _build_result(
 
     trades_sorted = sorted(trades, key=lambda t: t.exit_date)
     note = (
-        f"以 {len(universe)} 檔 AI 產業鏈主線股、6-18 個月波段策略回測 {years:.1f} 年；"
+        f"以 {len(universe)} 檔 AI 產業鏈主線股、趨勢跟隨策略（不設固定停利與持有期限，靠移動停利出場）回測 {years:.1f} 年；"
         f"累積報酬 {total_return_pct:.1f}%、年化 {cagr_pct:.1f}%、"
         f"對標{benchmark_symbol} {'超額' if excess_return_pct >= 0 else '落後'} {abs(excess_return_pct):.1f}%。"
     )

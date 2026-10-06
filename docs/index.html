@@ -79,6 +79,21 @@
     <div class="hl" id="gooaye-ep"></div>
   </div>
 
+  <div class="panel" id="ign-panel" style="display:none">
+    <div class="row">
+      <strong>🔥 點火雷達 · 爆量長紅續航買點</strong>
+      <span class="spacer"></span>
+      <span class="badge pill-neutral" id="ign-count">—</span>
+    </div>
+    <div class="muted" style="margin:4px 0">近 3 日出現單日 +5% 以上、量 1.3 倍均量以上的長紅，且仍守住漲幅。回測顯示點火後 1~3 個月平均跑贏同族群；停損設點火日低點。點一列看細節。</div>
+    <table>
+      <thead><tr>
+        <th>標的</th><th>點火</th><th>今日操作</th><th class="hide-sm">進場區</th><th>買進分數</th>
+      </tr></thead>
+      <tbody id="ign-body"></tbody>
+    </table>
+  </div>
+
   <div class="panel" id="dip-panel" style="display:none">
     <div class="row">
       <strong>📉 錯殺雷達 · 優質股大跌承接機會</strong>
@@ -228,6 +243,34 @@ function render(d){
     "最新集數：" + esc(g.episode_title || "—") +
     (g.episode_published ? `（${esc(g.episode_published)}）` : "") +
     (g.total_opinions!=null ? `　·　累積點名觀點 ${g.total_opinions} 則` : "");
+
+  // 點火雷達（爆量長紅續航）
+  const igns = d.ignition_radar || [];
+  if(igns.length){
+    document.getElementById("ign-panel").style.display = "";
+    document.getElementById("ign-count").textContent = igns.length + " 檔";
+    const ib = document.getElementById("ign-body");
+    ib.innerHTML = "";
+    igns.forEach(p=>{
+      const tech = p.technical || {};
+      const det = p.detail || {};
+      const action = det.today_action || tech.today_action || "—";
+      const zone = det.buy_zone || tech.buy_zone || "—";
+      const tr = document.createElement("tr");
+      tr.className = "pick";
+      tr.innerHTML =
+        `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="muted" style="font-size:.72rem">${esc(p.ai_chain_layer||"")}</div></td>`+
+        `<td><span class="badge pill-bull">${esc(p.ignition_reason||"點火")}</span></td>`+
+        `<td><span class="badge ${stanceCls(action)}">${esc(action)}</span></td>`+
+        `<td class="hide-sm">${esc(zone)}</td>`+
+        `<td><span class="score">${p.buy_score ?? "—"}</span></td>`;
+      const dtr = document.createElement("tr");
+      dtr.className = "detail";
+      dtr.innerHTML = `<td colspan="5">${detailHtml(p)}</td>`;
+      tr.addEventListener("click",()=>dtr.classList.toggle("open"));
+      ib.appendChild(tr); ib.appendChild(dtr);
+    });
+  }
 
   // 錯殺雷達（優質股大跌承接機會）
   const dips = d.dip_radar || [];

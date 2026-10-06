@@ -215,6 +215,36 @@ def dip_radar_rows(rows: List[Dict], max_n: int = 10) -> List[Dict]:
     return out[:max_n]
 
 
+def ignition_radar_rows(rows: List[Dict], max_n: int = 10) -> List[Dict]:
+    """點火雷達：近 3 日出現「爆量長紅點火」（單日 ≥+5%、量 ≥1.3 倍均量）且仍守住漲幅的個股。
+
+    2026-10-06 CEG(+13%)/VST(+9%) 檢討新增：兩檔都在錯殺雷達裡掛「小量／不要買」，點火當天
+    的續航訊號卻沒有任何版位。事件研究（75 檔、2017~2026）顯示點火後 60 日平均跑贏同池
+    +2.5%（≥+8% 為 +5.5%）；底部整理後突破反而沒有超額，所以雷達只看「點火」。
+    AI 主線對照表內個股優先，其次依點火日漲幅排序。
+    """
+    try:
+        from src.simple_signal import map_ai_chain_and_bottleneck
+    except Exception:
+        map_ai_chain_and_bottleneck = None  # type: ignore
+    out: List[Dict] = []
+    for r in rows:
+        tech = r.get("technical") or {}
+        if tech.get("ignition_days_ago") is None:
+            continue
+        layer = map_ai_chain_and_bottleneck(str(r.get("ticker", "")), "")[0] if map_ai_chain_and_bottleneck else None
+        if layer:
+            r["ai_chain_layer"] = layer
+        r["ignition_reason"] = tech.get("ignition_note", "")
+        out.append(r)
+    out.sort(key=lambda e: (
+        e.get("ai_chain_layer") is not None,
+        -((e.get("technical") or {}).get("ignition_days_ago") or 0),
+        (e.get("technical") or {}).get("day_change_pct") or 0.0,
+    ), reverse=True)
+    return out[:max_n]
+
+
 def parse_holding_tickers(text: str) -> List[str]:
     """從持股檔文字解析代號（每行 `代號 成本 股數`），只回代號、不回成本。"""
     out = []
@@ -537,6 +567,10 @@ def _technical(symbol: str) -> Optional[Dict]:
             "sell_zone":       getattr(r, "sell_zone", ""),
             "stop_loss":       getattr(r, "stop_loss", ""),
             "latest_close":    getattr(r, "latest_close", None),
+            "day_change_pct":  getattr(r, "day_change_pct", None),
+            "volume_ratio":    getattr(r, "volume_ratio", None),
+            "ignition_days_ago": getattr(r, "ignition_days_ago", None),
+            "ignition_note":   getattr(r, "ignition_note", ""),
             "_df":             df,   # 供台股 chip_flow 複用 df（避免重複下載）
         }
     except Exception as e:
@@ -767,13 +801,14 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
     all_rows = rank_rows(rows)
     # 錯殺雷達：在裁切 Top N「之前」從全掃描結果挑出優質股大跌候選（不受動能排序擠掉）。
     dip_radar = dip_radar_rows(all_rows)
+    ignition_radar = ignition_radar_rows(all_rows)
     rows = diversify_head(all_rows[:TOP_N])   # 台美股合併取前 50，頭部做主題分散
 
     # 入選 Top 50 才跑完整分析（agents / 3-6-9-12 月預測 / 各天期買賣價），控制運算量。
     for r in rows:
         r["detail"] = _full_analysis(r["symbol"])
     # 雷達候選同樣給完整分析（含修正後的今日操作/承接區），未入 Top 50 也看得到細節。
-    for r in dip_radar:
+    for r in dip_radar + ignition_radar:
         if "detail" not in r:
             r["detail"] = _full_analysis(r["symbol"])
 
@@ -789,6 +824,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
             "tw_in_top": sum(1 for r in rows if r.get("market") == "tw"),
             "us_in_top": sum(1 for r in rows if r.get("market") == "us"),
             "dip_radar": len(dip_radar),
+            "ignition_radar": len(ignition_radar),
         },
         "macro": {
             "score": macro_score,
@@ -798,6 +834,7 @@ def build_report(movers: List[str], holdings: List[str], opinions_store: Dict,
         },
         "gooaye_status": gooaye_status,
         "weights": WEIGHTS,
+        "ignition_radar": ignition_radar,   # 點火雷達：近 3 日爆量長紅點火（獨立於 Top N 排序）
         "dip_radar": dip_radar,   # 錯殺雷達：優質主線股大跌超跌候選（獨立於 Top N 排序）
         "top_picks": rows,
         "disclaimer": "本報告為自動產生之研究輔助，非投資建議；資料來源含 Yahoo Finance、股癌 Podcast 與公開新聞，僅供參考。",
