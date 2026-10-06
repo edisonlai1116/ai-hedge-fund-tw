@@ -7,7 +7,9 @@ import {
   evaluateHoldings,
   fetchStrategyBacktest,
   fetchStrategyReport,
+  lookupSymbols,
   type EvaluateResult,
+  type LookupResult,
   type HoldingAction,
   type Ignition,
   type StrategyBacktest,
@@ -99,9 +101,10 @@ function MarketToggle({ value, onChange }: { value: Market; onChange: (m: Market
 function StrategyRuleNote({ report }: { report: StrategyReport | null }) {
   return (
     <div className="text-xs leading-relaxed text-slate-500">
-      單一策略「Sharpe 動能輪動」：依近 6 個月「漲幅 ÷ 波動」排名，每個市場持有前 10 名、等權；每月初檢查一次，
-      持股跌出前 {report?.strategy.keep_n.us ?? 100} 名（美股）／前 {report?.strategy.keep_n.tw ?? 30} 名（台股）才賣出換股。
-      10 年回測贏過 VOO／0050（見「策略回測」分頁）。規則化訊號，非投資建議。
+      單一策略「AI 科技股 Sharpe 動能輪動」：只在 AI／科技股票池內，依近 6 個月「漲幅 ÷ 波動」排名。
+      美股持有前 {report?.strategy.top_n.us ?? 10} 名、跌出前 {report?.strategy.keep_n.us ?? 50} 名才賣；
+      台股持有前 {report?.strategy.top_n.tw ?? 20} 名、跌出前 {report?.strategy.keep_n.tw ?? 30} 名才賣。等權、每月初檢查。
+      回測見「策略回測」分頁（含倖存者偏差說明）。規則化訊號，非投資建議。
     </div>
   );
 }
@@ -121,6 +124,7 @@ export function StrategyPicksPanel() {
   const data = report?.markets[market];
   const rows = data?.rows ?? [];
   const keep = data?.keep_n ?? 20;
+  const top = data?.top_n ?? 10;
   const found = useMemo(() => {
     const q = query.trim().toUpperCase();
     if (!q) return null;
@@ -150,21 +154,21 @@ export function StrategyPicksPanel() {
         <>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 text-sm font-semibold text-slate-900">
-              前 10 名（買進區）<span className="ml-2 text-xs font-normal text-slate-500">共排名 {data.universe_size} 檔</span>
+              前 {top} 名（買進區）<span className="ml-2 text-xs font-normal text-slate-500">共排名 {data.universe_size} 檔</span>
             </div>
-            <RankTable rows={rows.slice(0, 10)} />
+            <RankTable rows={rows.slice(0, top)} />
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-semibold text-slate-900">
-                查排名<span className="ml-2 text-xs font-normal text-slate-500">第 11~{keep} 名為續抱區（已持有可續抱、不新買）；{keep} 名之後為賣出區</span>
+                查排名<span className="ml-2 text-xs font-normal text-slate-500">第 {top + 1}~{keep} 名為續抱區（已持有可續抱、不新買）；{keep} 名之後為賣出區</span>
               </div>
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="輸入代號，例：NVDA / 2330" className="h-9 w-56" />
             </div>
             {found === 'none' ? <p className="text-sm text-slate-500">不在股票池內（可到「我的持股」輸入，系統會即時計算等效排名）。</p> : null}
             {found && found !== 'none' ? <RankTable rows={[found]} /> : null}
-            {!found ? <RankTable rows={rows.slice(10, 30)} /> : null}
+            {!found ? <RankTable rows={rows.slice(top, keep)} /> : null}
           </div>
         </>
       ) : null}
@@ -447,7 +451,7 @@ export function MyHoldingsPanel() {
             result.new_buys[m]?.length ? (
               <div key={m} className="mt-4">
                 <div className="mb-1 text-sm font-semibold text-slate-900">
-                  {m === 'us' ? '美股' : '台股'}新買進（前 10 名中你還沒有的）
+                  {m === 'us' ? '美股' : '台股'}新買進（買進區中你還沒有的）
                   <span className="ml-2 text-xs font-normal text-slate-500">每檔目標約 {ntd(result.target_per_name_twd[m])}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -550,7 +554,7 @@ export function StrategyBacktestPanel() {
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-slate-900">策略回測 · Sharpe 動能輪動 vs {market === 'us' ? 'VOO' : '0050'}</div>
+            <div className="text-sm font-semibold text-slate-900">策略回測 · AI 科技股動能輪動 vs {market === 'us' ? 'VOO / QQQ' : '0050'}</div>
             <div className="text-xs text-slate-500">
               {bt ? `${bt.start_date} ~ ${bt.end_date} ・ 股票池 ${bt.universe_size} 檔 ・ 每年約換股 ${bt.trades_per_year} 次 ・ 每次成本 ${(bt.rules.cost_per_trade * 100).toFixed(1)}%` : '讀取中…'}
             </div>
@@ -574,6 +578,9 @@ export function StrategyBacktestPanel() {
                     <th className="py-1.5 pr-2 text-right">{bt.benchmark_symbol} 最大回撤</th>
                     <th className="py-1.5 pr-2 text-right">策略 Sharpe</th>
                     <th className="py-1.5 text-right">{bt.benchmark_symbol} Sharpe</th>
+                    {Object.keys(Object.values(bt.periods)[0]?.compare ?? {}).map((name) => (
+                      <th key={name} className="py-1.5 pl-2 text-right">{name} 年化</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -586,12 +593,18 @@ export function StrategyBacktestPanel() {
                       <td className="py-1.5 pr-2 text-right text-slate-600">{p.benchmark.max_drawdown_pct}%</td>
                       <td className="py-1.5 pr-2 text-right">{p.strategy.sharpe}</td>
                       <td className="py-1.5 text-right text-slate-600">{p.benchmark.sharpe}</td>
+                      {Object.entries(p.compare ?? {}).map(([name, c]) => (
+                        <td key={name} className="py-1.5 pl-2 text-right text-slate-600">{c.cagr_pct}%</td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <BacktestCurve points={bt.equity_curve} benchmark={bt.benchmark_symbol} />
+            <p className="mt-2 text-xs text-slate-500">
+              「同池等權持有」＝把整個 AI 科技股池平均買進不動。策略要贏過它，才代表排名選股真的有加分，而不只是吃到 AI 族群本身的漲幅。
+            </p>
             <p className="mt-2 text-xs text-amber-700">⚠️ {bt.caveat}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -641,6 +654,120 @@ function BacktestCurve({ points, benchmark }: { points: StrategyBacktest['equity
           {benchmark} ×{last.benchmark.toFixed(1)}
         </span>
         <span className="text-slate-400">（對數刻度）</span>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== 個股分析（以策略排名判斷） ============================== */
+
+const VERDICT_STYLE: Record<string, string> = {
+  可買進: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  '持有續抱，不新買': 'bg-sky-50 text-sky-800 border-sky-200',
+  '不買／月初換股': 'bg-rose-100 text-rose-800 border-rose-200',
+  '核心 ETF': 'bg-slate-100 text-slate-700 border-slate-200',
+  資料不足: 'bg-slate-50 text-slate-500 border-slate-200',
+};
+
+export function StockLookupPanel() {
+  const [input, setInput] = useState('');
+  const [results, setResults] = useState<LookupResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const run = async () => {
+    const symbols = input.split(/[\s,，、]+/).map((s) => s.trim().toUpperCase()).filter(Boolean);
+    if (!symbols.length) {
+      setError('請先輸入股票代號。');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      setResults(await lookupSymbols(symbols.slice(0, 10)));
+    } catch (e) {
+      setResults([]);
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <form
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run();
+        }}
+      >
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="block min-w-[240px] flex-1">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">查個股在策略中的排名（最多 10 檔，逗號或空白分隔）</span>
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="NVDA, CEG, 2330" className="h-10" />
+          </label>
+          <Button className="h-10 bg-slate-950 text-white hover:bg-slate-800" disabled={loading} type="submit">
+            {loading ? '查詢中' : '查詢'}
+          </Button>
+        </div>
+        <div className="mt-2 text-xs text-slate-500">
+          判斷只看一件事：近 6 個月「漲幅 ÷ 波動」在 AI 科技股池中的排名。買進區可買、續抱區可抱不新買、之外不買；非科技股會換算等效排名供參考。
+        </div>
+        {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
+      </form>
+
+      {results.map((r) => (
+        <div key={r.symbol} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-semibold text-slate-900">
+              {r.symbol.replace(/\.TWO?$/, '')}
+              {r.row?.name ? <span className="ml-1 text-sm font-normal text-slate-500">{r.row.name}</span> : null}
+            </span>
+            <span className={`rounded border px-2 py-0.5 text-xs font-medium ${VERDICT_STYLE[r.verdict] ?? VERDICT_STYLE['資料不足']}`}>{r.verdict}</span>
+            <IgnitionBadge ign={r.row?.ignition} />
+          </div>
+          <p className="mt-1 text-sm text-slate-600">{r.detail}</p>
+          {r.row && r.verdict !== '核心 ETF' ? (
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+              <span>
+                排名 <b>{r.row.rank}</b> / {r.universe_size}
+                {r.row.outside_universe ? <span className="text-xs text-slate-400">（不在股票池，等效排名）</span> : null}
+              </span>
+              <span>現價 {r.row.close}</span>
+              <span className={tone(r.row.ret_6m_pct)}>近 6 月 {pct(r.row.ret_6m_pct, 0)}</span>
+              <span className={tone(r.row.ret_1m_pct)}>近 1 月 {pct(r.row.ret_1m_pct, 0)}</span>
+              <span className="text-slate-600">年化波動 {r.row.vol_ann_pct.toFixed(0)}%</span>
+              <span className="text-slate-600">動能分數 {r.row.score.toFixed(2)}</span>
+            </div>
+          ) : null}
+          <PriceLine closes={r.closes} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PriceLine({ closes }: { closes: LookupResult['closes'] }) {
+  if (closes.length < 2) return null;
+  const W = 720;
+  const H = 140;
+  const vals = closes.map((c) => c.close);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const x = (i: number) => (i / (closes.length - 1)) * W;
+  const y = (v: number) => H - 4 - ((v - lo) / (hi - lo || 1)) * (H - 8);
+  const d = closes.map((c, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(c.close).toFixed(1)}`).join(' ');
+  const up = vals[vals.length - 1] >= vals[0];
+  return (
+    <div className="mt-3">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-32 w-full" preserveAspectRatio="none" role="img" aria-label="近一年收盤價">
+        <path d={d} fill="none" stroke={up ? '#047857' : '#be123c'} strokeWidth="1.8" />
+      </svg>
+      <div className="flex justify-between text-[11px] text-slate-400">
+        <span>{closes[0].date}</span>
+        <span>近一年收盤</span>
+        <span>{closes[closes.length - 1].date}</span>
       </div>
     </div>
   );

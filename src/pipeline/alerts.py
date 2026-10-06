@@ -1,9 +1,9 @@
 """自動買賣提醒（GitHub Actions 排程呼叫；免 API Key）。規則來源：src.strategy.momentum（單一策略）。
 
 推播時機（條件成立才推，同一訊號不重複）：
-  1) 每月調整（每月前 3 個平日）：你的持股該 加碼 / 減碼 / 賣出換股 的清單，以及前 10 名中你還沒有的「新買進」。
+  1) 每月調整（每月前 3 個平日）：你的持股該 加碼 / 減碼 / 賣出換股 的清單，以及買進區中你還沒有的「新買進」。
      與回測同規則、同頻率——月中不會因排名小幅變動叫你買賣。
-  2) 點火事件（任何交易日、盤中也檢查）：名單內（持股中仍在續抱區、或前 10 名）的股票出現
+  2) 點火事件（任何交易日、盤中也檢查）：名單內（持股中仍在續抱區、或買進區）的股票出現
      「爆量長紅點火」（單日 ≥+5%、量 ≥1.3 倍均量）→ 提醒可提前加碼／買進。
 
 持股來源：GitHub Secret `HOLDINGS`（每行「代號 成本 股數」），或本機 股票成本.txt；網站「我的持股」頁可一鍵匯出。
@@ -130,8 +130,8 @@ def build_alerts(holdings: List[Dict], report: Dict, markets: set, fractions: Di
     watch = {h["symbol"]: "持股" for h in ev["holdings"]
              if h["action"] in ("續抱", "加碼") and h["market"] in markets}
     for m in markets:
-        for r in report.get("markets", {}).get(m, {}).get("rows", [])[:TOP_N]:
-            watch.setdefault(r["symbol"], f"前 {TOP_N} 名")
+        for r in report.get("markets", {}).get(m, {}).get("rows", [])[:TOP_N[m]]:
+            watch.setdefault(r["symbol"], f"前 {TOP_N[m]} 名")
     for sym, ign in live_ignitions(list(watch), fractions).items():
         when = "今天" if ign["ignition_days_ago"] == 0 else "昨天"
         what = "可加碼" if watch[sym] == "持股" else "可提前買進"

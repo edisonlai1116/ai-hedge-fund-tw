@@ -26,8 +26,10 @@ def test_sharpe_momentum_prefers_smooth_uptrend():
 
 def test_zones_use_market_buffers():
     assert m.zone_of(10, "us") == "buy"
-    assert m.zone_of(100, "us") == "hold"
-    assert m.zone_of(101, "us") == "out"
+    assert m.zone_of(11, "us") == "hold"
+    assert m.zone_of(50, "us") == "hold"
+    assert m.zone_of(51, "us") == "out"
+    assert m.zone_of(20, "tw") == "buy"
     assert m.zone_of(31, "tw") == "out"
 
 
@@ -36,14 +38,14 @@ def test_evaluate_holdings_actions():
     rep = _report(syms)
     holdings = [
         {"ticker": "S000", "cost": 50, "shares": 1},     # 第 1 名、部位很小 → 加碼
-        {"ticker": "S050", "cost": 50, "shares": 10},    # 第 51 名 → 續抱
-        {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名 → 賣出換股
+        {"ticker": "S030", "cost": 50, "shares": 10},    # 第 31 名 → 續抱
+        {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名（> 50）→ 賣出換股
         {"ticker": "VOO", "cost": 400, "shares": 10},    # ETF → 核心（也讓單檔佔比 < 20%）
     ]
     ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0,
                              extra_prices={"VOO": pd.DataFrame({"Close": [500.0] * 10})})
     acts = {h["symbol"]: h["action"] for h in ev["holdings"]}
-    assert acts == {"S000": "加碼", "S050": "續抱", "S120": "賣出換股", "VOO": "核心 ETF"}
+    assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "VOO": "核心 ETF"}
     assert [b["symbol"] for b in ev["new_buys"]["us"]][:2] == ["S001", "S002"]
 
 

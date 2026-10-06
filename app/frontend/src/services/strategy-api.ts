@@ -24,6 +24,7 @@ export type RankRow = {
 
 export type MarketRanking = {
   universe_size: number;
+  top_n: number;
   keep_n: number;
   rows: RankRow[];
 };
@@ -33,7 +34,7 @@ export type StrategyReport = {
   strategy: {
     name: string;
     lookback_days: number;
-    top_n: number;
+    top_n: Record<string, number>;
     keep_n: Record<string, number>;
     rule: string;
     next_rebalance: string;
@@ -95,7 +96,7 @@ export type StrategyBacktest = {
   end_date: string;
   universe_size: number;
   trades_per_year: number;
-  periods: Record<string, { strategy: PeriodStats; benchmark: PeriodStats }>;
+  periods: Record<string, { strategy: PeriodStats; benchmark: PeriodStats; compare?: Record<string, PeriodStats> }>;
   equity_curve: { date: string; strategy: number; benchmark: number }[];
   current_holdings: string[];
   recent_rebalances: { date: string; buy: string[]; sell: string[] }[];
@@ -134,4 +135,21 @@ export async function evaluateHoldings(holdings: { ticker: string; cost: number;
 export async function fetchStrategyBacktest(): Promise<{ generated_at: string; markets: Record<'us' | 'tw', StrategyBacktest> }> {
   const response = await fetch(`${API_BASE_URL}/daily/data/strategy_backtest.json?_=${Date.now()}`);
   return parse(response, '回測結果讀取失敗。');
+}
+
+export type LookupResult = {
+  symbol: string;
+  market: 'us' | 'tw';
+  universe_size: number | null;
+  keep_n: number;
+  top_n: number;
+  row: (RankRow & { outside_universe?: boolean }) | null;
+  verdict: string;
+  detail: string;
+  closes: { date: string; close: number }[];
+};
+
+export async function lookupSymbols(symbols: string[]): Promise<LookupResult[]> {
+  const response = await fetch(`${API_BASE_URL}/strategy/lookup?symbols=${encodeURIComponent(symbols.join(','))}`);
+  return parse<LookupResult[]>(response, '查詢失敗。');
 }

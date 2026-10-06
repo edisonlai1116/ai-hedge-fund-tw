@@ -1,15 +1,11 @@
-import type { ChangeEvent, ErrorInfo, FormEvent, ReactNode } from 'react';
-import { Component, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
   BriefcaseBusiness,
   ChevronDown,
-  Clock3,
   Gauge,
   LineChart,
-  Mic,
   RadioTower,
   Search,
   ShieldAlert,
@@ -23,165 +19,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Toaster } from './components/ui/sonner';
 import {
-  analyzeSimpleSignal,
-  analyzeSimpleSignalBatch,
-  fetchGooayeOpinions,
-  fetchNicolasOpinions,
   fetchMarketRegime,
   fetchQuotes,
-  fetchSp500DailyTop,
   fetchSystemStatus,
-  reviewHoldings,
-  runAiMainlineBacktest,
   type SystemStatus,
-  type AgentView,
-  type AiMainlineBacktestResult,
-  type ChartPoint,
-  type ChipFlowResult,
-  type EventsResult,
-  type GooayeOpinion,
-  type HoldingReviewItemPayload,
-  type HoldingReviewResult,
-  type HorizonView,
-  type LongTermRisk,
-  type MarketRegime,
   type MarketRegimeSuggestion,
-  type PriceForecast,
-  type SP500DailyPick,
-  type SP500DailyScanResponse,
-  type SimpleSignalResult,
 } from './services/simple-signal-api';
-import { MyHoldingsPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
-
-type DetailResult = SimpleSignalResult | SP500DailyPick;
-
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; message: string }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false, message: '' };
-  }
-
-  static getDerivedStateFromError(error: unknown): { hasError: boolean; message: string } {
-    return { hasError: true, message: error instanceof Error ? error.message : String(error) };
-  }
-
-  componentDidCatch(error: unknown, info: ErrorInfo): void {
-    console.error('結果渲染發生錯誤：', error, info);
-  }
-
-  render(): ReactNode {
-    if (this.state.hasError) {
-      return (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          <div className="font-semibold">這檔結果顯示時發生問題，已略過以保持頁面正常。</div>
-          <div className="mt-1 text-xs text-rose-500">請改選其他標的，或重新掃描。{this.state.message ? `（${this.state.message}）` : ''}</div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-function safeFixed(value: number | null | undefined, digits = 2): string {
-  if (value === null || value === undefined || Number.isNaN(value) || !Number.isFinite(value)) {
-    return '-';
-  }
-  return value.toFixed(digits);
-}
-
-function parseTickers(raw: string): string[] {
-  return raw
-    .split(/[\s,\n，、]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-// 統一比對鍵：去 .TW/.TWO 後綴並大寫（股癌點名對照、持股健檢比對共用）。
-function tickerBaseKey(ticker: string): string {
-  return (ticker || '').trim().toUpperCase().replace(/\.(TW|TWO)$/, '');
-}
-function buildGooayeMap(opinions: GooayeOpinion[]): Record<string, GooayeOpinion> {
-  const map: Record<string, GooayeOpinion> = {};
-  for (const op of opinions) {
-    if (op?.target_ticker) map[tickerBaseKey(op.target_ticker)] = op;
-  }
-  return map;
-}
-function gooayeStanceTone(label: string): string {
-  if (/bull|多|買/i.test(label)) return 'bg-emerald-100 text-emerald-700';
-  if (/bear|空|賣|減/i.test(label)) return 'bg-rose-100 text-rose-700';
-  return 'bg-slate-200 text-slate-600';
-}
-
-// 真實持股（持股健檢）持久化：記住輸入＋上次健檢日期，避免每次重 key、並可每天自動健檢。
-const REAL_HOLDINGS_KEY = 'real_holdings_v1';
-function loadRealHoldings(): { text: string; lastReviewed: string } {
-  try {
-    const raw = localStorage.getItem(REAL_HOLDINGS_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      return { text: typeof d.text === 'string' ? d.text : '', lastReviewed: d.lastReviewed ?? '' };
-    }
-  } catch {
-    /* ignore */
-  }
-  return { text: '', lastReviewed: '' };
-}
-function saveRealHoldings(text: string, lastReviewed: string): void {
-  try {
-    localStorage.setItem(REAL_HOLDINGS_KEY, JSON.stringify({ text, lastReviewed }));
-  } catch {
-    /* ignore */
-  }
-}
-function localDateStr(): string {
-  return new Date().toLocaleDateString('en-CA');
-}
-
-function parseHoldingsInput(raw: string, market: 'us' | 'tw' | ''): HoldingReviewItemPayload[] {
-  return raw
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(/[\s,，、]+/).filter(Boolean);
-      const [ticker, costBasisText, sharesText] = parts;
-      return {
-        ticker,
-        market: market || undefined,
-        cost_basis: costBasisText ? Number(costBasisText) : undefined,
-        shares: sharesText ? Number(sharesText) : undefined,
-      };
-    })
-    .filter((item) => item.ticker);
-}
-
-function actionTone(action: string): string {
-  if (action.includes('買') || action.includes('偏多') || action.includes('加碼')) return 'text-emerald-700';
-  if (action.includes('賣') || action.includes('偏空') || action.includes('減碼') || action.includes('出場')) return 'text-rose-700';
-  if (action.includes('續抱')) return 'text-sky-700';
-  if (action.includes('回檔') || action.includes('觀察')) return 'text-amber-700';
-  return 'text-slate-700';
-}
-
-function aiScoreText(result: DetailResult): string {
-  if (result.ai_score !== null) return `${result.ai_score}`;
-  if (result.ai_enabled && !result.ai_available) return 'AI 不可用';
-  if (result.ai_enabled) return 'AI 未回傳';
-  return '未啟用';
-}
-
-function finalVerdict(result: DetailResult): string {
-  if (result.today_exit_action.includes('賣')) return '偏賣出，先處理風險或獲利';
-  if (result.today_action.includes('可買')) return '偏買進，今天可評估掛單';
-  if (result.today_action.includes('回檔')) return '等回檔，今天不追高';
-  return '先觀察，等待更明確位置';
-}
+import { evaluateHoldings, fetchStrategyReport, type EvaluatedHolding, type RankRow } from './services/strategy-api';
+import { MyHoldingsPanel, StockLookupPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
 
 type TabKey = 'analyze' | 'daily' | 'holdings' | 'backtest' | 'portfolio';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
-  { key: 'analyze', label: '個股分析', icon: Search, hint: '單股或多股技術＋AI 評分' },
+  { key: 'analyze', label: '個股查詢', icon: Search, hint: '查任一檔的策略排名' },
   { key: 'daily', label: '策略精選', icon: Sparkles, hint: '本月買進名單（單一策略）' },
   { key: 'holdings', label: '我的持股', icon: BriefcaseBusiness, hint: '加碼 / 減碼 / 換股提醒' },
   { key: 'backtest', label: '策略回測', icon: LineChart, hint: '對標 VOO / 0050' },
@@ -189,145 +39,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] 
 ];
 
 export default function App() {
-  const [ticker, setTicker] = useState('');
-  const [holdingsText, setHoldingsText] = useState(() => loadRealHoldings().text);
-  const [holdingsLastReviewed, setHoldingsLastReviewed] = useState(() => loadRealHoldings().lastReviewed);
-  const [market, setMarket] = useState<'us' | 'tw' | ''>('');
-  const [scanMarket, setScanMarket] = useState<'us' | 'tw'>('us');
-  const [scanType, setScanType] = useState<'optimal' | 'lagging_value' | 'explosive_growth'>('optimal');
-  const [useAiCommittee, setUseAiCommittee] = useState(false);
-  const [committeeModel, setCommitteeModel] = useState('gemma4:e4b');
-
-  const [backtestMarket, setBacktestMarket] = useState<'us' | 'tw'>('us');
-  const [backtestPeriod, setBacktestPeriod] = useState('5y');
-
   const [activeTab, setActiveTab] = useState<TabKey>('holdings');
-
-  const [loading, setLoading] = useState(false);
-  const [holdingsLoading, setHoldingsLoading] = useState(false);
-  const [scanLoading, setScanLoading] = useState(false);
-  const [backtestLoading, setBacktestLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [holdingsError, setHoldingsError] = useState('');
-  const [dailyError, setDailyError] = useState('');
-  const [backtestError, setBacktestError] = useState('');
-
-  const [result, setResult] = useState<DetailResult | null>(null);
-  const [ranking, setRanking] = useState<SimpleSignalResult[]>([]);
-  const [holdings, setHoldings] = useState<HoldingReviewResult[]>([]);
-  const [selectedHolding, setSelectedHolding] = useState<HoldingReviewResult | null>(null);
-  const [dailyScan, setDailyScan] = useState<SP500DailyScanResponse | null>(null);
-  const [backtest, setBacktest] = useState<AiMainlineBacktestResult | null>(null);
-  const [gooayeMap, setGooayeMap] = useState<Record<string, GooayeOpinion>>({});
-  const [nicolasMap, setNicolasMap] = useState<Record<string, GooayeOpinion>>({});
-
-  useEffect(() => {
-    fetchGooayeOpinions()
-      .then((ops) => setGooayeMap(buildGooayeMap(ops)))
-      .catch(() => setGooayeMap({}));
-    fetchNicolasOpinions()
-      .then((ops) => setNicolasMap(buildGooayeMap(ops)))
-      .catch(() => setNicolasMap({}));
-  }, []);
-
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const tickers = parseTickers(ticker);
-    if (tickers.length === 0) {
-      setError('請先輸入股票代碼。');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSelectedHolding(null);
-    try {
-      if (tickers.length > 1) {
-        const response = await analyzeSimpleSignalBatch({ tickers, market, useAiCommittee, committeeModel });
-        setRanking(response);
-        setResult(response[0] ?? null);
-      } else {
-        const response = await analyzeSimpleSignal({ ticker: tickers[0], market, useAiCommittee, committeeModel });
-        setRanking([response]);
-        setResult(response);
-      }
-    } catch (submitError) {
-      setRanking([]);
-      setResult(null);
-      setError(submitError instanceof Error ? submitError.message : '分析失敗。');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleReviewHoldings(opts?: { auto?: boolean }) {
-    const parsed = parseHoldingsInput(holdingsText, market);
-    if (parsed.length === 0) {
-      if (!opts?.auto) setHoldingsError('請至少輸入一筆持股，例如 AAPL 185 20。');
-      return;
-    }
-
-    setHoldingsLoading(true);
-    setHoldingsError('');
-    try {
-      const response = await reviewHoldings({ holdings: parsed, useAiCommittee, committeeModel });
-      setHoldings(response);
-      setHoldingsLastReviewed(localDateStr()); // 記錄今日已健檢（每天首次開啟自動健檢用）
-      if (response[0]) {
-        setSelectedHolding(response[0]);
-        setResult(response[0].signal);
-      }
-    } catch (reviewError) {
-      setHoldings([]);
-      setSelectedHolding(null);
-      setHoldingsError(reviewError instanceof Error ? reviewError.message : '持股健檢失敗。');
-    } finally {
-      setHoldingsLoading(false);
-    }
-  }
-
-  async function handleDailyScan() {
-    setScanLoading(true);
-    setDailyError('');
-    try {
-      const response = await fetchSp500DailyTop({
-        period: '3y',
-        limit: 50,
-        useAiCommittee,
-        committeeModel,
-        market: scanMarket,
-        scanType,
-      });
-      setDailyScan(response);
-      if (response.picks[0]) {
-        setSelectedHolding(null);
-        setResult(response.picks[0]);
-      }
-    } catch (scanError) {
-      setDailyScan(null);
-      setDailyError(scanError instanceof Error ? scanError.message : '每日掃描失敗。');
-    } finally {
-      setScanLoading(false);
-    }
-  }
-
-  async function handleAiMainlineBacktest() {
-    setBacktestLoading(true);
-    setBacktestError('');
-    try {
-      const response = await runAiMainlineBacktest({
-        market: backtestMarket,
-        period: backtestPeriod,
-      });
-      setBacktest(response);
-    } catch (btError) {
-      setBacktest(null);
-      setBacktestError(btError instanceof Error ? btError.message : 'AI 主線長線回測失敗。');
-    } finally {
-      setBacktestLoading(false);
-    }
-  }
 
   return (
     <>
@@ -339,21 +51,11 @@ export default function App() {
                 <TrendingUp className="h-4 w-4" />
               </span>
               <div>
-                <div className="text-sm font-semibold leading-tight text-slate-900">AI 主線投資儀表板</div>
-                <div className="text-xs text-slate-500">Sharpe 動能策略 ・ 我的持股提醒 ・ 對標 VOO / 0050</div>
+                <div className="text-sm font-semibold leading-tight text-slate-900">AI 科技股動能策略</div>
+                <div className="text-xs text-slate-500">單一策略 ・ 我的持股提醒 ・ 對標 VOO / 0050</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <label className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm">
-                <input checked={useAiCommittee} onChange={(event) => setUseAiCommittee(event.target.checked)} type="checkbox" />
-                AI 加權
-              </label>
-              <Input
-                value={committeeModel}
-                onChange={(event) => setCommitteeModel(event.target.value)}
-                className="h-9 w-40 bg-white"
-                title="AI 委員會模型名稱"
-              />
               <SystemStatusBadge />
             </div>
           </div>
@@ -383,70 +85,11 @@ export default function App() {
             })}
           </nav>
 
-          {activeTab === 'analyze' ? (
-            <div className="space-y-5">
-              <form className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" onSubmit={handleSubmit}>
-                <div className="grid gap-3 lg:grid-cols-[1fr_120px_auto] lg:items-end">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">單股 / 多股查詢（可用逗號或空白分隔）</span>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                      <Input value={ticker} onChange={(event) => setTicker(event.target.value)} placeholder="AAPL, MSFT, NVDA, 2330" className="h-10 bg-white pl-9" />
-                    </div>
-                  </label>
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-600">市場</span>
-                    <select value={market} onChange={(event) => setMarket(event.target.value as 'us' | 'tw' | '')} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
-                      <option value="">自動</option>
-                      <option value="us">美股</option>
-                      <option value="tw">台股</option>
-                    </select>
-                  </label>
-                  <Button className="h-10 bg-slate-950 text-white hover:bg-slate-800 lg:w-32" disabled={loading} type="submit">
-                    {loading ? '分析中' : '分析'}
-                  </Button>
-                </div>
-                {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
-              </form>
-
-              <ErrorBoundary key={`single-${result?.symbol ?? 'none'}`}>
-                <SignalInsight
-                  result={result}
-                  lists={
-                    ranking.length > 1 ? (
-                      <SignalList
-                        title="多檔分析排名"
-                        items={ranking}
-                        onSelect={(item) => {
-                          setSelectedHolding(null);
-                          setResult(item);
-                        }}
-                        selectedSymbol={result?.symbol}
-                        gooayeMap={gooayeMap}
-                        nicolasMap={nicolasMap}
-                      />
-                    ) : null
-                  }
-                />
-              </ErrorBoundary>
-            </div>
-          ) : null}
-
+          {activeTab === 'analyze' ? <StockLookupPanel /> : null}
           {activeTab === 'daily' ? <StrategyPicksPanel /> : null}
-
           {activeTab === 'holdings' ? <MyHoldingsPanel /> : null}
-
           {activeTab === 'backtest' ? <StrategyBacktestPanel /> : null}
-
-          {activeTab === 'portfolio' ? (
-            <PortfolioTab
-              recommendations={dailyScan?.picks ?? []}
-              useAiCommittee={useAiCommittee}
-              committeeModel={committeeModel}
-              gooayeMap={gooayeMap}
-              nicolasMap={nicolasMap}
-            />
-          ) : null}
+          {activeTab === 'portfolio' ? <PortfolioTab /> : null}
         </section>
       </main>
       <Toaster />
@@ -577,882 +220,9 @@ function StatusRow({ label, value, strong }: { label: string; value: string; str
   );
 }
 
-function SignalInsight({ result, lists }: { result: DetailResult | null; lists?: ReactNode }) {
-  if (!result) {
-    return lists ? <div className="space-y-4">{lists}</div> : <EmptyState />;
-  }
-  return (
-    <div className="space-y-5">
-      <StockOverviewCard result={result} />
-      {result.investingpro_fair_value != null ? <ValuationCard result={result} /> : null}
-      {result.long_term_risk ? <LongTermRiskBanner risk={result.long_term_risk} /> : null}
-      {result.chip ? <ChipFlowCard chip={result.chip} /> : null}
-      {result.events && (result.events.catalysts.length > 0 || result.events.risks.length > 0)
-        ? <CatalystsCard events={result.events} />
-        : null}
-      {result.price_forecast ? <PriceForecastCard forecast={result.price_forecast} latestClose={result.latest_close} /> : null}
-      {result.horizons?.length ? <HorizonPlanCard horizons={result.horizons} /> : null}
-      <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4">{lists}</div>
-        <div className="space-y-4">{result.backtest ? <BacktestCard result={result} /> : null}</div>
-      </div>
-      <AgentVoteCard result={result} />
-      <PriceChartCard result={result} />
-    </div>
-  );
-}
-
-function chipScoreColor(score: number): string {
-  if (score >= 65) return 'text-emerald-700';
-  if (score < 45) return 'text-rose-700';
-  return 'text-amber-700';
-}
-
-function chipScoreBg(score: number): string {
-  if (score >= 65) return 'border-emerald-200 bg-emerald-50';
-  if (score < 45) return 'border-rose-200 bg-rose-50';
-  return 'border-amber-200 bg-amber-50';
-}
-
-function ChipFlowCard({ chip }: { chip: ChipFlowResult }) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          🏦 籌碼面 / 法人動向
-        </CardTitle>
-        <CardDescription>
-          {chip.source === 'TWSE T86' ? '台灣證交所三大法人買賣超（免 Key）' : 'Chaikin Money Flow CMF-20（資金流代理）'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className={`rounded-md border p-3 ${chipScoreBg(chip.score)}`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-sm font-semibold ${chipScoreColor(chip.score)}`}>{chip.label}</span>
-            <span className={`text-lg font-bold ${chipScoreColor(chip.score)}`}>{chip.score} / 100</span>
-          </div>
-          <div className="mt-1 text-xs text-slate-600">{chip.net_summary}</div>
-          {chip.net_trend && (
-            <div className="mt-0.5 text-xs text-slate-500">趨勢：{chip.net_trend}</div>
-          )}
-        </div>
-        {chip.source === 'TWSE T86' && chip.foreign_net !== null && (
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="rounded border border-slate-200 p-2">
-              <div className="text-slate-500">外資</div>
-              <div className={`font-semibold ${(chip.foreign_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {(chip.foreign_net ?? 0) >= 0 ? '+' : ''}{((chip.foreign_net ?? 0) / 1000).toFixed(0)}張
-              </div>
-            </div>
-            <div className="rounded border border-slate-200 p-2">
-              <div className="text-slate-500">投信</div>
-              <div className={`font-semibold ${(chip.trust_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {(chip.trust_net ?? 0) >= 0 ? '+' : ''}{((chip.trust_net ?? 0) / 1000).toFixed(0)}張
-              </div>
-            </div>
-            <div className="rounded border border-slate-200 p-2">
-              <div className="text-slate-500">合計</div>
-              <div className={`font-semibold ${(chip.total_net ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {(chip.total_net ?? 0) >= 0 ? '+' : ''}{((chip.total_net ?? 0) / 1000).toFixed(0)}張
-              </div>
-            </div>
-          </div>
-        )}
-        <p className="text-xs text-slate-400">
-          籌碼分數已納入每日 Top 50 買進評分（權重 20%）。台股資料來自 TWSE 開放資料，美股為技術性資金流代理，非實際法人數據。
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CatalystsCard({ events }: { events: EventsResult }) {
-  const hasCats = events.catalysts.length > 0;
-  const hasRisks = events.risks.length > 0;
-  if (!hasCats && !hasRisks) return null;
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          📋 催化因素 / 風險警報
-        </CardTitle>
-        <CardDescription>從個股新聞標題自動擷取的事件訊號（不影響分數，純資訊呈現）</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {hasCats && (
-          <div>
-            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">🚀 催化因素</div>
-            <div className="space-y-1.5">
-              {events.catalysts.map((c, i) => (
-                <div key={i} className="flex items-start gap-2 rounded-md border border-emerald-100 bg-emerald-50 p-2">
-                  <span className="mt-0.5 shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                    {c.tag}
-                  </span>
-                  <span className="text-xs text-slate-700 leading-5">{c.headline}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {hasRisks && (
-          <div>
-            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-rose-700">⚠️ 風險警報</div>
-            <div className="space-y-1.5">
-              {events.risks.map((r, i) => (
-                <div key={i} className="flex items-start gap-2 rounded-md border border-rose-100 bg-rose-50 p-2">
-                  <span className="mt-0.5 shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800">
-                    {r.tag}
-                  </span>
-                  <span className="text-xs text-slate-700 leading-5">{r.headline}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex h-full min-h-[220px] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-sm text-slate-500">
-      輸入股票或持股後，這裡會顯示今天的買、賣、續抱結論。
-    </div>
-  );
-}
-
-function HoldingSummaryCard({ holding }: { holding: HoldingReviewResult }) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{holding.symbol} 持股判斷</CardTitle>
-        <CardDescription>{holding.holding_reason}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="建議動作" value={holding.verdict} valueClassName={actionTone(holding.verdict)} />
-        <MetricCard label="賣出比例" value={holding.trim_ratio} />
-        <MetricCard label="未實現報酬" value={holding.pnl_pct === null ? '-' : `${safeFixed(holding.pnl_pct, 2)}%`} />
-        <MetricCard label="最新收盤" value={safeFixed(holding.latest_close, 2)} />
-        <MetricCard label="保護停損" value={holding.protective_stop} />
-        <MetricCard label="緊急程度" value={holding.urgency} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function StockOverviewCard({ result }: { result: DetailResult }) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{result.symbol} 結論與核心資料</CardTitle>
-        <CardDescription>{finalVerdict(result)}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">今日操作結論</div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="買進動作" value={result.today_action} valueClassName={actionTone(result.today_action)} icon={<ArrowDownToLine className="h-4 w-4" />} />
-            <MetricCard label="今天買點" value={result.today_entry_zone} />
-            <MetricCard label="賣出動作" value={result.today_exit_action} valueClassName={actionTone(result.today_exit_action)} icon={<ArrowUpFromLine className="h-4 w-4" />} />
-            <MetricCard label="今天賣點" value={result.today_exit_zone} />
-            <MetricCard label="預期報酬" value={`${safeFixed(result.expected_return_pct, 1)}%`} icon={<TrendingUp className="h-4 w-4" />} />
-            <MetricCard label="風險報酬比" value={safeFixed(result.risk_reward_ratio, 2)} icon={<ShieldAlert className="h-4 w-4" />} />
-            <MetricCard label="預估持有" value={result.holding_days_estimate > 0 ? `${result.holding_days_estimate} 天` : '暫不建倉'} icon={<Clock3 className="h-4 w-4" />} />
-            <MetricCard label="綜合分數" value={`${result.composite_score}`} />
-          </div>
-          {result.today_note && (
-            <p className={`mt-3 rounded-md border p-3 text-xs leading-5 ${todayNoteTone(result.today_note)}`}>
-              <span className="font-semibold">買進理由：</span>
-              {result.today_note}
-            </p>
-          )}
-          {result.today_exit_note && (
-            <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-              <span className="font-semibold">賣出理由：</span>
-              {result.today_exit_note}
-            </p>
-          )}
-        </div>
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">核心技術資料</div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="趨勢" value={result.bias} valueClassName={actionTone(result.bias)} />
-            <MetricCard label="最新收盤" value={safeFixed(result.latest_close, 2)} />
-            <MetricCard label="規則分數" value={`${result.rule_score}`} />
-            <MetricCard label="AI 分數" value={aiScoreText(result)} />
-            <MetricCard label="建議買點區" value={result.buy_zone} />
-            <MetricCard label="建議賣點區" value={result.sell_zone} />
-            <MetricCard label="停損區" value={result.stop_loss} />
-            <MetricCard label="長線 MA120" value={result.ma120 ? safeFixed(result.ma120, 2) : '-'} />
-            <MetricCard label="RSI14" value={safeFixed(result.rsi14, 1)} />
-          </div>
-          <p className="mt-2 text-xs leading-5 text-slate-500">{result.reason}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function todayNoteTone(note: string): string {
-  // 大跌承接/突破參與等機會型理由（⚡📉🎲🚀 開頭）用綠色突顯，警示用紅色，其餘中性。
-  if (/[⚡📉🎲🚀]/u.test(note)) return 'border-emerald-200 bg-emerald-50 text-emerald-800';
-  if (note.includes('⚠️') || note.includes('不建議')) return 'border-rose-200 bg-rose-50 text-rose-700';
-  return 'border-slate-200 bg-slate-50 text-slate-600';
-}
-
-function forecastVerdictTone(verdict: string): string {
-  if (verdict.includes('賣') || verdict.includes('減碼')) return 'text-rose-700';
-  if (verdict.includes('暫不') || verdict.includes('觀望')) return 'text-amber-700';
-  if (verdict.includes('買進') || verdict.includes('布局')) return 'text-emerald-700';
-  return 'text-slate-700';
-}
-
-function forecastVerdictBg(verdict: string): string {
-  if (verdict.includes('賣') || verdict.includes('減碼')) return 'border-rose-200 bg-rose-50';
-  if (verdict.includes('暫不') || verdict.includes('觀望')) return 'border-amber-200 bg-amber-50';
-  if (verdict.includes('買進') || verdict.includes('布局')) return 'border-emerald-200 bg-emerald-50';
-  return 'border-slate-200 bg-slate-50';
-}
-
-function stanceTone(stance: string): string {
-  if (stance.includes('多')) return 'text-emerald-700';
-  if (stance.includes('空')) return 'text-rose-700';
-  return 'text-slate-500';
-}
-
-function LongTermRiskBanner({ risk }: { risk: LongTermRisk }) {
-  const blocked = risk.blocked;
-  const tone = blocked
-    ? 'border-rose-300 bg-rose-50 text-rose-800'
-    : risk.severity === 'medium'
-      ? 'border-amber-300 bg-amber-50 text-amber-800'
-      : 'border-emerald-200 bg-emerald-50 text-emerald-800';
-  const title = blocked ? '🔴 長線恐虧損：不建議買進' : risk.severity === 'medium' ? '🟡 長線需謹慎' : '🟢 長線虧損風險評估';
-  return (
-    <div className={`rounded-lg border p-4 ${tone}`}>
-      <div className="text-sm font-semibold">{title}</div>
-      <div className="mt-1 text-xs leading-5">{risk.note}</div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-        {risk.expected_return_12m_pct !== null ? (
-          <span>12 個月預測：{risk.expected_return_12m_pct >= 0 ? '+' : ''}{risk.expected_return_12m_pct.toFixed(1)}%</span>
-        ) : null}
-        {risk.history_cumulative_return_pct !== null && risk.history_trades > 0 ? (
-          <span>
-            個股波段歷史：累積 {risk.history_cumulative_return_pct >= 0 ? '+' : ''}
-            {risk.history_cumulative_return_pct.toFixed(1)}%／勝率 {risk.history_win_rate_pct?.toFixed(0)}%（{risk.history_trades} 筆）
-          </span>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function valuationGapTone(gap: number): string {
-  if (gap >= 5) return 'text-emerald-700';
-  if (gap <= -5) return 'text-rose-700';
-  return 'text-slate-600';
-}
-
-function valuationGapBg(gap: number): string {
-  if (gap >= 5) return 'border-emerald-200 bg-emerald-50';
-  if (gap <= -5) return 'border-rose-200 bg-rose-50';
-  return 'border-slate-200 bg-slate-50';
-}
-
-type ValuationModel = { name: string; valuation: number; type: string };
-
-function ValuationCard({ result }: { result: DetailResult }) {
-  const fair = result.investingpro_fair_value;
-  if (fair == null) return null;
-  const gap = result.valuation_gap_pct ?? 0;
-  const close = result.latest_close;
-  const target = result.analyst_target_price;
-  const momentum = result.warren_ai_momentum;
-  const models = (result.investingpro_models ?? []) as ValuationModel[];
-  const undervalued = gap >= 0;
-  const verdict =
-    gap >= 15 ? '顯著被低估' : gap >= 5 ? '略為低估' : gap <= -15 ? '顯著高估' : gap <= -5 ? '略為高估' : '估值合理';
-
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Gauge className="h-4 w-4" />
-          InvestingPro 估值（12 模型綜合）
-        </CardTitle>
-        <CardDescription>
-          綜合 DCF、本益比、P/B、EV/EBITDA、葛拉漢防守價等 12 種估值模型，估算合理價值與目前折溢價。
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className={`rounded-md border p-3 ${valuationGapBg(gap)}`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-sm font-semibold ${valuationGapTone(gap)}`}>{verdict}</span>
-            <span className={`text-lg font-bold ${valuationGapTone(gap)}`}>
-              {undervalued ? '折價' : '溢價'} {Math.abs(gap).toFixed(1)}%
-            </span>
-          </div>
-          <div className="mt-1 text-xs leading-5 text-slate-600">
-            合理價值約 <span className="font-semibold text-slate-900">{fair.toFixed(2)}</span>，目前股價 {close.toFixed(2)}
-            {undervalued ? '，低於合理價值、具安全邊際。' : '，高於合理價值、留意追高風險。'}
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="text-xs text-slate-500">合理價值（12 模型均值）</div>
-            <div className="text-lg font-semibold text-slate-900">{fair.toFixed(2)}</div>
-          </div>
-          <div className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="text-xs text-slate-500">分析師共識目標價</div>
-            <div className="text-lg font-semibold text-slate-900">{target != null ? target.toFixed(2) : '—'}</div>
-          </div>
-          <div className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="text-xs text-slate-500">Warren AI 技術動能</div>
-            <div className={`text-sm font-semibold ${stanceTone(momentum ?? '')}`}>{momentum ?? '—'}</div>
-          </div>
-        </div>
-        {models.length > 0 ? (
-          (() => {
-            // 以中位數為基準標記離群模型（與後端穩健平均同邏輯：落在 [×0.4, ×2.6] 外視為離群、不計入合理價值）。
-            const valid = models.map((m) => m.valuation).filter((v) => v > 0).sort((a, b) => a - b);
-            const median = valid.length
-              ? valid.length % 2
-                ? valid[(valid.length - 1) / 2]
-                : (valid[valid.length / 2 - 1] + valid[valid.length / 2]) / 2
-              : 0;
-            const lo = median * 0.4;
-            const hi = median * 2.6;
-            const isOutlier = (v: number) => valid.length >= 6 && median > 0 && v > 0 && (v < lo || v > hi);
-            const outlierCount = models.filter((m) => isOutlier(m.valuation)).length;
-            return (
-              <div>
-                <div className="mb-2 text-xs font-medium text-slate-500">12 種估值模型細項（相對現價折溢價）</div>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {models.map((m, i) => {
-                    const mGap = close > 0 && m.valuation > 0 ? (m.valuation / close - 1) * 100 : null;
-                    const outlier = isOutlier(m.valuation);
-                    return (
-                      <div
-                        key={`${m.name}-${i}`}
-                        className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 ${
-                          outlier ? 'border-slate-100 bg-slate-50/60 opacity-60' : 'border-slate-100 bg-slate-50'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1">
-                            <span className="truncate text-xs font-medium text-slate-700">{m.name}</span>
-                            {outlier ? (
-                              <span className="shrink-0 rounded bg-slate-200 px-1 text-[9px] font-medium text-slate-500">離群</span>
-                            ) : null}
-                          </div>
-                          <div className="text-[10px] text-slate-400">{m.type}</div>
-                        </div>
-                        <div className="ml-2 shrink-0 text-right">
-                          <div className="text-xs font-semibold text-slate-900">{m.valuation > 0 ? m.valuation.toFixed(2) : '—'}</div>
-                          {mGap != null ? (
-                            <div className={`text-[10px] font-medium ${outlier ? 'text-slate-400' : mGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {mGap >= 0 ? '+' : ''}
-                              {mGap.toFixed(0)}%
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {outlierCount > 0 ? (
-                  <p className="mt-2 text-[11px] leading-4 text-slate-400">
-                    灰色「離群」模型（共 {outlierCount} 項）與其他模型差距過大（多為成長股的 DCF 外推或防守型估值），
-                    合理價值採穩健平均、已降低其影響。
-                  </p>
-                ) : null}
-              </div>
-            );
-          })()
-        ) : null}
-        <p className="text-xs leading-5 text-slate-400">
-          估值為模型推估（多數標的由 yfinance 財務數據動態計算、取穩健平均），非 InvestingPro 官方數據，僅供參考；
-          折價不代表短期會漲，請搭配趨勢、買賣點與長線風險一併判斷。
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PriceForecastCard({ forecast, latestClose }: { forecast: PriceForecast; latestClose: number }) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <TrendingUp className="h-4 w-4" />
-          3 / 6 / 9 / 12 個月股價預測
-        </CardTitle>
-        <CardDescription>{forecast.method}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className={`rounded-md border p-3 ${forecastVerdictBg(forecast.verdict)}`}>
-          <div className={`text-sm font-semibold ${forecastVerdictTone(forecast.verdict)}`}>現在建議：{forecast.verdict}</div>
-          <div className="mt-0.5 text-xs leading-5 text-slate-600">{forecast.verdict_reason}</div>
-          <div className="mt-1 text-xs text-slate-500">
-            現價 {latestClose.toFixed(2)} ・ 年化漂移 {forecast.annualized_drift_pct.toFixed(1)}% ・ 年化波動 {forecast.annualized_volatility_pct.toFixed(1)}%
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {forecast.horizons.map((horizon) => {
-            const up = horizon.expected_return_pct >= 0;
-            return (
-              <div key={horizon.days} className="rounded-md border border-slate-200 bg-white p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-900">{horizon.label}</span>
-                  <span className={`text-xs font-semibold ${stanceTone(horizon.stance)}`}>{horizon.stance}</span>
-                </div>
-                <div className="text-lg font-semibold text-slate-900">{horizon.base.toFixed(2)}</div>
-                <div className={`text-xs font-medium ${up ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  預期 {up ? '+' : ''}{horizon.expected_return_pct.toFixed(1)}%
-                </div>
-                <div className="mt-1 text-xs text-slate-500">區間 {horizon.low.toFixed(2)} ~ {horizon.high.toFixed(2)}</div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="text-xs leading-5 text-slate-400">
-          預測為統計推估，僅供評估買賣時機參考，非保證未來表現；實際走勢受財報、消息面與大盤影響。
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function HorizonPlanCard({ horizons }: { horizons: HorizonView[] }) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Clock3 className="h-4 w-4" />
-          短 / 中 / 長線買賣點
-        </CardTitle>
-        <CardDescription>各時間維度的進場區、停利區與停損區，搭配上方股價預測判斷買進時機。</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 md:grid-cols-3">
-        {horizons.map((horizon) => (
-          <div key={horizon.horizon} className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900">{horizon.horizon}</span>
-              <span className={`text-xs font-semibold ${actionTone(horizon.bias)}`}>{horizon.bias}</span>
-            </div>
-            <div className="grid gap-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">進場區</span>
-                <span className="font-medium text-emerald-700">{horizon.entry_zone}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">停利區</span>
-                <span className="font-medium text-slate-900">{horizon.take_profit_zone}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">停損區</span>
-                <span className="font-medium text-rose-700">{horizon.stop_zone}</span>
-              </div>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-slate-500">{horizon.summary}</p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function AgentVoteCard({ result }: { result: DetailResult }) {
-  return (
-    <Card className="mb-5 rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Agents 投票評分</CardTitle>
-        <CardDescription>參考原 repo 的 agent 架構，使用 Technical、Fundamentals、Valuation、Sentiment、Risk 的 signal 與 confidence 組合總分。</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {result.agents.map((agent) => (
-          <AgentVoteItem key={agent.key} agent={agent} />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function AgentVoteItem({ agent }: { agent: AgentView }) {
-  const edge = agent.historical_edge;
-  const hasEdge = edge && edge.sample_size >= 8;
-  const trustLabel = hasEdge
-    ? edge.weight >= 1.2
-      ? '高信任'
-      : edge.weight <= 0.8
-        ? '低信任'
-        : '中性信任'
-    : null;
-  const trustTone = hasEdge
-    ? edge.weight >= 1.2
-      ? 'bg-emerald-100 text-emerald-700'
-      : edge.weight <= 0.8
-        ? 'bg-rose-100 text-rose-700'
-        : 'bg-slate-200 text-slate-600'
-    : '';
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="text-sm font-semibold text-slate-900">{agent.name}</div>
-          {trustLabel ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${trustTone}`}>
-              {trustLabel} ×{edge!.weight.toFixed(2)}
-            </span>
-          ) : null}
-        </div>
-        <div className={`text-sm font-semibold ${actionTone(agent.signal)}`}>{agent.signal}</div>
-      </div>
-      <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-slate-900" style={{ width: `${Math.max(5, Math.min(100, agent.confidence))}%` }} />
-      </div>
-      <div className="text-xs leading-5 text-slate-600">{agent.summary}</div>
-      {hasEdge ? (
-        <div className="mt-2 text-[11px] leading-4 text-slate-500">
-          個股歷史回測：此訊號出現後 20 日勝率 {edge!.win_rate.toFixed(0)}%、平均報酬 {edge!.avg_return.toFixed(1)}%（樣本 {edge!.sample_size} 次），據此調整信任權重。
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function SignalList({
-  title,
-  items,
-  selectedSymbol,
-  onSelect,
-  gooayeMap,
-  nicolasMap,
-}: {
-  title: string;
-  items: DetailResult[];
-  selectedSymbol?: string;
-  onSelect: (item: DetailResult) => void;
-  gooayeMap?: Record<string, GooayeOpinion>;
-  nicolasMap?: Record<string, GooayeOpinion>;
-}) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2">
-        {items.map((item, index) => {
-          const op = gooayeMap?.[tickerBaseKey(item.symbol)];
-          const nop = nicolasMap?.[tickerBaseKey(item.symbol)];
-          return (
-            <button
-              key={`${item.symbol}-${index}`}
-              className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[44px_1fr_150px_70px] md:items-center ${
-                selectedSymbol === item.symbol ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white'
-              }`}
-              onClick={() => onSelect(item)}
-              type="button"
-            >
-              <div className="font-mono text-xs text-slate-500">#{index + 1}</div>
-              <div>
-                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
-                  {item.symbol}
-                  {op ? (
-                    <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
-                      <Mic className="h-2.5 w-2.5" />股癌點名
-                    </span>
-                  ) : null}
-                  {nop ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
-                      🎯尼可拉斯楊
-                    </span>
-                  ) : null}
-                  {item.valuation_gap_pct != null ? (
-                    <span
-                      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                        item.valuation_gap_pct >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                      }`}
-                      title="InvestingPro 12 模型穩健估值相對現價的折溢價"
-                    >
-                      {item.valuation_gap_pct >= 0 ? '折價' : '溢價'} {Math.abs(item.valuation_gap_pct).toFixed(0)}%
-                    </span>
-                  ) : null}
-                </div>
-                <div className="text-xs text-slate-500">{'company_name' in item ? item.company_name : finalVerdict(item)}</div>
-                {op ? <div className="mt-0.5 text-[11px] leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
-              </div>
-              <div>
-                <div className={`font-medium ${actionTone('action_label' in item ? item.action_label : item.today_action)}`}>
-                  {'action_label' in item ? item.action_label : item.today_action}
-                </div>
-                {'action_label' in item ? (
-                  <div className="text-[11px] leading-4 text-slate-400">今日時機：{item.today_action}</div>
-                ) : null}
-              </div>
-              <div className="text-slate-700">{'daily_score' in item ? item.daily_score : item.composite_score}</div>
-            </button>
-          );
-        })}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ResultList({
-  title,
-  items,
-  selectedSymbol,
-  onSelectHolding,
-}: {
-  title: string;
-  items: HoldingReviewResult[];
-  selectedSymbol?: string;
-  onSelectHolding: (item: HoldingReviewResult) => void;
-}) {
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2">
-        {items.map((item) => (
-          <button
-            key={`${item.symbol}-${item.cost_basis ?? 'na'}`}
-            className={`grid w-full gap-2 rounded-md border p-3 text-left text-sm hover:border-slate-400 md:grid-cols-[1fr_110px_90px_90px] md:items-center ${
-              selectedSymbol === item.symbol ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white'
-            }`}
-            onClick={() => onSelectHolding(item)}
-            type="button"
-          >
-            <div>
-              <div className="font-semibold text-slate-900">{item.symbol}</div>
-              <div className="text-xs text-slate-500">{item.holding_reason}</div>
-            </div>
-            <div className={`font-medium ${actionTone(item.verdict)}`}>{item.verdict}</div>
-            <div>{item.trim_ratio}</div>
-            <div>{item.pnl_pct === null ? '-' : `${item.pnl_pct.toFixed(1)}%`}</div>
-          </button>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function BacktestCard({ result }: { result: DetailResult }) {
-  if (!result.backtest) return null;
-
-  return (
-    <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">回測校正</CardTitle>
-        <CardDescription>{result.backtest.calibration_note}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <MetricCard label="樣本數" value={`${result.backtest.sample_size}`} />
-        <MetricCard label="20日勝率" value={`${safeFixed(result.backtest.win_rate_20d, 1)}%`} />
-        <MetricCard label="20日平均報酬" value={`${safeFixed(result.backtest.avg_return_20d, 2)}%`} />
-        <MetricCard label="20日下跌比例" value={`${safeFixed(result.backtest.downside_rate_20d, 1)}%`} />
-        <MetricCard label="回測可信度" value={`${result.backtest.confidence_score}`} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function MarketRegimeCard({ regime }: { regime: MarketRegime }) {
-  return (
-    <Card className="mb-5 rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">今日市場大環境</CardTitle>
-        <CardDescription>{regime.summary}</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="市場動作" value={regime.action} />
-        <MetricCard label="VIX" value={`${safeFixed(regime.vix_close, 2)} / ${regime.vix_regime}`} />
-        <MetricCard label="Fear & Greed" value={`${regime.fear_greed_score} / ${regime.fear_greed_label}`} />
-        <MetricCard label="SPY 回撤" value={`${safeFixed(regime.spy_drawdown_pct, 2)}%`} />
-        <MetricCard label="建議部位" value={regime.risk_budget} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function PriceChartCard({ result }: { result: DetailResult }) {
-  return (
-    <Card className="mb-5 rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{result.symbol} 走勢參考</CardTitle>
-        <CardDescription>最近 60 個交易日，含收盤、MA20、MA50、買點區與賣點區。</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <PriceChart chart={result.chart} buyZone={result.buy_zone} sellZone={result.sell_zone} />
-      </CardContent>
-    </Card>
-  );
-}
-
-function PriceChart({ chart, buyZone, sellZone }: { chart: ChartPoint[]; buyZone: string; sellZone: string }) {
-  if (!chart || chart.length < 2) {
-    return <div className="text-sm text-slate-500">目前沒有足夠圖表資料。</div>;
-  }
-
-  const width = 860;
-  const height = 260;
-  const padding = 18;
-  const [buyLow, buyHigh] = parseRange(buyZone);
-  const [sellLow, sellHigh] = parseRange(sellZone);
-  const values = chart.flatMap((point) => [point.close, point.ma20 ?? point.close, point.ma50 ?? point.close]).concat([buyLow, buyHigh, sellLow, sellHigh]);
-  const minValue = Math.min(...values) * 0.96;
-  const maxValue = Math.max(...values) * 1.04;
-  const toX = (index: number) => padding + (index / Math.max(chart.length - 1, 1)) * (width - padding * 2);
-  const toY = (value: number) => height - padding - ((value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
-
-  const closePath = buildPath(chart.map((point, index) => ({ x: toX(index), y: toY(point.close) })));
-  const ma20Points = chart.map((point, index) => (point.ma20 === null ? null : { x: toX(index), y: toY(point.ma20) })).filter(Boolean) as Array<{ x: number; y: number }>;
-  const ma50Points = chart.map((point, index) => (point.ma50 === null ? null : { x: toX(index), y: toY(point.ma50) })).filter(Boolean) as Array<{ x: number; y: number }>;
-
-  return (
-    <div className="space-y-2">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full rounded-md border border-slate-200 bg-white">
-        <rect x={padding} y={toY(sellHigh)} width={width - padding * 2} height={Math.max(toY(sellLow) - toY(sellHigh), 4)} fill="rgba(248,113,113,0.12)" />
-        <rect x={padding} y={toY(buyHigh)} width={width - padding * 2} height={Math.max(toY(buyLow) - toY(buyHigh), 4)} fill="rgba(34,197,94,0.12)" />
-        <path d={closePath} fill="none" stroke="#0f172a" strokeWidth="2.2" />
-        <path d={buildPath(ma20Points)} fill="none" stroke="#0284c7" strokeWidth="1.6" strokeDasharray="5 4" />
-        <path d={buildPath(ma50Points)} fill="none" stroke="#f97316" strokeWidth="1.6" strokeDasharray="4 4" />
-      </svg>
-      <div className="grid gap-2 text-xs text-slate-500 md:grid-cols-4">
-        <div>黑線：收盤價</div>
-        <div>藍線：MA20</div>
-        <div>橘線：MA50</div>
-        <div>綠區：買點 / 紅區：賣點</div>
-      </div>
-    </div>
-  );
-}
-
 function buildPath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return '';
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-}
-
-function parseRange(rangeText: string): [number, number] {
-  const [low, high] = rangeText.split('-').map((part) => Number(part.trim()));
-  return [low, high];
-}
-
-function AiMainlineBacktestPanel({ data }: { data: AiMainlineBacktestResult }) {
-  const positiveTone = (value: number) => (value >= 0 ? 'text-emerald-700' : 'text-rose-700');
-  const fmtPct = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
-  return (
-    <Card className="mb-5 rounded-lg border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <LineChart className="h-4 w-4" />
-          AI 主線長線回測結果
-        </CardTitle>
-        <CardDescription>{data.note}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="累積報酬" value={fmtPct(data.total_return_pct)} valueClassName={positiveTone(data.total_return_pct)} icon={<TrendingUp className="h-4 w-4" />} />
-          <MetricCard label="年化報酬 (CAGR)" value={fmtPct(data.cagr_pct)} valueClassName={positiveTone(data.cagr_pct)} />
-          <MetricCard label="最大回撤" value={`${data.max_drawdown_pct.toFixed(1)}%`} valueClassName="text-rose-700" icon={<ShieldAlert className="h-4 w-4" />} />
-          <MetricCard label="Sharpe" value={data.sharpe_ratio.toFixed(2)} />
-          <MetricCard label="勝率" value={`${data.win_rate.toFixed(1)}%`} />
-          <MetricCard label="交易次數" value={`${data.total_trades} 筆`} />
-          <MetricCard label="平均持有" value={`${data.avg_holding_days.toFixed(0)} 天`} icon={<Clock3 className="h-4 w-4" />} />
-          <MetricCard
-            label={`對標 ${data.benchmark_symbol}`}
-            value={`${fmtPct(data.benchmark_return_pct)} / 超額 ${fmtPct(data.excess_return_pct)}`}
-            valueClassName={positiveTone(data.excess_return_pct)}
-          />
-        </div>
-
-        <div>
-          <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-            <span>權益曲線（初始 {data.initial_capital.toLocaleString()} → 期末 {data.final_equity.toLocaleString()}）</span>
-            <span>{data.start_date} ~ {data.end_date}（{data.years} 年）</span>
-          </div>
-          <EquityCurve points={data.equity_curve} />
-        </div>
-
-        {data.layer_breakdown.length ? (
-          <div>
-            <div className="mb-2 text-sm font-semibold text-slate-900">AI 產業鏈分層貢獻</div>
-            <div className="grid gap-2">
-              {data.layer_breakdown.map((layer) => (
-                <div key={layer.layer} className="grid items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm md:grid-cols-[1fr_90px_90px_110px_90px]">
-                  <div className="font-medium text-slate-900">{layer.layer}</div>
-                  <div className="text-xs text-slate-500">{layer.trades} 筆</div>
-                  <div className="text-xs text-slate-500">勝率 {layer.win_rate.toFixed(0)}%</div>
-                  <div className={`text-xs ${positiveTone(layer.net_pnl)}`}>損益 {layer.net_pnl.toLocaleString()}</div>
-                  <div className={`text-xs font-semibold ${positiveTone(layer.contribution_pct)}`}>貢獻 {layer.contribution_pct.toFixed(0)}%</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {data.trades_log.length ? (
-          <div>
-            <div className="mb-2 text-sm font-semibold text-slate-900">近期交易紀錄</div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-                <thead>
-                  <tr className="text-slate-500">
-                    <th className="py-1.5 pr-2 font-medium">標的</th>
-                    <th className="py-1.5 pr-2 font-medium">分層</th>
-                    <th className="py-1.5 pr-2 font-medium">進場</th>
-                    <th className="py-1.5 pr-2 font-medium">出場</th>
-                    <th className="py-1.5 pr-2 font-medium">報酬</th>
-                    <th className="py-1.5 pr-2 font-medium">持有</th>
-                    <th className="py-1.5 pr-2 font-medium">結果</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...data.trades_log].reverse().map((trade, index) => (
-                    <tr key={`${trade.symbol}-${trade.exit_date}-${index}`} className="border-t border-slate-100">
-                      <td className="py-1.5 pr-2 font-semibold text-slate-900">{trade.symbol}</td>
-                      <td className="py-1.5 pr-2 text-slate-500">{trade.layer ?? '-'}</td>
-                      <td className="py-1.5 pr-2 text-slate-600">{trade.entry_date}</td>
-                      <td className="py-1.5 pr-2 text-slate-600">{trade.exit_date}</td>
-                      <td className={`py-1.5 pr-2 font-medium ${positiveTone(trade.return_pct)}`}>{fmtPct(trade.return_pct)}</td>
-                      <td className="py-1.5 pr-2 text-slate-600">{trade.days_held} 天</td>
-                      <td className="py-1.5 pr-2 text-slate-600">{trade.outcome}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function EquityCurve({ points }: { points: AiMainlineBacktestResult['equity_curve'] }) {
-  if (!points || points.length < 2) {
-    return <div className="text-sm text-slate-500">沒有足夠的權益曲線資料。</div>;
-  }
-  const width = 860;
-  const height = 220;
-  const padding = 18;
-  const values = points.map((p) => p.equity);
-  const minValue = Math.min(...values) * 0.98;
-  const maxValue = Math.max(...values) * 1.02;
-  const toX = (index: number) => padding + (index / Math.max(points.length - 1, 1)) * (width - padding * 2);
-  const toY = (value: number) => height - padding - ((value - minValue) / Math.max(maxValue - minValue, 1)) * (height - padding * 2);
-  const path = buildPath(points.map((point, index) => ({ x: toX(index), y: toY(point.equity) })));
-  const baselineY = toY(points[0].equity);
-  const lastUp = points[points.length - 1].equity >= points[0].equity;
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full rounded-md border border-slate-200 bg-white">
-      <line x1={padding} y1={baselineY} x2={width - padding} y2={baselineY} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
-      <path d={path} fill="none" stroke={lastUp ? '#059669' : '#e11d48'} strokeWidth="2.2" />
-    </svg>
-  );
 }
 
 function MetricCard({ label, value, icon, valueClassName }: { label: string; value: string; icon?: ReactNode; valueClassName?: string }) {
@@ -1550,15 +320,11 @@ function toneOf(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return 'text-slate-900';
   return value > 0 ? 'text-emerald-700' : value < 0 ? 'text-rose-700' : 'text-slate-900';
 }
-function paperTrimNum(text?: string): number {
-  const n = parseFloat(String(text ?? '').replace('%', ''));
-  return Number.isNaN(n) ? 0 : n;
-}
-function verdictBadgeClass(rv: HoldingReviewResult): string {
-  const n = paperTrimNum(rv.trim_ratio);
-  if (n >= 100 || /賣出|停損|了結/.test(rv.verdict)) return 'border-rose-200 bg-rose-100 text-rose-700';
-  if (n > 0) return 'border-amber-200 bg-amber-100 text-amber-700';
-  return 'border-emerald-200 bg-emerald-100 text-emerald-700';
+function verdictBadgeClass(rv: EvaluatedHolding): string {
+  if (rv.action === '賣出換股') return 'border-rose-200 bg-rose-100 text-rose-700';
+  if (rv.action === '減碼') return 'border-amber-200 bg-amber-100 text-amber-700';
+  if (rv.action === '加碼') return 'border-emerald-200 bg-emerald-100 text-emerald-700';
+  return 'border-sky-200 bg-sky-50 text-sky-700';
 }
 function blankPaperAccount(): PaperAccount {
   return {
@@ -1658,27 +424,16 @@ function rebuildPaperAccount(trades: PaperTrade[], startCapital: number): Pick<P
   return { cash, positions, realized, trades: rebuilt };
 }
 
-function PortfolioTab({
-  recommendations,
-  useAiCommittee,
-  committeeModel,
-  gooayeMap,
-  nicolasMap,
-}: {
-  recommendations: SP500DailyPick[];
-  useAiCommittee: boolean;
-  committeeModel: string;
-  gooayeMap: Record<string, GooayeOpinion>;
-  nicolasMap?: Record<string, GooayeOpinion>;
-}) {
+function PortfolioTab() {
   const [account, setAccount] = useState<PaperAccount>(() => loadPaperAccount());
   const accountRef = useRef(account);
   const [quotes, setQuotes] = useState<Record<string, number>>({});
   const [quoteMeta, setQuoteMeta] = useState<Record<string, { name?: string; currency?: string }>>({});
-  const [quotesOk, setQuotesOk] = useState(false);
+  const [, setQuotesOk] = useState(false);
   const [quoteMsg, setQuoteMsg] = useState('');
   const [regime, setRegime] = useState<MarketRegimeSuggestion | null>(null);
-  const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
+  const [reviews, setReviews] = useState<Record<string, EvaluatedHolding>>({});
+  const [stratRows, setStratRows] = useState<(RankRow & { market: 'us' | 'tw' })[]>([]);
   const [reviewMsg, setReviewMsg] = useState('');
   const [reviewing, setReviewing] = useState(false);
   const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
@@ -1773,24 +528,33 @@ function PortfolioTab({
     }
     setReviewing(true);
     try {
-      const res = await reviewHoldings({
-        holdings: tickers.map((t) => ({ ticker: t, cost_basis: acc.positions[t].avgCost, shares: acc.positions[t].shares })),
-        period: '2y',
-        useAiCommittee,
-        committeeModel,
-      });
-      const map: Record<string, HoldingReviewResult> = {};
-      res.forEach((r) => {
+      const res = await evaluateHoldings(
+        tickers.map((t) => ({ ticker: t, cost: acc.positions[t].avgCost, shares: acc.positions[t].shares })),
+      );
+      const map: Record<string, EvaluatedHolding> = {};
+      res.holdings.forEach((r) => {
         if (r && r.symbol) map[paperBaseKey(r.symbol)] = r;
       });
       setReviews(map);
       setReviewMsg(`策略評估更新：${paperToday()}`);
     } catch {
-      setReviewMsg('策略評估暫時無法取得（需後端 /simple-signals）。');
+      setReviewMsg('策略評估暫時無法取得（需後端 /strategy）。');
     } finally {
       setReviewing(false);
     }
-  }, [useAiCommittee, committeeModel]);
+  }, []);
+
+  useEffect(() => {
+    fetchStrategyReport()
+      .then((rep) =>
+        setStratRows(
+          (['us', 'tw'] as const).flatMap((m) =>
+            (rep.markets[m]?.rows ?? []).slice(0, rep.markets[m]?.top_n ?? 10).map((r) => ({ ...r, market: m })),
+          ),
+        ),
+      )
+      .catch(() => setStratRows([]));
+  }, []);
 
   useEffect(() => {
     refreshQuotes();
@@ -1952,10 +716,10 @@ function PortfolioTab({
 
   const sellSignals = Object.keys(account.positions)
     .map((t) => ({ ticker: t, rv: reviews[paperBaseKey(t)] }))
-    .filter((x): x is { ticker: string; rv: HoldingReviewResult } => Boolean(x.rv) && paperTrimNum(x.rv!.trim_ratio) > 0);
+    .filter((x): x is { ticker: string; rv: EvaluatedHolding } => Boolean(x.rv) && ['賣出換股', '減碼'].includes(x.rv!.action));
 
   const positionTickers = Object.keys(account.positions);
-  const recList = recommendations.slice(0, 20);
+  const recList = stratRows;
   const fxTwdPerUsd = quotes['TWD=X']; // 1 美金 = ? 台幣
   const formCurrency = paperCurrencyOf(fTicker || 'US');
 
@@ -1967,7 +731,7 @@ function PortfolioTab({
           <div>
             <div className="text-sm font-semibold text-slate-900">跟單對帳本</div>
             <div className="text-xs text-slate-500">
-              起始本金 {paperUsd(account.startCapital)} ・ 開帳日 {account.startDate} ・ 依推薦自行操作，驗證能否贏過大盤(SPY)。資料只存在本機瀏覽器。
+              起始本金 {paperUsd(account.startCapital)} ・ 開帳日 {account.startDate} ・ 依策略名單自行操作，驗證能否贏過大盤(SPY)。資料只存在本機瀏覽器。
               {fxTwdPerUsd ? <>　匯率 1 USD ≈ {fxTwdPerUsd.toFixed(2)} TWD（台股自動換算為美金）。</> : null}
             </div>
           </div>
@@ -1987,7 +751,7 @@ function PortfolioTab({
           <div className="mt-1.5 space-y-1 text-xs">
             {sellSignals.map((s) => (
               <div key={s.ticker}>
-                <span className="font-semibold">{s.ticker}</span>：{s.rv.verdict}・建議出場 {s.rv.trim_ratio}・強度 {s.rv.urgency}
+                <span className="font-semibold">{s.ticker}</span>：{s.rv.action}・排名 {s.rv.rank ?? '—'}・{s.rv.reason}
               </div>
             ))}
           </div>
@@ -2112,7 +876,7 @@ function PortfolioTab({
               <Input list="paper-rec-tickers" value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / 2330" className="h-10 bg-white" />
               <datalist id="paper-rec-tickers">
                 {recList.map((r) => (
-                  <option key={r.symbol} value={r.symbol} label={r.company_name && r.company_name !== r.symbol ? r.company_name : undefined} />
+                  <option key={r.symbol} value={r.symbol} label={r.name || undefined} />
                 ))}
               </datalist>
             </label>
@@ -2146,8 +910,8 @@ function PortfolioTab({
 
       <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">今日推薦（點「買入」自動帶入表單）</CardTitle>
-          <CardDescription>來自「每日掃描」分頁的結果。請先到該分頁掃出 Top 50，這裡才會帶出可跟單的清單。</CardDescription>
+          <CardTitle className="text-base">策略買進名單（點「買入」自動帶入表單）</CardTitle>
+          <CardDescription>來自「策略精選」：AI 科技股池中動能排名在買進區的標的（每月初調整）。</CardDescription>
         </CardHeader>
         <CardContent>
           {recList.length ? (
@@ -2156,8 +920,9 @@ function PortfolioTab({
                 <thead>
                   <tr className="text-slate-500">
                     <th className="py-1.5 pr-2 font-medium">標的</th>
-                    <th className="py-1.5 pr-2 font-medium">每日分數</th>
-                    <th className="py-1.5 pr-2 font-medium">建議</th>
+                    <th className="py-1.5 pr-2 font-medium">市場</th>
+                    <th className="py-1.5 pr-2 font-medium">排名</th>
+                    <th className="py-1.5 pr-2 font-medium">近 6 月</th>
                     <th className="py-1.5 pr-2 font-medium">最新收盤</th>
                     <th className="py-1.5 pr-2 font-medium" />
                   </tr>
@@ -2165,39 +930,18 @@ function PortfolioTab({
                 <tbody>
                   {recList.map((r) => {
                     const ccy = paperCurrencyOf(r.symbol);
-                    const op = gooayeMap[tickerBaseKey(r.symbol)];
-                    const nop = nicolasMap?.[tickerBaseKey(r.symbol)];
                     return (
                       <tr key={r.symbol} className="border-t border-slate-100">
                         <td className="py-1.5 pr-2 font-semibold text-slate-900">
-                          <div className="flex items-center gap-1.5">
-                            {r.symbol}
-                            {r.company_name && r.company_name !== r.symbol ? (
-                              <span className="font-normal text-slate-500">{r.company_name}</span>
-                            ) : null}
-                            {op ? (
-                              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
-                                <Mic className="h-2.5 w-2.5" />股癌點名
-                              </span>
-                            ) : null}
-                            {nop ? (
-                              <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
-                                🎯尼可拉斯楊
-                              </span>
-                            ) : null}
-                          </div>
-                          {op ? <div className="mt-0.5 max-w-[260px] text-[11px] font-normal leading-4 text-slate-400">🎙️ {op.core_logic}</div> : null}
+                          {r.symbol}
+                          {r.name ? <span className="ml-1 font-normal text-slate-500">{r.name}</span> : null}
                         </td>
-                        <td className="py-1.5 pr-2 text-slate-700">{r.daily_score}</td>
-                        <td className={`py-1.5 pr-2 font-medium ${actionTone(r.action_label ?? r.today_action)}`}>
-                          <div>{r.action_label ?? r.today_action}</div>
-                          {r.action_label && r.today_action ? (
-                            <div className="text-[11px] font-normal leading-4 text-slate-400">今日時機：{r.today_action}</div>
-                          ) : null}
-                        </td>
-                        <td className="py-1.5 pr-2 text-slate-700">{paperNative(r.latest_close, ccy)}</td>
+                        <td className="py-1.5 pr-2 text-slate-600">{r.market === 'us' ? '美股' : '台股'}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{r.rank}</td>
+                        <td className={`py-1.5 pr-2 ${toneOf(r.ret_6m_pct)}`}>{paperPct(r.ret_6m_pct)}</td>
+                        <td className="py-1.5 pr-2 text-slate-700">{paperNative(r.close, ccy)}</td>
                         <td className="py-1.5 pr-2">
-                          <Button type="button" onClick={() => prefillBuy(r.symbol, r.latest_close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">
+                          <Button type="button" onClick={() => prefillBuy(r.symbol, r.close)} className="h-8 bg-emerald-600 px-3 text-xs text-white hover:bg-emerald-500">
                             買入
                           </Button>
                         </td>
@@ -2208,7 +952,7 @@ function PortfolioTab({
               </table>
             </div>
           ) : (
-            <div className="text-sm text-slate-500">尚無推薦。請先到「每日掃描」分頁按「掃描 Top 50」（可切美股 / 台股）。</div>
+            <div className="text-sm text-slate-500">策略名單讀取中（或後端暫時無法連線）。</div>
           )}
         </CardContent>
       </Card>
@@ -2273,8 +1017,8 @@ function PortfolioTab({
                           <td className="py-1.5 pr-2">
                             {rv ? (
                               <span className="inline-flex items-center gap-1">
-                                <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
-                                <span className="text-xs text-slate-500">出{rv.trim_ratio}·強度{rv.urgency}</span>
+                                <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${verdictBadgeClass(rv)}`}>{rv.action}</span>
+                                <span className="text-xs text-slate-500">排名 {rv.rank ?? '—'}</span>
                               </span>
                             ) : (
                               <span className="text-xs text-slate-400">—</span>
@@ -2288,17 +1032,10 @@ function PortfolioTab({
                                 <div className="space-y-1">
                                   <div>
                                     <span className="font-semibold">策略結論：</span>
-                                    <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
-                                    <span className="ml-1">強度 {rv.urgency}・建議出場 {rv.trim_ratio}</span>
+                                    <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${verdictBadgeClass(rv)}`}>{rv.action}</span>
+                                    <span className="ml-1">動能排名 {rv.rank ?? '—'}・近 6 月 {rv.ret_6m_pct != null ? paperPct(rv.ret_6m_pct) : '—'}</span>
                                   </div>
-                                  {rv.holding_reason ? <div>{rv.holding_reason}</div> : null}
-                                  <div>
-                                    <span className="font-semibold">操作區間：</span>趨勢 {rv.signal?.bias ?? '—'}　買進區 {rv.signal?.buy_zone ?? '—'}　賣出區 {rv.signal?.sell_zone ?? '—'}　停損 {rv.protective_stop || rv.signal?.stop_loss || '—'}
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">今日動作：</span>買進 {rv.signal?.today_action ?? '—'}
-                                    {rv.signal?.buy_strength ? `（強度 ${rv.signal.buy_strength}）` : ''}　賣出 {rv.signal?.today_exit_action ?? '—'}
-                                  </div>
+                                  <div>{rv.reason}</div>
                                 </div>
                               ) : (
                                 <div className="text-slate-400">尚未評估。點上方「🔍 重新評估持股」取得策略訊號。</div>
@@ -2426,312 +1163,6 @@ function PaperEquityChart({ history, startCapital }: { history: PaperEquityPoint
         <div>橘線：SPY 買進持有</div>
         <div>灰虛線：起始本金 {paperUsd(startCapital)}</div>
       </div>
-    </div>
-  );
-}
-
-/* ===================== 我的真實持股健檢（結構化、記憶、每日自動） ===================== */
-
-const REAL_HOLDINGS_V2_KEY = 'real_holdings_v2';
-type RealHolding = { ticker: string; cost: number; shares: number };
-
-function parseHoldingsLines(text: string): RealHolding[] {
-  return text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const p = l.split(/[\s,，、]+/).filter(Boolean);
-      return { ticker: (p[0] || '').toUpperCase(), cost: Number(p[1]) || 0, shares: Number(p[2]) || 0 };
-    })
-    .filter((h) => h.ticker);
-}
-function loadRealHoldingsV2(): { holdings: RealHolding[]; lastReviewed: string } {
-  try {
-    const raw = localStorage.getItem(REAL_HOLDINGS_V2_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      if (Array.isArray(d.holdings)) return { holdings: d.holdings, lastReviewed: d.lastReviewed ?? '' };
-    }
-    // 從舊版（v1 文字框）遷移
-    const v1 = localStorage.getItem('real_holdings_v1');
-    if (v1) {
-      const d = JSON.parse(v1);
-      return { holdings: parseHoldingsLines(d.text || ''), lastReviewed: d.lastReviewed ?? '' };
-    }
-  } catch {
-    /* ignore */
-  }
-  return { holdings: [], lastReviewed: '' };
-}
-function saveRealHoldingsV2(holdings: RealHolding[], lastReviewed: string): void {
-  try {
-    localStorage.setItem(REAL_HOLDINGS_V2_KEY, JSON.stringify({ holdings, lastReviewed }));
-  } catch {
-    /* ignore */
-  }
-}
-
-function HoldingsManager({
-  useAiCommittee,
-  committeeModel,
-  gooayeMap,
-  nicolasMap,
-}: {
-  useAiCommittee: boolean;
-  committeeModel: string;
-  gooayeMap: Record<string, GooayeOpinion>;
-  nicolasMap?: Record<string, GooayeOpinion>;
-}) {
-  const initial = loadRealHoldingsV2();
-  const [holdings, setHoldings] = useState<RealHolding[]>(initial.holdings);
-  const [lastReviewed, setLastReviewed] = useState(initial.lastReviewed);
-  const holdingsRef = useRef(holdings);
-  const [reviews, setReviews] = useState<Record<string, HoldingReviewResult>>({});
-  const [names, setNames] = useState<Record<string, string>>({});
-  const [reviewing, setReviewing] = useState(false);
-  const [error, setError] = useState('');
-  const [openRows, setOpenRows] = useState<Record<string, boolean>>({});
-  const [fTicker, setFTicker] = useState('');
-  const [fCost, setFCost] = useState('');
-  const [fShares, setFShares] = useState('');
-
-  useEffect(() => {
-    holdingsRef.current = holdings;
-    saveRealHoldingsV2(holdings, lastReviewed);
-  }, [holdings, lastReviewed]);
-
-  const runReview = useCallback(async () => {
-    const list = holdingsRef.current;
-    if (!list.length) {
-      setReviews({});
-      return;
-    }
-    setReviewing(true);
-    setError('');
-    try {
-      const res = await reviewHoldings({
-        holdings: list.map((h) => ({ ticker: h.ticker, cost_basis: h.cost, shares: h.shares })),
-        useAiCommittee,
-        committeeModel,
-      });
-      const map: Record<string, HoldingReviewResult> = {};
-      res.forEach((r) => {
-        if (r && r.symbol) map[tickerBaseKey(r.symbol)] = r;
-      });
-      setReviews(map);
-      setLastReviewed(localDateStr());
-      try {
-        const q = await fetchQuotes(list.map((h) => h.ticker));
-        const nm: Record<string, string> = {};
-        q.forEach((it) => {
-          if (it.ok && it.name && it.name !== it.symbol) nm[tickerBaseKey(it.symbol)] = it.name;
-        });
-        setNames(nm);
-      } catch {
-        /* 名稱非必要 */
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '持股健檢失敗。');
-    } finally {
-      setReviewing(false);
-    }
-  }, [useAiCommittee, committeeModel]);
-
-  useEffect(() => {
-    // 每天首次開啟、已有持股時自動健檢一次
-    if (holdingsRef.current.length && initial.lastReviewed !== localDateStr()) runReview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function addHolding() {
-    const t = fTicker.trim().toUpperCase();
-    const c = parseFloat(fCost);
-    const s = parseFloat(fShares);
-    setError('');
-    if (!t) return setError('請輸入代碼。');
-    if (!(c > 0)) return setError('平均成本需大於 0。');
-    if (!(s > 0)) return setError('股數需大於 0。');
-    const next = [...holdingsRef.current.filter((h) => h.ticker !== t), { ticker: t, cost: c, shares: s }];
-    holdingsRef.current = next;
-    setHoldings(next);
-    setFTicker('');
-    setFCost('');
-    setFShares('');
-    runReview();
-  }
-  function removeHolding(t: string) {
-    const next = holdingsRef.current.filter((h) => h.ticker !== t);
-    holdingsRef.current = next;
-    setHoldings(next);
-    runReview();
-  }
-
-  const sellSignals = holdings
-    .map((h) => ({ ticker: h.ticker, rv: reviews[tickerBaseKey(h.ticker)] }))
-    .filter((x): x is { ticker: string; rv: HoldingReviewResult } => Boolean(x.rv) && paperTrimNum(x.rv!.trim_ratio) > 0);
-
-  return (
-    <div className="space-y-5">
-      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BriefcaseBusiness className="h-4 w-4" />
-                我的真實持股健檢
-              </CardTitle>
-              <CardDescription>新增持股後系統會記住；每天首次開啟此頁自動健檢，依波段策略判斷續抱／減碼／賣出，不用每次重 key。</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">{lastReviewed ? `上次健檢：${lastReviewed}` : '尚未健檢'}</span>
-              <Button type="button" onClick={() => runReview()} disabled={reviewing || !holdings.length} className="h-9 border border-slate-200 bg-white text-slate-700 hover:border-slate-400">
-                {reviewing ? '健檢中…' : '🔍 重新健檢'}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-[1fr_140px_120px_auto] md:items-end">
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-slate-600">代碼（美股 AAPL／台股 2330）</span>
-              <Input value={fTicker} onChange={(e) => setFTicker(e.target.value)} placeholder="AAPL / 2330" className="h-10 bg-white" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-slate-600">平均成本（原幣）</span>
-              <Input type="number" min="0" step="any" value={fCost} onChange={(e) => setFCost(e.target.value)} className="h-10 bg-white" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-slate-600">股數</span>
-              <Input type="number" min="0" step="any" value={fShares} onChange={(e) => setFShares(e.target.value)} className="h-10 bg-white" />
-            </label>
-            <Button type="button" onClick={addHolding} className="h-10 bg-slate-950 text-white hover:bg-slate-800 md:w-28">
-              新增持股
-            </Button>
-          </div>
-          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-        </CardContent>
-      </Card>
-
-      {sellSignals.length ? (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
-          <div className="flex items-center gap-2 font-semibold">
-            <AlertTriangle className="h-4 w-4" />
-            策略對你的真實持股發出減碼／賣出訊號（請自行判斷是否執行）
-          </div>
-          <div className="mt-1.5 space-y-1 text-xs">
-            {sellSignals.map((s) => (
-              <div key={s.ticker}>
-                <span className="font-semibold">{s.ticker}</span>：{s.rv.verdict}・建議出場 {s.rv.trim_ratio}・強度 {s.rv.urgency}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <Card className="rounded-lg border-slate-200 bg-white shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">持股健檢結果</CardTitle>
-          <CardDescription>點一列看策略理由與操作區間。報酬率以你的成本對最新收盤計算（原幣）。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {holdings.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
-                <thead>
-                  <tr className="text-slate-500">
-                    <th className="py-1.5 pr-2 font-medium">標的</th>
-                    <th className="py-1.5 pr-2 font-medium">股數</th>
-                    <th className="py-1.5 pr-2 font-medium">成本(原幣)</th>
-                    <th className="py-1.5 pr-2 font-medium">現價(原幣)</th>
-                    <th className="py-1.5 pr-2 font-medium">報酬率</th>
-                    <th className="py-1.5 pr-2 font-medium">策略訊號</th>
-                    <th className="py-1.5 pr-2 font-medium" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {holdings.map((h) => {
-                    const key = tickerBaseKey(h.ticker);
-                    const rv = reviews[key];
-                    const ccy = paperCurrencyOf(h.ticker);
-                    const name = names[key];
-                    const cur = rv ? rv.latest_close : null;
-                    const pnl = rv ? rv.pnl_pct : null;
-                    const op = gooayeMap[key];
-                    const nop = nicolasMap?.[key];
-                    const open = openRows[h.ticker];
-                    return (
-                      <Fragment key={h.ticker}>
-                        <tr className="cursor-pointer border-t border-slate-100 hover:bg-slate-50" onClick={() => setOpenRows((prev) => ({ ...prev, [h.ticker]: !prev[h.ticker] }))}>
-                          <td className="py-1.5 pr-2 font-semibold text-slate-900">
-                            <div className="flex items-center gap-1.5">
-                              {h.ticker}
-                              {name ? <span className="font-normal text-slate-500">{name}</span> : null}
-                              {op ? (
-                                <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${gooayeStanceTone(op.sentiment_label)}`} title={op.core_logic}>
-                                  <Mic className="h-2.5 w-2.5" />股癌點名
-                                </span>
-                              ) : null}
-                              {nop ? (
-                                <span className="inline-flex items-center gap-0.5 rounded-full border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700" title={nop.core_logic}>
-                                  🎯尼可拉斯楊
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="py-1.5 pr-2 text-slate-700">{h.shares}</td>
-                          <td className="py-1.5 pr-2 text-slate-700">{paperNative(h.cost, ccy)}</td>
-                          <td className="py-1.5 pr-2 text-slate-700">{cur != null ? paperNative(cur, ccy) : '-'}</td>
-                          <td className={`py-1.5 pr-2 font-medium ${toneOf(pnl)}`}>{pnl != null ? paperPct(pnl) : '-'}</td>
-                          <td className="py-1.5 pr-2">
-                            {rv ? (
-                              <span className="inline-flex items-center gap-1">
-                                <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
-                                <span className="text-xs text-slate-500">出{rv.trim_ratio}·強度{rv.urgency}</span>
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">{reviewing ? '健檢中…' : '—'}</span>
-                            )}
-                          </td>
-                          <td className="py-1.5 pr-2">
-                            <button type="button" onClick={(e) => { e.stopPropagation(); removeHolding(h.ticker); }} className="text-rose-600 hover:text-rose-700" title="刪除持股">
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                        {open ? (
-                          <tr className="border-t border-slate-100 bg-slate-50">
-                            <td colSpan={7} className="px-2 py-3 text-xs leading-5 text-slate-600">
-                              {rv ? (
-                                <div className="space-y-1">
-                                  <div>
-                                    <span className="font-semibold">策略結論：</span>
-                                    <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${verdictBadgeClass(rv)}`}>{rv.verdict}</span>
-                                    <span className="ml-1">強度 {rv.urgency}・建議出場 {rv.trim_ratio}</span>
-                                  </div>
-                                  {rv.holding_reason ? <div>{rv.holding_reason}</div> : null}
-                                  <div>
-                                    <span className="font-semibold">操作區間：</span>趨勢 {rv.signal?.bias ?? '—'}　買進區 {rv.signal?.buy_zone ?? '—'}　賣出區 {rv.signal?.sell_zone ?? '—'}　停損 {rv.protective_stop || rv.signal?.stop_loss || '—'}
-                                  </div>
-                                  {op ? <div className="text-slate-500">🎙️ 股癌：{op.core_logic}</div> : null}
-                                </div>
-                              ) : (
-                                <div className="text-slate-400">尚未健檢，點「🔍 重新健檢」。</div>
-                              )}
-                            </td>
-                          </tr>
-                        ) : null}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500">尚無持股。用上方表單新增（例：AAPL 185 20、台股 2330 785 1），系統會記住並每天自動健檢。</div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

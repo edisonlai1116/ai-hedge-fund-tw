@@ -3,353 +3,102 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>每日最該買 · AI Hedge Fund (股癌輿情版)</title>
+<title>AI 科技股動能策略 · 本月名單</title>
 <style>
   :root{
     --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2a3340;
     --text:#e6edf3; --muted:#8b97a5; --accent:#58a6ff;
-    --bull:#2ea043; --bull-bg:#10311a; --bear:#f85149; --bear-bg:#3a1414;
-    --neutral:#9e6a03; --neutral-bg:#2e2410;
+    --bull:#2ea043; --bull-bg:#10311a; --bear:#f85149; --bear-bg:#3a1414; --hold:#58a6ff; --hold-bg:#0f2540;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);
+  body{margin:0 auto;background:var(--bg);color:var(--text);
     font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
-    line-height:1.5;padding:16px;max-width:960px;margin:0 auto}
+    line-height:1.5;padding:16px;max-width:960px}
   h1{font-size:1.35rem;margin:.2em 0}
   a{color:var(--accent)}
   .muted{color:var(--muted);font-size:.85rem}
-  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600;border:1px solid var(--border)}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin:12px 0}
   .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .spacer{flex:1}
-  .pill-bull{color:var(--bull);background:var(--bull-bg);border-color:#1d5}
-  .pill-bear{color:var(--bear);background:var(--bear-bg);border-color:#a33}
-  .pill-neutral{color:#e3b341;background:var(--neutral-bg);border-color:#7a5}
-  .score{font-weight:700;font-size:1.05rem}
+  .tabs button{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer}
+  .tabs button.on{background:var(--accent);color:#0d1117;border-color:var(--accent);font-weight:700}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600}
+  .buy{color:var(--bull);background:var(--bull-bg)} .hold{color:var(--hold);background:var(--hold-bg)} .fire{color:#e3b341;background:#2e2410}
   table{width:100%;border-collapse:collapse;font-size:.9rem}
-  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
-  tr.pick{cursor:pointer}
-  tr.pick:hover{background:var(--panel2)}
-  .detail{display:none;background:var(--panel2)}
-  .detail.open{display:table-row}
-  .detail td{font-size:.85rem;color:#cdd6e0}
-  .tk{font-weight:700}
-  .tags .badge{margin-left:6px}
-  .bar{height:7px;border-radius:4px;background:#222b36;overflow:hidden;min-width:64px}
-  .bar > i{display:block;height:100%}
-  .hl{font-size:.8rem;color:var(--muted);margin:2px 0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
-  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px}
-  .stat .v{font-size:1.25rem;font-weight:700}
-  .disclaimer{font-size:.78rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:10px;margin-top:14px}
-  code{background:#0b1020;padding:1px 5px;border-radius:5px}
-  .filt{cursor:pointer;user-select:none}
-  .filt.on{background:var(--accent);color:#001;border-color:var(--accent)}
-  @media(max-width:560px){ th.hide-sm,td.hide-sm{display:none} h1{font-size:1.15rem} }
+  th,td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--border)}
+  th:nth-child(2),td:nth-child(2){text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:.78rem}
+  .up{color:var(--bull)} .down{color:var(--bear)}
+  .wrap{overflow-x:auto}
+  @media (max-width:600px){ .hide-sm{display:none} }
 </style>
 </head>
 <body>
-  <div class="row">
-    <h1>📈 每日台美股 Top 50 最值得買</h1>
-    <span class="spacer"></span>
-    <a id="query-link" href="/" style="font-size:.85rem">🔍 查個股</a>
-    <a href="history.html" style="font-size:.85rem">📊 歷史走勢</a>
-  </div>
-  <div class="muted" id="mode" style="margin-top:2px"></div>
-  <div class="muted" id="updated">載入中…</div>
+  <h1>AI 科技股動能策略 · 本月名單</h1>
+  <div class="muted" id="meta">讀取中…</div>
 
-  <div class="panel" id="macro-panel">
+  <div class="panel">
     <div class="row">
-      <strong>🌍 市場輿情（總經/地緣）</strong>
+      <div class="tabs row" id="tabs">
+        <button data-m="us" class="on">美股</button>
+        <button data-m="tw">台股</button>
+      </div>
       <span class="spacer"></span>
-      <span class="badge" id="macro-label">—</span>
-      <span class="score" id="macro-score">—</span>
+      <span class="muted" id="rule"></span>
     </div>
-    <div class="bar" style="margin:8px 0"><i id="macro-bar"></i></div>
-    <div class="hl" id="macro-heads"></div>
-  </div>
-
-  <div class="panel" id="gooaye-panel">
-    <div class="row">
-      <strong>🎙️ 股癌 Podcast 追蹤</strong>
-      <span class="spacer"></span>
-      <span class="badge" id="gooaye-state">—</span>
-    </div>
-    <div class="hl" id="gooaye-ep"></div>
-  </div>
-
-  <div class="panel" id="ign-panel" style="display:none">
-    <div class="row">
-      <strong>🔥 點火雷達 · 爆量長紅續航買點</strong>
-      <span class="spacer"></span>
-      <span class="badge pill-neutral" id="ign-count">—</span>
-    </div>
-    <div class="muted" style="margin:4px 0">近 3 日出現單日 +5% 以上、量 1.3 倍均量以上的長紅，且仍守住漲幅。回測顯示點火後 1~3 個月平均跑贏同族群；停損設點火日低點。點一列看細節。</div>
-    <table>
-      <thead><tr>
-        <th>標的</th><th>點火</th><th>今日操作</th><th class="hide-sm">進場區</th><th>買進分數</th>
-      </tr></thead>
-      <tbody id="ign-body"></tbody>
-    </table>
-  </div>
-
-  <div class="panel" id="dip-panel" style="display:none">
-    <div class="row">
-      <strong>📉 錯殺雷達 · 優質股大跌承接機會</strong>
-      <span class="spacer"></span>
-      <span class="badge pill-neutral" id="dip-count">—</span>
-    </div>
-    <div class="muted" style="margin:4px 0">AI 主線／權值優質股出現超跌（距 60 日高點 -8% 或 RSI &lt; 42）時獨立列出——大跌時分數排序會被動能拖低，這裡保證看得到「跌出來的機會」。點一列看細節。</div>
-    <table id="dips">
-      <thead><tr>
-        <th>標的</th><th>回檔原因</th><th>今日操作</th><th class="hide-sm">承接區</th><th>買進分數</th>
-      </tr></thead>
-      <tbody id="dips-body"></tbody>
-    </table>
   </div>
 
   <div class="panel">
-    <div class="row"><strong>🏆 每日最該買排序</strong>
-      <span class="spacer"></span>
-      <span class="filt badge" data-m="all" onclick="setFilter('all')">全部</span>
-      <span class="filt badge" data-m="tw" onclick="setFilter('tw')">台股</span>
-      <span class="filt badge" data-m="us" onclick="setFilter('us')">美股</span>
-    </div>
-    <div class="muted" style="margin:4px 0">點一列看股癌論述</div>
-    <table id="picks">
-      <thead><tr>
-        <th>#</th><th>標的</th><th>買進分數</th><th>建議</th>
-        <th class="hide-sm">技術面</th><th>籌碼/法人</th><th>股癌共識</th><th class="hide-sm">新聞</th>
-      </tr></thead>
-      <tbody id="picks-body"><tr><td colspan="8" class="muted">載入中…</td></tr></tbody>
-    </table>
+    <strong id="buy-title">買進區</strong>
+    <div class="wrap"><table><thead><tr>
+      <th>排名</th><th>標的</th><th>現價</th><th>近 6 月</th><th class="hide-sm">近 1 月</th><th class="hide-sm">年化波動</th><th>分數</th>
+    </tr></thead><tbody id="buy"></tbody></table></div>
   </div>
 
-  <div class="disclaimer" id="disclaimer"></div>
+  <div class="panel">
+    <strong id="hold-title">續抱區</strong>
+    <div class="muted">已持有可續抱、不新買；跌出此區才在月初賣出換股。</div>
+    <div class="wrap"><table><thead><tr>
+      <th>排名</th><th>標的</th><th>現價</th><th>近 6 月</th><th class="hide-sm">近 1 月</th><th class="hide-sm">年化波動</th><th>分數</th>
+    </tr></thead><tbody id="hold"></tbody></table></div>
+  </div>
+
+  <p class="muted">
+    完整功能（我的持股提醒、個股查詢、回測對標 VOO／0050）請用 <a href="/">儀表板主頁</a>。
+    規則化訊號，回測有倖存者偏差，非投資建議。
+  </p>
 
 <script>
-const sigClass = s => s>=65 ? "pill-bull" : (s<45 ? "pill-bear" : "pill-neutral");
-const barColor = s => s>=65 ? "var(--bull)" : (s<45 ? "var(--bear)" : "#e3b341");
-const recClass = r => /買進|偏多/.test(r) ? "pill-bull" : (/賣出|減碼|避險/.test(r) ? "pill-bear" : "pill-neutral");
-const esc = t => (t==null?"":String(t)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-// GitHub Pages 是靜態站、沒有查個股後端 → 隱藏「查個股」連結（避免指向 / 而 404）。
-if(location.hostname.endsWith("github.io")){ const ql=document.getElementById("query-link"); if(ql) ql.style.display="none"; }
-
-function bar(score){ return `<div class="bar"><i style="width:${Math.max(4,Math.min(100,score))}%;background:${barColor(score)}"></i></div>`; }
-
-const stanceCls = s => /看多|偏多|多|bull|買/i.test(s||"") ? "pill-bull" : (/看空|偏空|空|bear|賣|減/i.test(s||"") ? "pill-bear" : "pill-neutral");
-
-function detailHtml(p){
-  const d = p.detail || {};
-  let h = "";
-
-  // 催化/風險警報
-  const ev = p.events || {};
-  const cats = ev.catalysts || [];
-  const risks = ev.risks || [];
-  if(cats.length){
-    h += `<div class="hl" style="margin-top:4px"><strong style="color:var(--bull)">🚀 催化因素</strong></div>`;
-    cats.forEach(c => {
-      h += `<div class="hl" style="color:var(--bull)">▸ <span class="badge pill-bull">${esc(c.tag)}</span> ${esc(c.headline)}</div>`;
-    });
-  }
-  if(risks.length){
-    h += `<div class="hl" style="margin-top:4px"><strong style="color:var(--bear)">⚠️ 風險警報</strong></div>`;
-    risks.forEach(r => {
-      h += `<div class="hl" style="color:var(--bear)">▸ <span class="badge pill-bear">${esc(r.tag)}</span> ${esc(r.headline)}</div>`;
-    });
-  }
-
-  // 籌碼面 / 法人動向
-  const chip = p.chip;
-  if(chip){
-    h += `<div class="hl" style="margin-top:6px"><strong>🏦 籌碼面/法人動向</strong> — <span class="badge ${sigClass(chip.score)}">${esc(chip.label)}</span> <span class="muted">(${chip.score}/100)</span></div>`;
-    h += `<div class="hl">${esc(chip.net_summary||"")} ${chip.net_trend ? '· ' + esc(chip.net_trend) : ''} <span class="muted">資料來源：${esc(chip.source||"")}</span></div>`;
-  }
-
-  // 股癌 / 輿情
-  if(p.gooaye?.opinion_count){
-    h += `<div class="hl" style="margin-top:6px"><strong>股癌/輿情論述：</strong>${esc(p.gooaye.top_logic)||"—"}</div>`;
-    if(p.gooaye.top_quote) h += `<div class="hl">「${esc(p.gooaye.top_quote)}」</div>`;
-  } else { h += `<div class="hl muted" style="margin-top:6px">此標的目前無股癌/輿情點名。</div>`; }
-  // 操作建議價
-  if(d.buy_zone||d.sell_zone||d.stop_loss){
-    h += `<div class="hl"><strong>操作：</strong>${esc(d.today_action||d.bias||"")}　現價 ${esc(d.latest_close)}　`+
-         `買進 ${esc(d.buy_zone||"—")}　賣出 ${esc(d.sell_zone||"—")}　停損 ${esc(d.stop_loss||"—")}</div>`;
-  }
-  // 各 agent 看法
-  if(d.agents && d.agents.length){
-    h += `<div class="hl" style="margin-top:6px"><strong>各 agent 看法</strong></div>`;
-    h += `<table style="margin:2px 0 6px"><tbody>`;
-    d.agents.forEach(a=>{
-      h += `<tr><td style="white-space:nowrap">${esc(a.name)}</td>`+
-           `<td><span class="badge ${stanceCls(a.signal)}">${esc(a.signal)}</span></td>`+
-           `<td class="hide-sm">信心 ${esc(a.confidence)}</td>`+
-           `<td class="muted">${esc(a.summary)}</td></tr>`;
-    });
-    h += `</tbody></table>`;
-  }
-  // 3/6/9/12 個月預測股價
-  const pf = d.price_forecast;
-  if(pf && pf.horizons && pf.horizons.length){
-    h += `<div class="hl" style="margin-top:6px"><strong>3 / 6 / 9 / 12 個月預測股價</strong>`+
-         (pf.verdict?` — <span class="badge ${stanceCls(pf.verdict)}">${esc(pf.verdict)}</span>`:"")+`</div>`;
-    h += `<table style="margin:2px 0 6px"><thead><tr><th>期間</th><th>預估價</th><th>區間</th><th>預期報酬</th><th>傾向</th></tr></thead><tbody>`;
-    pf.horizons.forEach(z=>{
-      h += `<tr><td>${esc(z.label)}</td><td>${esc(z.base)}</td>`+
-           `<td class="muted">${esc(z.low)}~${esc(z.high)}</td>`+
-           `<td>${esc(z.expected_return_pct)}%</td>`+
-           `<td><span class="badge ${stanceCls(z.stance)}">${esc(z.stance)}</span></td></tr>`;
-    });
-    h += `</tbody></table>`;
-    if(pf.verdict_reason) h += `<div class="hl muted">${esc(pf.verdict_reason)}</div>`;
-  } else if(!d.agents || !d.agents.length){
-    h += `<div class="hl muted">完整分析（各 agent、3/6/9/12 月預測）將於每日排程在雲端產生後顯示。</div>`;
-  }
-  h += `<div class="hl muted" style="margin-top:6px">買進分數組成：技術 ${p.components?.technical} · 相對強度 ${p.components?.relative_strength ?? '—'} · 籌碼 ${p.components?.chip_flow ?? '—'} · 股癌 ${p.components?.gooaye} · 個股新聞 ${p.components?.ticker_news} · 市場輿情 ${p.components?.macro}</div>`;
-  return h;
+let DATA = null, MARKET = "us";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct = v => v == null ? "—" : `<span class="${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : ""}${Number(v).toFixed(0)}%</span>`;
+function rows(list){
+  return list.map(r => `<tr>
+    <td>${r.rank}</td>
+    <td><b>${esc(r.symbol.replace(/\.TWO?$/, ""))}</b> <span class="muted">${esc(r.name || "")}</span>
+      ${r.ignition ? `<span class="badge fire">🔥 點火 +${r.ignition.ignition_gain_pct}%</span>` : ""}</td>
+    <td>${r.close}</td><td>${pct(r.ret_6m_pct)}</td><td class="hide-sm">${pct(r.ret_1m_pct)}</td>
+    <td class="hide-sm">${Number(r.vol_ann_pct).toFixed(0)}%</td><td>${Number(r.score).toFixed(2)}</td></tr>`).join("");
 }
-
-fetch("data/daily_report.json?_=" + Date.now())
-  .then(r => r.ok ? r.json() : Promise.reject(r.status))
-  .then(render)
-  .catch(err => {
-    document.getElementById("updated").textContent = "尚無報告資料（等待第一次每日排程執行）。錯誤：" + err;
-  });
-
-function render(d){
-  document.getElementById("mode").textContent = d.mode || "";
-  document.getElementById("updated").textContent = "更新時間：" + (d.generated_at || "—") + "（台北時間）";
-  document.getElementById("disclaimer").textContent = "⚠️ " + (d.disclaimer || "");
-
-  // macro
-  const m = d.macro || {};
-  document.getElementById("macro-score").textContent = (m.score ?? "—") + " / 100";
-  const ml = document.getElementById("macro-label");
-  ml.textContent = m.label || "—"; ml.className = "badge " + sigClass(m.score ?? 50);
-  document.getElementById("macro-bar").style.cssText =
-    `width:${Math.max(4,Math.min(100,m.score??50))}%;background:${barColor(m.score??50)}`;
-  document.getElementById("macro-heads").innerHTML =
-    (m.sample_headlines||[]).slice(0,5).map(h=>"• "+esc(h)).join("<br>") ||
-    "<span class='muted'>（此次未取得新聞標題，輿情以中性計）</span>";
-
-  // gooaye status
-  const g = d.gooaye_status || {};
-  const gs = document.getElementById("gooaye-state");
-  gs.textContent = g.updated ? "偵測到新集數，已更新" : "無新集數";
-  gs.className = "badge " + (g.updated ? "pill-bull" : "pill-neutral");
-  document.getElementById("gooaye-ep").innerHTML =
-    "最新集數：" + esc(g.episode_title || "—") +
-    (g.episode_published ? `（${esc(g.episode_published)}）` : "") +
-    (g.total_opinions!=null ? `　·　累積點名觀點 ${g.total_opinions} 則` : "");
-
-  // 點火雷達（爆量長紅續航）
-  const igns = d.ignition_radar || [];
-  if(igns.length){
-    document.getElementById("ign-panel").style.display = "";
-    document.getElementById("ign-count").textContent = igns.length + " 檔";
-    const ib = document.getElementById("ign-body");
-    ib.innerHTML = "";
-    igns.forEach(p=>{
-      const tech = p.technical || {};
-      const det = p.detail || {};
-      const action = det.today_action || tech.today_action || "—";
-      const zone = det.buy_zone || tech.buy_zone || "—";
-      const tr = document.createElement("tr");
-      tr.className = "pick";
-      tr.innerHTML =
-        `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="muted" style="font-size:.72rem">${esc(p.ai_chain_layer||"")}</div></td>`+
-        `<td><span class="badge pill-bull">${esc(p.ignition_reason||"點火")}</span></td>`+
-        `<td><span class="badge ${stanceCls(action)}">${esc(action)}</span></td>`+
-        `<td class="hide-sm">${esc(zone)}</td>`+
-        `<td><span class="score">${p.buy_score ?? "—"}</span></td>`;
-      const dtr = document.createElement("tr");
-      dtr.className = "detail";
-      dtr.innerHTML = `<td colspan="5">${detailHtml(p)}</td>`;
-      tr.addEventListener("click",()=>dtr.classList.toggle("open"));
-      ib.appendChild(tr); ib.appendChild(dtr);
-    });
-  }
-
-  // 錯殺雷達（優質股大跌承接機會）
-  const dips = d.dip_radar || [];
-  const dipPanel = document.getElementById("dip-panel");
-  if(dips.length){
-    dipPanel.style.display = "";
-    document.getElementById("dip-count").textContent = dips.length + " 檔";
-    const db = document.getElementById("dips-body");
-    db.innerHTML = "";
-    dips.forEach(p=>{
-      const tech = p.technical || {};
-      const det = p.detail || {};
-      const action = det.today_action || tech.today_action || "—";
-      const zone = det.buy_zone || tech.buy_zone || "—";
-      const tr = document.createElement("tr");
-      tr.className = "pick";
-      tr.innerHTML =
-        `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="muted" style="font-size:.72rem">${esc(p.ai_chain_layer||"")}</div></td>`+
-        `<td><span class="badge pill-bear">${esc(p.dip_reason||"超跌")}</span></td>`+
-        `<td><span class="badge ${stanceCls(action)}">${esc(action)}</span></td>`+
-        `<td class="hide-sm">${esc(zone)}</td>`+
-        `<td><span class="score">${p.buy_score ?? "—"}</span></td>`;
-      const dtr = document.createElement("tr");
-      dtr.className = "detail";
-      dtr.innerHTML = `<td colspan="5">${detailHtml(p)}</td>`;
-      tr.addEventListener("click",()=>dtr.classList.toggle("open"));
-      db.appendChild(tr); db.appendChild(dtr);
-    });
-  }
-
-  // picks
-  const body = document.getElementById("picks-body");
-  const picks = d.top_picks || [];
-  if(!picks.length){ body.innerHTML = "<tr><td colspan='8' class='muted'>無標的</td></tr>"; return; }
-  body.innerHTML = "";
-  picks.forEach((p,i)=>{
-    const hasRisk = (p.events?.risks?.length > 0);
-    const riskBadge = hasRisk ? '<span class="badge pill-bear" title="有風險警報">⚠</span>' : '';
-    const tags = `<span class="badge">${p.market==='tw'?'台股':'美股'}</span>` + (p.market_mover?'<span class="badge pill-neutral">熱門</span>':'') + (p.gooaye_named?'<span class="badge pill-bull">股癌點名</span>':'') + (p.held?'<span class="badge">持股</span>':'') + riskBadge;
-    const tech = p.technical;
-    const techCell = tech ? `${esc(tech.today_action||tech.bias||"")}<div class="muted">買 ${esc(tech.buy_zone||"—")}</div>` : '<span class="muted">—</span>';
-    const chip = p.chip;
-    const chipScore = chip?.score ?? null;
-    const chipCell = chip
-      ? `<span class="badge ${sigClass(chipScore)}">${chipScore}</span> <span class="muted">${esc(chip.label||"")}</span><div class="muted" style="font-size:.72rem">${esc(chip.net_trend||"")}</div>`
-      : '<span class="muted">—</span>';
-    const gscore = p.gooaye?.score ?? 50;
-    const tr = document.createElement("tr");
-    tr.className = "pick";
-    tr.dataset.market = p.market || "us";
-    tr.innerHTML =
-      `<td>${i+1}</td>`+
-      `<td class="tk">${esc(p.ticker)}${(p.name && p.name!==p.ticker)?` <span class="muted" style="font-weight:400">${esc(p.name)}</span>`:''}<div class="tags">${tags}</div></td>`+
-      `<td><span class="score">${p.buy_score}</span>${bar(p.buy_score)}</td>`+
-      `<td><span class="badge ${recClass(p.recommendation)}">${esc(p.recommendation)}</span></td>`+
-      `<td class="hide-sm">${techCell}</td>`+
-      `<td>${chipCell}</td>`+
-      `<td><span class="badge ${sigClass(gscore)}">${gscore}</span> <span class="muted">${esc(p.gooaye?.label||"")}</span></td>`+
-      `<td class="hide-sm">${p.news?.label?esc(p.news.label):'<span class="muted">—</span>'}</td>`;
-    const det = document.createElement("tr");
-    det.className = "detail";
-    det.innerHTML = `<td colspan="8">${detailHtml(p)}</td>`;
-    tr.addEventListener("click",()=>det.classList.toggle("open"));
-    body.appendChild(tr); body.appendChild(det);
-  });
-  setFilter(curFilter);
+function render(){
+  const m = DATA.markets[MARKET]; if(!m) return;
+  const top = m.top_n || 10, keep = m.keep_n || 30;
+  document.getElementById("buy-title").innerHTML = `買進區 · 前 ${top} 名 <span class="badge buy">等權持有</span>`;
+  document.getElementById("hold-title").innerHTML = `續抱區 · 第 ${top + 1}~${keep} 名 <span class="badge hold">不新買</span>`;
+  document.getElementById("buy").innerHTML = rows(m.rows.slice(0, top));
+  document.getElementById("hold").innerHTML = rows(m.rows.slice(top, keep));
+  document.getElementById("rule").textContent = `股票池 ${m.universe_size} 檔`;
 }
-
-let curFilter = "all";
-function setFilter(m){
-  curFilter = m;
-  document.querySelectorAll(".filt").forEach(b=>b.classList.toggle("on", b.dataset.m===m));
-  document.querySelectorAll("#picks-body tr.pick").forEach(tr=>{
-    const show = (m==="all") || (tr.dataset.market===m);
-    tr.style.display = show ? "" : "none";
-    const det = tr.nextElementSibling;
-    if(det && det.classList.contains("detail")){ det.style.display = show ? "" : "none"; if(!show) det.classList.remove("open"); }
-  });
-}
+document.getElementById("tabs").addEventListener("click", e => {
+  const m = e.target.dataset.m; if(!m) return;
+  MARKET = m; document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.m === m)); render();
+});
+fetch("data/strategy.json?_=" + Date.now()).then(r => r.json()).then(d => {
+  DATA = d;
+  document.getElementById("meta").textContent =
+    `排名更新：${d.generated_at.replace("T", " ").slice(0, 16)} ・ 下次月調：${d.strategy.next_rebalance} ・ ${d.strategy.rule}`;
+  render();
+}).catch(() => { document.getElementById("meta").textContent = "讀取策略排名失敗。"; });
 </script>
 </body>
 </html>

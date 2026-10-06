@@ -56,3 +56,17 @@ def evaluate(request: EvaluateRequest) -> dict:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"持股評估失敗：{exc}") from exc
+
+
+@router.get("/lookup")
+def lookup(symbols: str = "") -> list[dict]:
+    from src.strategy.momentum import lookup_symbols
+    tickers = [t for t in symbols.replace("，", ",").replace(" ", ",").split(",") if t.strip()][:10]
+    if not tickers:
+        raise HTTPException(status_code=400, detail="請輸入股票代號。")
+    try:
+        return lookup_symbols(tickers, _report())
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"查詢失敗：{exc}") from exc

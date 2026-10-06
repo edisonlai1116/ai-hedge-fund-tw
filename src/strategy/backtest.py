@@ -1,6 +1,6 @@
 """Sharpe 動能輪動的投組回測（與 src.strategy.momentum 同規則），對標 VOO / 0050。
 
-月調（每 21 個交易日）、持有前 TOP_N、跌出前 KEEP_N[市場] 才賣、每換一檔扣成本 COST。
+月調（每 21 個交易日）、持有前 TOP_N[市場]、跌出前 KEEP_N[市場] 才賣、每換一檔扣成本 COST。
 以「前一日」的分數決定隔日持股，避免偷看未來。結果分全期與前後兩段（樣本外檢查）。
 """
 from __future__ import annotations
@@ -16,6 +16,8 @@ from src.strategy.momentum import KEEP_N, LOOKBACK, TOP_N, download_closes, univ
 REBALANCE_DAYS = 21
 COST = 0.002
 BENCHMARK = {"us": "VOO", "tw": "0050.TW"}
+# 額外對照：科技 ETF（美股）＋「同一股票池全部等權持有」——看策略是否只是在吃族群本身的漲幅。
+EXTRA_COMPARE = {"us": ["QQQ"], "tw": []}
 SPLIT_DATE = "2022-01-01"
 
 
@@ -31,7 +33,8 @@ def _stats(eq: pd.Series) -> Dict:
     }
 
 
-def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str = "2017-07-01") -> Dict:
+def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str = "2017-07-01",
+                 extra: Optional[Dict[str, pd.Series]] = None) -> Dict:
     closes = closes.sort_index().ffill(limit=3)
     rets = closes.pct_change()
     score = rets.rolling(LOOKBACK).mean() / rets.rolling(LOOKBACK).std()
@@ -49,11 +52,11 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
             s = score.iloc[i - 1].dropna().sort_values(ascending=False)
             pos = {k: j for j, k in enumerate(s.index)}
             stay = [h for h in held if pos.get(h, 10 ** 9) < KEEP_N[market]]
-            new = [k for k in s.index if k not in stay][: max(0, TOP_N - len(stay))]
+            new = [k for k in s.index if k not in stay][: max(0, TOP_N[market] - len(stay))]
             nxt = stay + new
             changed = set(nxt) ^ set(held)
             trades += len(changed)
-            cost = COST * len(changed) / TOP_N
+            cost = COST * len(changed) / TOP_N[market]
             if changed:
                 log.append({"date": idx[i].strftime("%Y-%m-%d"),
                             "buy": sorted(set(nxt) - set(held)), "sell": sorted(set(held) - set(nxt))})
@@ -61,6 +64,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         day = float(rets.iloc[i][held].mean()) if held else 0.0
         eq.append(eq[-1] * (1 + day - cost))
     eq_s = pd.Series(eq, index=idx)
+    ew = (1 + rets.mean(axis=1).fillna(0.0)).cumprod()   # 同池等權（每日再平衡近似）
     bm = bench / bench.iloc[0]
 
     periods = {"全期": (None, None), "2017-2021": (None, "2021-12-31"), "2022-今": (SPLIT_DATE, None)}
@@ -69,6 +73,10 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         e, b = eq_s[a:z], bm[a:z]
         if len(e) > 30:
             out_periods[lab] = {"strategy": _stats(e), "benchmark": _stats(b)}
+            comp = {"同池等權持有": _stats(ew[a:z])}
+            for name, ser in (extra or {}).items():
+                comp[name] = _stats(ser.reindex(idx).ffill()[a:z])
+            out_periods[lab]["compare"] = comp
 
     weekly = eq_s.iloc[::5]
     bm_weekly = bm.reindex(weekly.index)
@@ -87,9 +95,9 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         ],
         "current_holdings": held,
         "recent_rebalances": log[-6:],
-        "rules": {"lookback_days": LOOKBACK, "top_n": TOP_N, "keep_n": KEEP_N[market],
+        "rules": {"lookback_days": LOOKBACK, "top_n": TOP_N[market], "keep_n": KEEP_N[market],
                   "rebalance_days": REBALANCE_DAYS, "cost_per_trade": COST},
-        "caveat": "股票池為現在的成分股（含事後挑選的 AI 主線股），有倖存者偏差，實際超額報酬會比回測小。",
+        "caveat": "AI 科技股池是用現在眼光挑出的贏家族群，有明顯倖存者／後見之明偏差：實際報酬會比回測低很多，AI 族群轉弱時也可能大幅落後大盤。",
     }
 
 
@@ -98,10 +106,14 @@ def build_backtest_report(period: str = "10y") -> Dict:
     for m in ("us", "tw"):
         syms = universe(m)
         pm = download_closes(syms + [BENCHMARK[m]], period=period)
+        extra_syms = EXTRA_COMPARE[m]
+        if extra_syms:
+            pm.update(download_closes(extra_syms, period=period))
+        extra = {e: pm.pop(e)["Close"] for e in extra_syms if e in pm}
         bench = pm.pop(BENCHMARK[m], None)
         if bench is None or not pm:
             continue
         closes = pd.DataFrame({s: f["Close"] for s, f in pm.items()})
-        out[m] = run_backtest(m, closes, bench["Close"])
+        out[m] = run_backtest(m, closes, bench["Close"], extra=extra)
     from datetime import datetime, timedelta, timezone
     return {"generated_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"), "markets": out}
