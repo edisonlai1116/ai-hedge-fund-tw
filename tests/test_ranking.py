@@ -193,10 +193,13 @@ def test_low_entry_score_and_status():
     st = sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
                           drawdown_type="FUNDAMENTAL_DISCOUNT")
     assert st["status"] == "BUY_NOW" and "LOW_ENTRY_ZONE" in st["flags"]
-    # 2026-10-08 規格：跌深本身不等於可買——回撤類型未知/投機下修 → 最多 BUY_ON_PULLBACK
+    # 2026-10-08 規格：跌深本身不等於可買——回撤類型未知/投機下修/估值修正 → 不能 BUY_NOW（第二輪：依排名 Tier 再區分）
     for dt in ("UNKNOWN", "SPECULATIVE_DE_RATING", "VALUATION_RESET"):
-        assert sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
-                                drawdown_type=dt)["status"] == "BUY_ON_PULLBACK"
+        for tier in ("A", "B", "C", "D", None):
+            assert sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
+                                    drawdown_type=dt, tier=tier)["status"] != "BUY_NOW"
+    assert sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
+                            drawdown_type="VALUATION_RESET", tier="A")["status"] == "BUY_ON_PULLBACK"
     assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True)["status"] == "HOLD_CORE"
     # 基本面結構性受損時不套低檔規則
     assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True, damage=70)["status"] == "SELL"

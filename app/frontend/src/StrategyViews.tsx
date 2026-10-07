@@ -180,6 +180,17 @@ export function StrategyPicksPanel() {
   );
 }
 
+const LOW_REC_ORDER = ['BUY', 'BUY_STAGED', 'BUY_ON_PULLBACK', 'BUY_ON_CONFIRMATION', 'WATCH', 'SPECULATIVE_WATCH', 'NO_BUY'];
+const LOW_REC_STYLE: Record<string, string> = {
+  BUY: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+  BUY_STAGED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  BUY_ON_PULLBACK: 'bg-sky-50 text-sky-800 border-sky-200',
+  BUY_ON_CONFIRMATION: 'bg-amber-50 text-amber-800 border-amber-200',
+  WATCH: 'bg-slate-50 text-slate-600 border-slate-200',
+  SPECULATIVE_WATCH: 'bg-orange-50 text-orange-800 border-orange-200',
+  NO_BUY: 'bg-rose-50 text-rose-800 border-rose-200',
+};
+
 function LowEntrySection({ rows, low, watch }: { rows: StrategyReport['markets']['us']['rows']; low: string[]; watch: string[] }) {
   const by = Object.fromEntries(rows.map((r) => [r.symbol, r]));
   const list = (syms: string[]) => syms.map((s) => by[s]).filter(Boolean);
@@ -193,7 +204,18 @@ function LowEntrySection({ rows, low, watch }: { rows: StrategyReport['markets']
       <td className="py-1.5 pr-2 text-right text-rose-700">{pct(r.dd_52w_pct ?? null, 0)}</td>
       <td className="py-1.5 pr-2 text-right">{r.high_52w}</td>
       <td className={`py-1.5 pr-2 text-right ${tone(r.ret_3y_pct ?? null)}`}>{pct(r.ret_3y_pct ?? null, 0)}</td>
-      <td className="py-1.5 text-right text-slate-600">{r.low_entry_price ?? '—'}</td>
+      <td className="py-1.5 pr-2 text-right text-slate-600">{r.low_entry_price ?? '—'}</td>
+      <td className="py-1.5 pr-2 text-right text-slate-600">
+        {r.rank}
+        {r.quality_tier ? <span className="ml-1 text-xs text-slate-400">Tier {r.quality_tier}</span> : null}
+      </td>
+      <td className="py-1.5 text-xs" title={r.low_view?.why}>
+        {r.low_view ? (
+          <span className={`whitespace-nowrap rounded border px-1.5 py-0.5 ${LOW_REC_STYLE[r.low_view.recommendation] ?? LOW_REC_STYLE.WATCH}`}>{r.low_view.label}</span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
+      </td>
     </tr>
   );
   const head = (
@@ -204,19 +226,30 @@ function LowEntrySection({ rows, low, watch }: { rows: StrategyReport['markets']
         <th className="py-1.5 pr-2 text-right">距 52 週高</th>
         <th className="py-1.5 pr-2 text-right">52 週高</th>
         <th className="py-1.5 pr-2 text-right">3 年報酬</th>
-        <th className="py-1.5 text-right">低檔價（−30%）</th>
+        <th className="py-1.5 pr-2 text-right">低檔價（−30%）</th>
+        <th className="py-1.5 pr-2 text-right">排名</th>
+        <th className="py-1.5">建議（跌深 ≠ 買進）</th>
       </tr>
     </thead>
   );
   return (
     <div className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
-      <div className="text-sm font-semibold text-slate-900">長線低檔布局（主力資金）· 現在可分批買進</div>
-      <div className="mb-2 text-xs text-slate-500">長線贏家（3 年報酬為正）自 52 週高點回落 ≥30%：回測勝率 81%（美股）。每檔約一成低檔資金，持有 12 個月。</div>
+      <div className="text-sm font-semibold text-slate-900">長線低檔（價格跌深）· 依排名與基本面分級</div>
+      <div className="mb-2 text-xs text-slate-500">
+        跌破 52 週高點 −30% 只代表「價格跌深」，不等於值得買：排名 Tier A + 基本面折價 → 可買；Tier B → 分批（半個部位）；Tier C → 低檔觀察；Tier D →
+        不因跌深而買（需獨立證據才是反轉候選）；基本面受損 → 不買。可買者每檔約一成低檔資金，持有 12 個月。
+      </div>
       {list(low).length ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             {head}
-            <tbody>{list(low).map((r) => <Row key={r.symbol} r={r} />)}</tbody>
+            <tbody>
+              {[...list(low)]
+                .sort((a, b) => LOW_REC_ORDER.indexOf(a.low_view?.recommendation ?? 'WATCH') - LOW_REC_ORDER.indexOf(b.low_view?.recommendation ?? 'WATCH'))
+                .map((r) => (
+                  <Row key={r.symbol} r={r} />
+                ))}
+            </tbody>
           </table>
         </div>
       ) : (
@@ -528,13 +561,14 @@ export function MyHoldingsPanel() {
             result.low_entry_buys?.[m]?.length ? (
               <div key={`low-${m}`} className="mt-4">
                 <div className="mb-1 text-sm font-semibold text-slate-900">
-                  {m === 'us' ? '美股' : '台股'}低檔布局可買（你還沒有的）
+                  {m === 'us' ? '美股' : '台股'}低檔可買（Tier A/B 且基本面未受損；你還沒有的）
                   <span className="ml-2 text-xs font-normal text-slate-500">每檔目標約 {ntd(result.low_entry_target_twd?.[m])}，持有 12 個月</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {result.low_entry_buys[m].map((b) => (
                     <span key={b.symbol} className="rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
-                      {b.symbol.replace(/\.TWO?$/, '')}{b.name ? ` ${b.name}` : ''} · {b.close} · 距高點 {pct(b.dd_52w_pct, 0)} · 3 年 {pct(b.ret_3y_pct, 0)}
+                      {b.symbol.replace(/\.TWO?$/, '')}{b.name ? ` ${b.name}` : ''} · {b.close} · 距高點 {pct(b.dd_52w_pct, 0)} · 排名 {b.rank}
+                      {b.low_label ? ` · ${b.low_label}` : ''}
                     </span>
                   ))}
                 </div>
@@ -794,7 +828,14 @@ const VERDICT_STYLE: Record<string, string> = {
   可買進: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   '持有續抱，不新買': 'bg-sky-50 text-sky-800 border-sky-200',
   '不買／月初換股': 'bg-rose-100 text-rose-800 border-rose-200',
-  低檔布局可買: 'bg-emerald-200 text-emerald-900 border-emerald-300',
+  '低檔布局可買（高排名回撤）': 'bg-emerald-200 text-emerald-900 border-emerald-300',
+  '低檔分批（中等排名的跌深機會）': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  '高排名回撤：等拉回分批': 'bg-sky-50 text-sky-800 border-sky-200',
+  '低檔觀察（不直接買）': 'bg-slate-100 text-slate-700 border-slate-200',
+  '高風險反轉觀察（不買）': 'bg-orange-100 text-orange-800 border-orange-200',
+  '反轉候選：等確認後小量': 'bg-amber-50 text-amber-800 border-amber-200',
+  '高風險反轉候選：小量、等確認': 'bg-amber-50 text-amber-800 border-amber-200',
+  '跌深但基本面受損：不買': 'bg-rose-100 text-rose-800 border-rose-200',
   等低檔: 'bg-amber-50 text-amber-800 border-amber-200',
   '核心 ETF': 'bg-slate-100 text-slate-700 border-slate-200',
   資料不足: 'bg-slate-50 text-slate-500 border-slate-200',
@@ -843,7 +884,7 @@ export function StockLookupPanel() {
           </Button>
         </div>
         <div className="mt-2 text-xs text-slate-500">
-          兩條規則：①長線贏家回落 ≥30% → 低檔布局可買（主力）；②動能排名前段 → 動能可買。都不符合時顯示「等低檔」與低檔價。
+          兩條規則：①長線贏家回落 ≥30% 是「價格跌深」，是否買看排名 Tier 與回撤分類（A 可買、B 分批、C 觀察、D 不因跌深而買）；②動能排名前段 → 動能可買。
         </div>
         {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
       </form>

@@ -48,7 +48,7 @@ def _rally(n, total, noise, seed):
     return r - (np.prod(1 + r) ** (1 / n) - 1 - base)   # 調整到總漲幅 ≈ total
 
 
-def evaluate(close, fund, held=False, shock_view=None, fund_metrics=None):
+def evaluate(close, fund, held=False, shock_view=None, fund_metrics=None, universe_rank=None):
     """synthetic close → 正式 features → 正式 decision_pipeline。fund：quality/growth/earnings_acceleration/valuation/ai_exposure/catalyst。"""
     n = len(close)
     peers = {f"P{i}": _walk(n, 0.0004, 0.02, 100 + i) for i in range(6)}
@@ -66,7 +66,8 @@ def evaluate(close, fund, held=False, shock_view=None, fund_metrics=None):
     }
     g = lambda k: float(last(F[k]))   # noqa: E731
     d = decision_pipeline(pm["X"], scores, None, dd52=g("drawdown_252"), ret_3y=g("ret_756"), dist_ma50=g("dist_ma50"),
-                          shock_view=shock_view, fund_metrics=fund_metrics, days_to_earnings=None, held=held)
+                          shock_view=shock_view, fund_metrics=fund_metrics, days_to_earnings=None, held=held,
+                          ret_20=g("ret_20"), universe_rank=universe_rank)
     d.update(scores=scores, r20=g("ret_20"), rsi=g("rsi14"), price=d["zones"]["price"])
     return d
 
@@ -276,7 +277,7 @@ PRE_REVENUE = {"operating_margin": -60.0, "fcf_margin": -190.0, "revenue": 0.0, 
 def test_regression_mrvl_like_good_but_overextended():
     """3 年上升趨勢 + 20 日 +26%、RSI ~70、技術強 → GOOD_BUT_OVEREXTENDED，WAIT / BUY_ON_PULLBACK，不是 BUY_NOW。"""
     close = _then(_walk(830, 0.0012, 0.028, 11), _rally(20, 0.26, 0.028, 12))
-    d = evaluate(close, dict(STRONG), fund_metrics=PROFITABLE)
+    d = evaluate(close, dict(STRONG), fund_metrics=PROFITABLE, universe_rank=(14, 102))
     assert 0.22 <= d["r20"] <= 0.30 and 60 <= d["rsi"] <= 80          # 夾具確實是案例特徵
     assert d["scores"]["overextension"] >= sc.OX_EXTENDED
     assert d["action"]["state"] == "GOOD_BUT_OVEREXTENDED"
@@ -290,7 +291,7 @@ def test_regression_wdc_like_drawdown_fundamentals_intact():
     close = _then(_walk(600, 0.0030, 0.02, 21), _rets(220, -0.0027, 0.025, 22))
     shock = {"shock": {"causes": ["macro", "industry"]}, "fundamental_damage_score": 10, "verdict": "POTENTIAL_OVERSOLD"}
     d = evaluate(close, {"quality": 80, "growth": 75, "earnings_acceleration": 70, "valuation": 55, "ai_exposure": 55},
-                 shock_view=shock, fund_metrics=PROFITABLE)
+                 shock_view=shock, fund_metrics=PROFITABLE, universe_rank=(59, 102))
     assert d["is_low"]
     assert d["drawdown"]["type"] in ("TEMPORARY_SHOCK", "FUNDAMENTAL_DISCOUNT")
     assert d["action"]["status"] in ("BUY_NOW", "BUY_ON_PULLBACK")
@@ -302,7 +303,7 @@ def test_regression_stx_like_company_specific_drop_fundamentals_strong():
     close = _then(_walk(650, 0.0025, 0.02, 31), _rets(170, -0.0019, 0.022, 32))
     shock = {"shock": {"causes": ["company_specific"]}, "fundamental_damage_score": 50, "verdict": None}
     d = evaluate(close, {"quality": 81, "growth": 83, "earnings_acceleration": 87, "valuation": 30, "ai_exposure": 55},
-                 shock_view=shock, fund_metrics=PROFITABLE)
+                 shock_view=shock, fund_metrics=PROFITABLE, universe_rank=(25, 102))
     assert d["drawdown"]["type"] != "FUNDAMENTAL_DAMAGE"
     assert d["action"]["status"] in ("BUY_NOW", "BUY_ON_PULLBACK")
     assert_consistent(d)
@@ -311,7 +312,7 @@ def test_regression_stx_like_company_specific_drop_fundamentals_strong():
 def test_regression_avgo_like_quality_holder_hold_core():
     close = _walk(850, 0.0010, 0.018, 41)
     d = evaluate(close, {"quality": 88, "growth": 75, "earnings_acceleration": 70, "valuation": 45, "ai_exposure": 80},
-                 held=True, fund_metrics=PROFITABLE)
+                 held=True, fund_metrics=PROFITABLE, universe_rank=(40, 102))
     assert d["action"]["status"] == "HOLD_CORE"
     assert_consistent(d)
 
@@ -334,7 +335,7 @@ def test_regression_oklo_scenario_a_speculative_derating_not_buy_now():
     close = _then(_walk(600, 0.0080, 0.05, 61), _rets(230, -0.0045, 0.05, 62))
     shock = {"shock": {"causes": ["unexplained"]}, "fundamental_damage_score": 15, "verdict": "POTENTIAL_OVERSOLD"}
     d = evaluate(close, {"quality": 10, "growth": 60, "earnings_acceleration": 45, "valuation": 0, "ai_exposure": 70},
-                 shock_view=shock, fund_metrics=PRE_REVENUE)
+                 shock_view=shock, fund_metrics=PRE_REVENUE, universe_rank=(96, 102))
     assert d["is_low"] and d["low_score"] >= 80                       # 跌很多
     assert d["drawdown"]["type"] == "SPECULATIVE_DE_RATING"           # 但不是便宜
     assert d["action"]["status"] != "BUY_NOW"
@@ -346,11 +347,11 @@ def test_regression_oklo_scenario_b_thesis_deterioration_fundamental_damage():
     close = _then(_walk(600, 0.0080, 0.05, 61), _rets(230, -0.0045, 0.05, 62))
     shock = {"shock": {"causes": ["company_specific"]}, "fundamental_damage_score": 80, "verdict": "THESIS_AT_RISK"}
     d = evaluate(close, {"quality": 10, "growth": 30, "earnings_acceleration": 20, "valuation": 0, "ai_exposure": 70},
-                 shock_view=shock, fund_metrics={**PRE_REVENUE, "eps_revision_90d": -0.15})
+                 shock_view=shock, fund_metrics={**PRE_REVENUE, "eps_revision_90d": -0.15}, universe_rank=(96, 102))
     assert d["drawdown"]["type"] == "FUNDAMENTAL_DAMAGE"
     assert d["action"]["status"] not in ("BUY_NOW", "BUY_ON_PULLBACK")
     held = evaluate(close, {"quality": 10, "growth": 30, "earnings_acceleration": 20, "valuation": 0, "ai_exposure": 70},
-                    held=True, shock_view=shock, fund_metrics={**PRE_REVENUE, "eps_revision_90d": -0.15})
+                    held=True, shock_view=shock, fund_metrics={**PRE_REVENUE, "eps_revision_90d": -0.15}, universe_rank=(96, 102))
     assert held["action"]["status"] == "SELL"
     assert_consistent(d)
 

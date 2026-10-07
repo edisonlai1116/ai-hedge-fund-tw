@@ -90,7 +90,10 @@ def _positioning(info: Dict) -> Dict:
 
 
 def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, asof: Optional[str] = None,
-                live_fundamentals: bool = True, live_news: bool = True, calibration: Optional[Dict] = None) -> Dict:
+                live_fundamentals: bool = True, live_news: bool = True, calibration: Optional[Dict] = None,
+                universe_ranks: Optional[Dict[str, tuple]] = None) -> Dict:
+    """universe_ranks：{代號: (策略股票池名次, 池大小)}（strategy.json）——Investment Quality Tier 用；
+    沒提供時以本批參考池的動能百分位換算。"""
     holdings = {_to_yf(k): v for k, v in (holdings or {}).items()}
     batch = [_to_yf(t) for t in tickers]
     asof_ts = pd.Timestamp(asof) if asof else None
@@ -135,7 +138,7 @@ def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, 
             if sym not in pm:
                 return {"ticker": sym, "status": "WAIT", "error": "抓不到報價"}
             return _build_row(sym, pm[sym], F, last, lastF, bench_close, profile, holdings.get(sym),
-                              live_fundamentals, live_news, calibration)
+                              live_fundamentals, live_news, calibration, (universe_ranks or {}).get(sym))
 
         with ThreadPoolExecutor(max_workers=6) as ex:
             rows += [r for r in ex.map(build, syms) if r]
@@ -191,7 +194,8 @@ def _num(x) -> Optional[float]:
 
 def decision_pipeline(ohlcv: pd.DataFrame, scores: Dict, profile: Optional[Dict], dd52: Optional[float], ret_3y: Optional[float],
                       dist_ma50: Optional[float], shock_view: Optional[Dict], fund_metrics: Optional[Dict],
-                      days_to_earnings: Optional[int], held: bool) -> Dict:
+                      days_to_earnings: Optional[int], held: bool, ret_20: Optional[float] = None,
+                      universe_rank: Optional[tuple] = None) -> Dict:
     """確定性決策（純函式，不連網）：A Opportunity → B Entry → C Overextension（已在 scores）→ D Risk → 回撤分類 → E Action。
     會在 scores 補上 low_entry、price_risk、fundamental_uncertainty 並把 risk 改為合成風險。正式流程與測試共用。"""
     weights = sc.regime_weights(profile)
@@ -225,10 +229,16 @@ def decision_pipeline(ohlcv: pd.DataFrame, scores: Dict, profile: Optional[Dict]
     scores["price_risk"] = scores.get("risk")
     scores["fundamental_uncertainty"] = fu["score"] if fu else None
     scores["risk"] = sc.combined_risk(scores["price_risk"], fu)
+    # A. Price Location / B. Investment Quality Tier / 獨立 thesis 證據（與跌多深無關）
+    location = sc.price_location(dd52)
+    tier = (sc.quality_tier(universe_rank[0], universe_rank[1]) if universe_rank
+            else sc.quality_tier(percentile=scores.get("momentum_rank")))
+    conf = sc.thesis_confirmations(scores.get("earnings_acceleration"), (fund_metrics or {}).get("eps_revision_90d"),
+                                   scores.get("catalyst"), ret_20, dist_ma50, scores.get("growth"))
     args = dict(opp=opp["score"], overext=scores.get("overextension"), quality=scores.get("quality"), risk=scores["risk"],
                 valuation=scores.get("valuation"), relative_strength=scores.get("relative_strength"), damage=damage,
                 oversold=oversold, entry_ok=cond["ok"], low_entry=is_low, long_term_broken=lt_broken,
-                growth=scores.get("growth"), drawdown_type=dclass["type"])
+                growth=scores.get("growth"), drawdown_type=dclass["type"], tier=tier, confirmations=conf)
     st = sc.decide_action(held=held, **args)
     new_money = sc.decide_action(held=False, **args) if held else st
     for a in {id(st): st, id(new_money): new_money}.values():
@@ -236,11 +246,13 @@ def decision_pipeline(ohlcv: pd.DataFrame, scores: Dict, profile: Optional[Dict]
         if a["status"] == "BUY_ON_PULLBACK" and target and zones.get(target):
             z = zones[target]
             a["why"] += f"（{'Buy1' if target == 'zone_1' else 'Buy2'} {z['low']}–{z['high']}）"
-    return {"opp": opp, "weights": weights, "zones": zones, "cond": cond, "entry_score": e_score, "fu": fu, "drawdown": dclass,
+    return {"price_location": location, "quality_tier": tier, "confirmations": conf,
+            "opp": opp, "weights": weights, "zones": zones, "cond": cond, "entry_score": e_score, "fu": fu, "drawdown": dclass,
             "action": st, "new_money": new_money, "low_score": low_score, "is_low": is_low, "lt_broken": lt_broken}
 
 
-def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_fund, live_news, calibration) -> Dict:
+def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_fund, live_news, calibration,
+               universe_rank: Optional[tuple] = None) -> Dict:
     th = theme_of(sym)
     g = lambda name: _num(lastF[name].get(sym)) if name in lastF else None   # noqa: E731
     scores = {
@@ -329,7 +341,8 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
         shock_view = {"shock": worst, **dmg, "verdict": shock_verdict(worst, dmg)}
 
     d = decision_pipeline(ohlcv, scores, profile, dd52=g("drawdown_252"), ret_3y=g("ret_756"), dist_ma50=g("dist_ma50"),
-                          shock_view=shock_view, fund_metrics=fund_metrics, days_to_earnings=next_er, held=holding is not None)
+                          shock_view=shock_view, fund_metrics=fund_metrics, days_to_earnings=next_er, held=holding is not None,
+                          ret_20=g("ret_20"), universe_rank=universe_rank)
     opp, zones, cond, e_score, fu, dclass, st, new_money = (d[k] for k in ("opp", "zones", "cond", "entry_score", "fu",
                                                                          "drawdown", "action", "new_money"))
     weights, low_score, is_low, lt_broken, held = d["weights"], d["low_score"], d["is_low"], d["lt_broken"], holding is not None
@@ -351,6 +364,9 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
         "entry_score": e_score, "entry_condition": cond,
         "overextension_tier": fx.overextension_tier(scores["overextension"]),
         "drawdown": dclass, "drawdown_type": dclass["type"],
+        "price_location": d["price_location"], "quality_tier": d["quality_tier"], "confirmations": d["confirmations"],
+        "universe_rank": list(universe_rank) if universe_rank else None,
+        "low_price": new_money.get("low_price"),
         "risk_detail": {"price_risk": scores["price_risk"], "fundamental_uncertainty": fu},
         "theme_exposure": theme_exposures(sym, (fund_metrics or {}).get("sector")),
         "scores": {**scores, "earnings": scores.get("earnings_acceleration"), "ai": scores.get("ai_exposure"),

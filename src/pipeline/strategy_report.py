@@ -29,7 +29,8 @@ def _write(obj, path):
 
 def drawdown_map(opp: dict) -> dict:
     """{代號: {type, why, status}}：機會評分的回撤分類，給每日建議與持股建議共用（同一套規則）。"""
-    return {r["ticker"]: {"type": r.get("drawdown_type"), "why": (r.get("drawdown") or {}).get("why"), "status": r.get("status")}
+    return {r["ticker"]: {"type": r.get("drawdown_type"), "why": (r.get("drawdown") or {}).get("why"), "status": r.get("status"),
+                          "confirmations": r.get("confirmations") or []}
             for r in opp.get("ranking", []) if r.get("drawdown_type")}
 
 
@@ -67,12 +68,18 @@ def main(argv=None) -> int:
             watch += report["markets"].get(m, {}).get("low_entry", [])[:15]         # 低檔布局：全部做回撤分類（大跌 ≠ 便宜）
             watch += [r["symbol"] for r in report["markets"].get(m, {}).get("rows", [])[:6]]   # 動能前段
         watch = list(dict.fromkeys(watch))
-        opp = rank_stocks(watch)
+        ranks = {r["symbol"]: (r["rank"], d["universe_size"]) for d in report["markets"].values() for r in d.get("rows", [])}
+        opp = rank_stocks(watch, universe_ranks=ranks)
         for r in opp["ranking"]:   # 精簡：原始財報細節不輸出
             for k in ("fundamentals",):
                 r.pop(k, None)
         _write(opp, OPPORTUNITY_JSON)
         report["drawdown_types"] = drawdown_map(opp)
+        from src.strategy.momentum import low_view
+        for d in report["markets"].values():          # 低檔股：價格位置 vs 投資建議（同一函式）
+            for r in d.get("rows", []):
+                if r.get("low_entry"):
+                    r["low_view"] = low_view(r, report, d.get("universe_size"))
         _write(report, STRATEGY_JSON)
         n = tracking.log_signals(opp, SIGNAL_LOG)
         _write(tracking.evaluate(SIGNAL_LOG), SIGNAL_ACCURACY_JSON)

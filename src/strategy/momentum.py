@@ -335,9 +335,12 @@ def rank_market(market: str, price_map: Optional[Dict[str, pd.DataFrame]] = None
     for r in rows:
         r["rank_score"] = round(float(rs.get(r["symbol"], 0.0)), 4)
     rows.sort(key=lambda r: r["rank_score"], reverse=True)
+    from src.ranking.scoring import price_location, quality_tier
     for i, r in enumerate(rows, 1):
         r["rank"] = i
         r["zone"] = zone_of(i, market)
+        r["quality_tier"] = quality_tier(i, len(rows))
+        r["price_location"] = price_location(r["dd_52w_pct"] / 100 if r.get("dd_52w_pct") is not None else None)
     names = _names(market)
     for r in rows:
         r["name"] = names.get(r["symbol"].split(".")[0], "")
@@ -448,7 +451,8 @@ def build_strategy_report() -> Dict:
         "strategy": {
             "name": "長線低檔布局 70% ＋ 動能輪動 30%",
             "lookback_days": LOOKBACK, "top_n": TOP_N, "keep_n": KEEP_N, "allocation": ALLOCATION,
-            "low_entry_rule": (f"長線贏家（{LOWENTRY_LT_YEARS} 年報酬 > 0）自 52 週高點回落 ≥ {abs(LOWENTRY_DD):.0%} → 低檔布局買進，"
+            "low_entry_rule": (f"長線贏家（{LOWENTRY_LT_YEARS} 年報酬 > 0）自 52 週高點回落 ≥ {abs(LOWENTRY_DD):.0%} 只代表「價格跌深」；"
+                               "是否買進看排名 Tier（A 可買、B 分批、C 觀察、D 不因跌深而買）與回撤分類，"
                                f"持有 {LOWENTRY_HOLD_MONTHS} 個月；回落 {abs(LOWENTRY_WATCH_DD):.0%}~{abs(LOWENTRY_DD):.0%} 列入觀察。"),
             "rule": (f"資金 {ALLOCATION['lowentry']:.0%} 給長線低檔布局、{ALLOCATION['momentum']:.0%} 給動能輪動"
                      f"（美股前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；台股前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣）。"
@@ -484,9 +488,18 @@ def _rank_for_score(row: Dict, rows: List[Dict]) -> int:
     return 1 + sum(1 for r in rows if r.get("rank_score", 0) > rs)
 
 
-def _dd_type(report: Dict, sym: str) -> str:
-    """機會評分的回撤分類（strategy_report 寫入 report["drawdown_types"]）；沒有就是 UNKNOWN。"""
-    return ((report.get("drawdown_types") or {}).get(sym) or {}).get("type") or "UNKNOWN"
+def low_view(row: Optional[Dict], report: Dict, universe_size: Optional[int] = None) -> Optional[Dict]:
+    """跌深長線贏家的「低檔狀態 + 新資金建議」（與機會評分同一函式 scoring.low_price_recommendation）。
+    Price Location 只說明跌多深；是否值得買由排名 Tier、回撤分類、獨立 thesis 證據決定。不是跌深 → None。"""
+    if not row or not row.get("low_entry"):
+        return None
+    from src.ranking.scoring import low_price_recommendation, price_location, quality_tier
+    info = (report.get("drawdown_types") or {}).get(row["symbol"]) or {}
+    n = universe_size or (report.get("markets", {}).get(market_of(row["symbol"]), {}) or {}).get("universe_size")
+    tier = row.get("quality_tier") or (quality_tier(row.get("rank"), n) if row.get("rank") and n else None)
+    loc = row.get("price_location") or price_location((row.get("dd_52w_pct") or 0) / 100)
+    return low_price_recommendation(loc, tier, info.get("type") or "UNKNOWN", info.get("confirmations") or [],
+                                    long_term_winner=not row.get("long_term_broken"))
 
 
 def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dict) -> tuple:
@@ -620,18 +633,14 @@ def evaluate_holdings(
             why = (f"單檔佔總資產 {it['value_twd'] / total_twd:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限；"
                    f"減碼到 {CONCENTRATION_PCT:.0f}% 以下，資金分散到低檔布局/動能名單。")
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
-              and _dd_type(report, sym) == "FUNDAMENTAL_DAMAGE"):
+              and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
+            lv = low_view(row, report) or {}
             act = "續抱"
-            why = (f"在低檔區，但回撤分類為基本面受損（{(report.get('drawdown_types') or {}).get(sym, {}).get('why') or ''}）："
-                   "不加碼；若長線趨勢也破壞，月調時換股。")
-        elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
-              and _dd_type(report, sym) not in ("FUNDAMENTAL_DISCOUNT", "TEMPORARY_SHOCK")):
-            act = "續抱"
-            why = (f"在低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}），但回撤分類為 {_dd_type(report, sym)}：跌深不等於便宜，"
-                   "不自動加碼；最多在更深的價位小量。")
+            why = (f"價格跌深（距高點 {_pct(row.get('dd_52w_pct'), False)}），但{lv.get('label', '')}：{lv.get('why', '')}"
+                   "不加碼。")
             lt = low_target[it["market"]]
             act = "低檔加碼"
-            why = (f"長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點回落 {_pct(abs(row['dd_52w_pct']) if row.get('dd_52w_pct') is not None else None, False)}，進入低檔布局區；"
+            why = (f"{(low_view(row, report) or {}).get('label', '')}｜長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點回落 {_pct(abs(row['dd_52w_pct']) if row.get('dd_52w_pct') is not None else None, False)}，進入低檔布局區；"
                    f"部位僅目標的 {it['value_twd'] / lt:.0%}，可分批加碼到約 NT${lt:,.0f}，持有 {LOWENTRY_HOLD_MONTHS} 個月。")
         elif row["rank"] <= TOP_N[it["market"]] and tgt and it["value_twd"] < tgt * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             act = "加碼"
@@ -677,10 +686,14 @@ def evaluate_holdings(
         mk = markets.get(m, {})
         by = {r["symbol"]: r for r in mk.get("rows", [])}
         low_buys[m] = [
-            {**{k: by[s_].get(k) for k in ("symbol", "name", "rank", "close", "dd_52w_pct", "ret_3y_pct", "high_52w", "spike", "bounce_20d_pct")},
-             "target_twd": round(low_target[m]) if low_target[m] else None}
-            for s_ in mk.get("low_entry", [])[:LOWENTRY_SLOTS] if s_ in by and s_ not in held
-        ]
+            {**{k: by[s_].get(k) for k in ("symbol", "name", "rank", "close", "dd_52w_pct", "ret_3y_pct", "high_52w", "spike",
+                                           "bounce_20d_pct", "quality_tier")},
+             "low_label": (low_view(by[s_], report) or {}).get("label"),
+             "target_twd": round(low_target[m] * (0.5 if (low_view(by[s_], report) or {}).get("recommendation") == "BUY_STAGED" else 1))
+             if low_target[m] else None}
+            for s_ in mk.get("low_entry", []) if s_ in by and s_ not in held
+            and (low_view(by[s_], report) or {}).get("recommendation") in ("BUY", "BUY_STAGED")
+        ][:LOWENTRY_SLOTS]
 
     order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "續抱": 4, "核心 ETF": 5, "資料不足": 6}
     out_rows.sort(key=lambda r: (order.get(r["action"], 9), -(r["value_twd"] or 0)))
@@ -745,8 +758,12 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
         elif row is None:
             verdict, detail = "資料不足", "抓不到報價或上市未滿半年，暫不評分。"
         elif row.get("low_entry") and not row.get("outside_universe"):
-            verdict, detail = "低檔布局可買", (f"長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點 {row.get('high_52w')} 回落 "
-                                         f"{_pct(row.get('dd_52w_pct'), False)}：符合低檔布局規則，可分批買進、持有 {LOWENTRY_HOLD_MONTHS} 個月。")
+            lv = low_view(row, report, mk.get("universe_size")) or {}
+            verdict = lv.get("label") or "低檔觀察（不直接買）"
+            detail = (f"價格位置：自 52 週高點 {row.get('high_52w')} 回落 {_pct(row.get('dd_52w_pct'), False)}（DEEPLY_DISCOUNTED）；"
+                      f"排名第 {row['rank']}/{mk.get('universe_size')}（Tier {lv.get('tier')}）、回撤分類 {lv.get('drawdown_type')}。"
+                      + (lv.get("why") or "")
+                      + (f"持有 {LOWENTRY_HOLD_MONTHS} 個月。" if lv.get("recommendation") in ("BUY", "BUY_STAGED") else ""))
         elif row["zone"] == "buy" and row.get("outside_universe"):
             verdict, detail = "持有續抱，不新買", f"不在 AI 科技股池；換算排名第 {row['rank']} 名，動能強但策略只買池內標的。已持有可續抱。"
         elif row["zone"] == "buy":
@@ -760,7 +777,7 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
                 lep = row.get("low_entry_price")
                 verdict, detail = "等低檔", (f"動能排名第 {row['rank']} 名偏弱、尚未跌到低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}）；"
                                             + (f"跌到 {lep} 以下（回落 30%）才進入低檔布局區。已持有者長線續抱。" if lep else "觀望。"))
-        if verdict in ("低檔布局可買", "可買進"):
+        if verdict in ("可買進",) or verdict.startswith(("低檔布局可買", "低檔分批")):
             detail += no_chase_note(row)
         closes = []
         if f is not None:

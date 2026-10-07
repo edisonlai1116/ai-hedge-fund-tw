@@ -20,6 +20,16 @@ export type Virattt = {
 
 export type Spike = { date: string; gain_pct: number; limit_price: number | null };
 
+export type LowView = {
+  state: 'LOW_PRICE' | 'LOW_PRICE_OPPORTUNITY' | 'LOW_PRICE_SPECULATIVE';
+  recommendation: 'BUY' | 'BUY_STAGED' | 'BUY_ON_PULLBACK' | 'BUY_ON_CONFIRMATION' | 'WATCH' | 'SPECULATIVE_WATCH' | 'NO_BUY';
+  label: string;
+  why: string;
+  tier: 'A' | 'B' | 'C' | 'D';
+  drawdown_type: string;
+  confirmations: string[];
+};
+
 export type RankRow = {
   symbol: string;
   name: string;
@@ -43,6 +53,9 @@ export type RankRow = {
   tech_score?: number | null;
   spike?: Spike | null;
   bounce_20d_pct?: number | null;
+  quality_tier?: 'A' | 'B' | 'C' | 'D';
+  price_location?: string;
+  low_view?: LowView | null;
 };
 
 export type MarketRanking = {
@@ -123,7 +136,7 @@ export type EvaluateResult = {
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];
   new_buys: Record<'us' | 'tw', NewBuy[]>;
-  low_entry_buys?: Record<'us' | 'tw', { symbol: string; name: string; rank: number; close: number; dd_52w_pct: number; ret_3y_pct: number; high_52w: number; target_twd: number | null }[]>;
+  low_entry_buys?: Record<'us' | 'tw', { symbol: string; name: string; rank: number; close: number; dd_52w_pct: number; ret_3y_pct: number; high_52w: number; target_twd: number | null; low_label?: string; quality_tier?: string }[]>;
   low_entry_target_twd?: Record<string, number>;
   allocation?: { lowentry: number; momentum: number };
 };

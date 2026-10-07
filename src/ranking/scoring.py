@@ -248,15 +248,122 @@ def classify_drawdown(dd_52w: Optional[float], quality: Optional[float], growth:
 
 
 # ---------------------------------------------------------------------------
+# 第二輪（2026-10-08）：LOW PRICE ≠ BUY
+#   A. Price Location（只回答「是不是跌深」）
+#   B. Investment Quality Tier（由排名決定「低檔規則可以多強」；不改 Rank 本身）
+#   C. Low-Price Recommendation（即使跌深，現在值不值得投入新資金）
+# ---------------------------------------------------------------------------
+PRICE_LOCATIONS = ("DEEPLY_DISCOUNTED", "DISCOUNTED", "PULLBACK", "NEAR_HIGH")
+# 以 102 檔美股池的使用者分界（30 / 60 / 85 名）換算成比例，套用到任何大小的股票池（台股 55 檔也適用）
+TIER_CUTS = (30 / 102, 60 / 102, 85 / 102)
+LOW_PRICE_STATES = ("LOW_PRICE", "LOW_PRICE_OPPORTUNITY", "LOW_PRICE_SPECULATIVE")
+
+
+def price_location(dd_52w: Optional[float]) -> Optional[str]:
+    if dd_52w is None:
+        return None
+    if dd_52w <= LOW_ENTRY_DD:
+        return "DEEPLY_DISCOUNTED"
+    if dd_52w <= -0.15:
+        return "DISCOUNTED"
+    if dd_52w <= -0.05:
+        return "PULLBACK"
+    return "NEAR_HIGH"
+
+
+def quality_tier(rank: Optional[int] = None, universe_size: Optional[int] = None,
+                 percentile: Optional[float] = None) -> Optional[str]:
+    """A（前 30/102）、B（31–60）、C（61–85）、D（> 85）。可用名次/池大小，或動能百分位（100 = 最強）。"""
+    if rank is not None and universe_size:
+        frac = rank / universe_size
+    elif percentile is not None:
+        frac = 1 - percentile / 100.0
+    else:
+        return None
+    if frac <= TIER_CUTS[0] + 1e-9:
+        return "A"
+    if frac <= TIER_CUTS[1] + 1e-9:
+        return "B"
+    if frac <= TIER_CUTS[2] + 1e-9:
+        return "C"
+    return "D"
+
+
+def thesis_confirmations(earnings_accel: Optional[float] = None, eps_revision_90d: Optional[float] = None,
+                         catalyst: Optional[float] = None, ret_20: Optional[float] = None,
+                         dist_ma50: Optional[float] = None, growth: Optional[float] = None) -> List[str]:
+    """與「跌多深」無關的獨立證據（Tier D 要買必須至少一項）。"""
+    out = []
+    if earnings_accel is not None and earnings_accel >= 65 and (eps_revision_90d is None or eps_revision_90d >= 0):
+        out.append("EARNINGS_ACCELERATION")
+    if eps_revision_90d is not None and eps_revision_90d >= 0.05 and (growth is None or growth >= 50):
+        out.append("FUNDAMENTAL_RECOVERY")
+    if catalyst is not None and catalyst >= 65:
+        out.append("CATALYST")
+    if ret_20 is not None and dist_ma50 is not None and ret_20 >= 0.05 and dist_ma50 > 0:
+        out.append("POSITIVE_REVERSAL")
+    return out
+
+
+def low_price_recommendation(location: Optional[str], tier: Optional[str], drawdown_type: Optional[str],
+                             confirmations: Optional[List[str]] = None, long_term_winner: bool = True) -> Optional[Dict]:
+    """跌深（DEEPLY_DISCOUNTED）的長線贏家：決定低檔狀態與新資金建議。不是跌深就回 None。
+    優先序：基本面受損 > 投機下修 > 排名 Tier > 價格位置。跌深本身永遠不是買進理由。
+    recommendation：BUY / BUY_STAGED / BUY_ON_PULLBACK / BUY_ON_CONFIRMATION / WATCH / SPECULATIVE_WATCH / NO_BUY"""
+    if location != "DEEPLY_DISCOUNTED" or not long_term_winner:
+        return None
+    dt = drawdown_type or "UNKNOWN"
+    conf = list(confirmations or [])
+    t = tier or "B"
+    buyable = dt in BUYABLE_DRAWDOWNS
+    spec_txt = "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
+
+    def r(state, rec, label, why):
+        return {"state": state, "recommendation": rec, "label": label, "why": why, "tier": t, "drawdown_type": dt,
+                "confirmations": conf}
+
+    if dt == "FUNDAMENTAL_DAMAGE":
+        return r("LOW_PRICE", "NO_BUY", "跌深但基本面受損：不買", "價格跌深，但回撤分類為基本面受損：跌深不是便宜。")
+    if dt == "SPECULATIVE_DE_RATING":
+        if t in ("A", "B") and conf:
+            return r("LOW_PRICE_SPECULATIVE", "BUY_ON_CONFIRMATION", "高風險反轉候選：小量、等確認",
+                     f"投機股預期修正（虧損/營收極小），但有獨立證據（{'、'.join(conf)}）：只能小量、分批。")
+        return r("LOW_PRICE_SPECULATIVE", "SPECULATIVE_WATCH", "高風險反轉觀察（不買）",
+                 "投機股預期修正（虧損/營收極小）：跌深是預期修正，不代表便宜；只列觀察。" + (spec_txt if t in ("C", "D") else ""))
+    if t == "D":
+        if conf:
+            return r("LOW_PRICE_SPECULATIVE", "BUY_ON_CONFIRMATION", "反轉候選：等確認後小量",
+                     f"排名偏低（Tier D），但有獨立證據（{'、'.join(conf)}）：屬反轉候選，確認後小量分批，不是因為跌深而買。")
+        return r("LOW_PRICE_SPECULATIVE", "SPECULATIVE_WATCH", "高風險反轉觀察（不買）", spec_txt)
+    if t == "C":
+        return r("LOW_PRICE", "WATCH", "低檔觀察（不直接買）",
+                 "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。")
+    if t == "B":
+        if buyable:
+            return r("LOW_PRICE_OPPORTUNITY", "BUY_STAGED", "低檔分批（中等排名的跌深機會）",
+                     f"低檔＋排名中等（Tier B）＋基本面未明顯破壞（{dt}）：可分批、降低部位，不是因為跌很多而買。")
+        return r("LOW_PRICE", "WATCH", "低檔觀察（不直接買）",
+                 f"價格跌深、排名中等（Tier B），但回撤分類為 {dt}：基本面證據不足，只列觀察。")
+    # Tier A
+    if buyable:
+        return r("LOW_PRICE_OPPORTUNITY", "BUY", "低檔布局可買（高排名回撤）",
+                 f"高排名（Tier A）的長線贏家回撤，回撤分類 {dt}：低檔布局可分批買進。")
+    return r("LOW_PRICE_OPPORTUNITY", "BUY_ON_PULLBACK", "高排名回撤：等拉回分批",
+             f"高排名（Tier A）回撤，但回撤分類為 {dt}（估值仍不便宜或證據不足）：等拉回到 Buy2 分批。")
+
+
+# ---------------------------------------------------------------------------
 # E. Final Action
 # ---------------------------------------------------------------------------
 def decide_action(opp: Optional[float], overext: Optional[float], quality: Optional[float], risk: Optional[float],
                   valuation: Optional[float], relative_strength: Optional[float], held: bool,
                   damage: Optional[float] = None, oversold: bool = False, entry_ok: bool = False,
                   low_entry: bool = False, long_term_broken: bool = False, growth: Optional[float] = None,
-                  drawdown_type: str = "UNKNOWN") -> Dict:
-    """回傳 status、state（例如 GOOD_BUT_OVEREXTENDED）、flags、why、pullback_reason。
-    BUY_NOW 的必要條件：entry_ok、過熱 < 50、非基本面受損、風險 < 90；低檔區另需回撤類型屬可買類。"""
+                  drawdown_type: str = "UNKNOWN", tier: Optional[str] = None,
+                  confirmations: Optional[List[str]] = None) -> Dict:
+    """回傳 status、state（例如 GOOD_BUT_OVEREXTENDED）、low_price（低檔狀態）、flags、why、pullback_reason。
+    優先序：基本面受損 > 極度過熱 > 風險 > 進場條件 > 排名 Tier > 價格位置。
+    BUY_NOW 的必要條件：entry_ok、過熱 < 50、非基本面受損、風險 < 90；低檔區另需 Tier A/B 且回撤類型屬可買類。"""
     flags: List[str] = []
     if opp is None:
         return {"status": "WAIT", "state": None, "flags": ["INSUFFICIENT_DATA"], "why": "資料不足，無法評分", "pullback_reason": None}
@@ -273,8 +380,10 @@ def decide_action(opp: Optional[float], overext: Optional[float], quality: Optio
     if damaged:
         flags.append("THESIS_AT_RISK")
 
+    lp = low_price_recommendation("DEEPLY_DISCOUNTED", tier, drawdown_type, confirmations) if low_entry else None
+
     def out(status, why, pb=None):
-        return {"status": status, "state": state, "flags": flags, "why": why, "pullback_reason": pb}
+        return {"status": status, "state": state, "flags": flags, "why": why, "pullback_reason": pb, "low_price": lp}
 
     tier = "極度過熱" if ox >= OX_EXTREME else ("過熱" if ox >= OX_OVERHEATED else "偏熱")
     if held:
@@ -284,12 +393,16 @@ def decide_action(opp: Optional[float], overext: Optional[float], quality: Optio
             return out("PARTIAL_PROFIT", f"{tier}（{ox:.0f}）且估值不便宜：先分批獲利了結")
         if ox >= OX_OVERHEATED and valuation is not None and valuation < 35:
             return out("PARTIAL_PROFIT", f"{tier}（{ox:.0f}）且估值偏貴（{valuation:.0f}）：先分批獲利了結")
-        if low_entry:
-            return out("HOLD_CORE", "長線贏家落入低檔區：續抱（是否加碼看新資金建議）")
+        if low_entry and lp and lp["recommendation"] not in ("NO_BUY", "SPECULATIVE_WATCH"):
+            return out("HOLD_CORE", f"長線贏家落入低檔區（{lp['label']}）：續抱（是否加碼看新資金建議）")
+        if low_entry and lp:
+            return out("HOLD", f"價格跌深但{lp['label']}：續抱、不加碼")
         if quality is not None and quality >= 70 and opp >= 45:
             return out("HOLD_CORE", "高品質核心部位，機會分數仍在中上" + ("；短線過熱，不加碼" if ox >= OX_EXTENDED else ""))
         if opp < 30 and (relative_strength or 50) < 30 and long_term_broken:
             return out("SELL", "機會分數與相對強度同時轉弱，且 3 年長線趨勢已破壞")
+        if state == "GOOD_BUT_OVEREXTENDED":
+            return out("HOLD", f"好公司＋強動能，但短線{tier}（{ox:.0f}）：持有者續抱，不加碼、新資金不追")
         if opp >= 30 or not long_term_broken:
             return out("HOLD", "續抱觀察" if opp >= 30 else "短線動能弱，但 3 年長線趨勢未破壞：續抱、不加碼")
         return out("SELL", "機會分數偏低且 3 年長線趨勢已破壞")
@@ -305,15 +418,21 @@ def decide_action(opp: Optional[float], overext: Optional[float], quality: Optio
             return out("BUY_ON_PULLBACK", f"基本面與成長性仍然優秀，但短期漲幅與技術位置{tier}（{ox:.0f}）：目前不適合追價；"
                                           "等降溫（過熱 < 50）或回撤至 Buy2", "COOLING_REQUIRED")
         return out("WAIT", f"{tier}（{ox:.0f}）且機會分數普通（{opp:.0f}）：不追")
-    if low_entry:
-        allowed = drawdown_type in BUYABLE_DRAWDOWNS and (damage or 0) < 40
-        if allowed and entry_ok and (risk is None or risk < MAX_RISK_FOR_BUY_NOW):
-            return out("BUY_NOW", f"長線贏家回落 ≥30%，回撤分類 {drawdown_type}：低檔布局分批買進，持有 12 個月")
-        if allowed:
-            return out("BUY_ON_PULLBACK", f"回撤分類 {drawdown_type} 可承接，但{'風險過高' if entry_ok else '現價不在進場區'}：等回到 Buy1/Buy2",
-                       "ABOVE_ENTRY" if not entry_ok else "CONFIRMATION_REQUIRED")
-        return out("BUY_ON_PULLBACK", f"跌深但回撤分類為 {drawdown_type}（不等於便宜）：只在 Buy2/Deep 小量分批，需基本面改善證據",
-                   "CONFIRMATION_REQUIRED")
+    if low_entry and lp:
+        rec = lp["recommendation"]
+        risk_ok = risk is None or risk < MAX_RISK_FOR_BUY_NOW
+        if rec in ("BUY", "BUY_STAGED") and (damage or 0) < 40:
+            if rec == "BUY_STAGED":
+                flags.append("STAGED_ENTRY")
+            if entry_ok and risk_ok:
+                return out("BUY_NOW", lp["why"] + ("（分批、降低部位）" if rec == "BUY_STAGED" else "") + f"持有 12 個月。")
+            return out("BUY_ON_PULLBACK", lp["why"] + ("風險過高，只在更深的進場區小量" if entry_ok else "現價不在進場區：等回到 Buy1"),
+                       "CONFIRMATION_REQUIRED" if entry_ok else "ABOVE_ENTRY")
+        if rec in ("BUY_ON_PULLBACK", "BUY_ON_CONFIRMATION"):
+            if rec == "BUY_ON_CONFIRMATION":
+                flags.append("REVERSAL_CANDIDATE")
+            return out("BUY_ON_PULLBACK", lp["why"], "CONFIRMATION_REQUIRED")
+        return out("WAIT", lp["why"])
     if opp >= BUY_NOW_OPPORTUNITY:
         if entry_ok and (risk is None or risk < MAX_RISK_FOR_BUY_NOW):
             return out("BUY_NOW", "機會分數高、現價在可進場區且未過熱")
@@ -333,10 +452,11 @@ def decide_status(opp: Optional[float], overext: Optional[float], quality: Optio
                   valuation: Optional[float], relative_strength: Optional[float], held: bool,
                   damage: Optional[float] = None, oversold: bool = False, above_avoid: bool = False,
                   low_entry: bool = False, long_term_broken: bool = False, entry_ok: bool = False,
-                  drawdown_type: str = "UNKNOWN", growth: Optional[float] = None) -> Dict:
+                  drawdown_type: str = "UNKNOWN", growth: Optional[float] = None, tier: Optional[str] = None,
+                  confirmations: Optional[List[str]] = None) -> Dict:
     """相容舊介面：轉呼叫 decide_action。entry_ok 預設 False——沒有進場條件就不會給 BUY_NOW。"""
     return decide_action(opp, overext, quality, risk, valuation, relative_strength, held, damage, oversold,
-                         entry_ok and not above_avoid, low_entry, long_term_broken, growth, drawdown_type)
+                         entry_ok and not above_avoid, low_entry, long_term_broken, growth, drawdown_type, tier, confirmations)
 
 
 # ---------------------------------------------------------------------------
