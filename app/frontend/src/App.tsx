@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Bot,
   BriefcaseBusiness,
   CalendarCheck,
   ChevronDown,
@@ -15,12 +16,14 @@ import { Toaster } from './components/ui/sonner';
 import { fetchSystemStatus, type SystemStatus } from './services/simple-signal-api';
 import { OpportunityPanel } from './OpportunityView';
 import { DailyAdvicePanel } from './DailyAdviceView';
+import { AskPanel } from './AskView';
 import { MyHoldingsPanel, StockLookupPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
 
-type TabKey = 'advice' | 'analyze' | 'daily' | 'opportunity' | 'holdings' | 'backtest';
+type TabKey = 'advice' | 'ask' | 'analyze' | 'daily' | 'opportunity' | 'holdings' | 'backtest';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
   { key: 'advice', label: '今日建議', icon: CalendarCheck, hint: '市場情緒・今天要不要動' },
+  { key: 'ask', label: 'AI 問答', icon: Bot, hint: '結合持股問免費 LLM' },
   { key: 'analyze', label: '個股查詢', icon: Search, hint: '查任一檔的策略排名' },
   { key: 'daily', label: '策略精選', icon: Sparkles, hint: '本月買進名單（單一策略）' },
   { key: 'opportunity', label: '機會評分', icon: Gauge, hint: '跨股比較・進場區・輪動' },
@@ -76,6 +79,7 @@ export default function App() {
           </nav>
 
           {activeTab === 'advice' ? <DailyAdvicePanel /> : null}
+          {activeTab === 'ask' ? <AskPanel /> : null}
           {activeTab === 'analyze' ? <StockLookupPanel /> : null}
           {activeTab === 'daily' ? <StrategyPicksPanel /> : null}
           {activeTab === 'opportunity' ? <OpportunityPanel /> : null}

@@ -24,3 +24,6 @@ services:
       # AI 主線長線回測：免費機把回看期間夾到 5 年，避免下載 20 檔×更長期間逾時（回 HTML 錯誤頁）。
       - key: AI_BACKTEST_MAX_PERIOD
         value: "5y"
+      # AI 問答（免費 Google Gemini）：金鑰不寫進 repo，請在 Render 後台 Environment 填入（Google AI Studio 免費取得）
+      - key: GOOGLE_API_KEY
+        sync: false

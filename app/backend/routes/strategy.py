@@ -72,6 +72,47 @@ def daily_advice() -> dict:
     return advice
 
 
+class AskRequest(BaseModel):
+    question: str = Field(default="", max_length=1000)
+    holdings: list[HoldingIn] = Field(default_factory=list)
+    call_llm: bool = True
+
+
+@router.get("/ask/presets")
+def ask_presets() -> dict:
+    from src.strategy.ask import PRESET_QUESTIONS
+    return {"questions": PRESET_QUESTIONS, "llm_available": bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))}
+
+
+@router.post("/ask")
+def ask(request: AskRequest) -> dict:
+    """AI 問答：問題 + 持股 + 系統今日建議 → 提示詞；call_llm=True 時再呼叫免費 Gemini。
+    持股只用於本次請求（不儲存）；呼叫 LLM 時會把提示詞送到 Google Gemini。"""
+    from src.strategy.ask import build_context, build_prompt, call_gemini
+    q = request.question.strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="請輸入問題。")
+    if len(request.holdings) > 80:
+        raise HTTPException(status_code=400, detail="持股最多 80 檔。")
+    advice = None
+    try:
+        with open(os.path.join(_DOCS, "daily_advice.json"), encoding="utf-8") as f:
+            advice = json.load(f)
+    except Exception:
+        pass
+    try:
+        ctx = build_context([h.model_dump() for h in request.holdings], _report(), advice, _fx())
+        prompt = build_prompt(q, ctx)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"整理持股與建議失敗：{exc}") from exc
+    out = {"prompt": prompt, "cash_plan": ctx.get("cash_plan")}
+    if request.call_llm:
+        out.update(call_gemini(prompt))
+    return out
+
+
 @router.post("/evaluate")
 def evaluate(request: EvaluateRequest) -> dict:
     from src.strategy.momentum import evaluate_holdings

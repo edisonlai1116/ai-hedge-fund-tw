@@ -27,7 +27,7 @@ type Holding = { ticker: string; cost: number; shares: number };
 const HOLDINGS_KEY = 'real_holdings_v2';
 const NOTIFY_KEY = 'strategy_notified_v1';
 
-function loadHoldings(): Holding[] {
+export function loadHoldings(): Holding[] {
   try {
     const raw = localStorage.getItem(HOLDINGS_KEY);
     if (raw) {

@@ -656,7 +656,13 @@ def evaluate_holdings(
         else:
             act = "續抱"
             if row.get("low_entry"):
-                why = f"在低檔布局區（距 52 週高點 {_pct(row.get('dd_52w_pct'), False)}、3 年 {_pct(row.get('ret_3y_pct'))}），部位已足，續抱 {LOWENTRY_HOLD_MONTHS} 個月。"
+                lv = low_view(row, report) or {}
+                if lv.get("recommendation") in ("BUY", "BUY_STAGED"):
+                    why = (f"{lv.get('label')}（距 52 週高點 {_pct(row.get('dd_52w_pct'), False)}、3 年 {_pct(row.get('ret_3y_pct'))}），"
+                           f"部位已足，續抱 {LOWENTRY_HOLD_MONTHS} 個月。")
+                else:
+                    why = (f"價格跌深（距 52 週高點 {_pct(row.get('dd_52w_pct'), False)}），但{lv.get('label') or '不屬於可買的低檔'}："
+                           f"{lv.get('why') or ''}續抱、不加碼。")
             elif row["rank"] <= KEEP_N[it["market"]]:
                 why = f"動能排名第 {row['rank']} 名（前 {KEEP_N[it['market']]} 名內），續抱。"
             else:

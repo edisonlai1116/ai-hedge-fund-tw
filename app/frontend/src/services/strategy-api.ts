@@ -367,3 +367,31 @@ export async function fetchDailyAdvice(): Promise<DailyAdvice> {
   const response = await fetch(`${API_BASE_URL}/strategy/advice`);
   return parse<DailyAdvice>(response, '每日建議讀取失敗');
 }
+
+/* ============================== AI 問答 ============================== */
+
+export type AskResult = {
+  prompt: string;
+  answer?: string;
+  model?: string;
+  error?: string;
+  cash_plan?: { order: number; symbol: string; why: string; value_twd: number; suggest_trim_twd: number | null }[];
+};
+
+export async function fetchAskPresets(): Promise<{ questions: string[]; llm_available: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/strategy/ask/presets`);
+  return parse(response, '讀取預設問題失敗');
+}
+
+export async function askQuestion(
+  question: string,
+  holdings: { ticker: string; cost: number; shares: number }[],
+  callLlm: boolean,
+): Promise<AskResult> {
+  const response = await fetch(`${API_BASE_URL}/strategy/ask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, holdings, call_llm: callLlm }),
+  });
+  return parse<AskResult>(response, '問答失敗');
+}
