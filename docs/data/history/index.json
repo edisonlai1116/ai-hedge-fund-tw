@@ -1042,5 +1042,14 @@
     "top_score": 84,
     "strong_buy": 16,
     "pick_count": 50
+  },
+  {
+    "date": "2026-10-07",
+    "generated_at": "2026-10-07T09:43:14+08:00",
+    "macro_score": 56,
+    "top_ticker": "TSM",
+    "top_score": 83,
+    "strong_buy": 15,
+    "pick_count": 50
   }
 ]
