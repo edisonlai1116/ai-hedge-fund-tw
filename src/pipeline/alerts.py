@@ -10,7 +10,10 @@
 推播管道（擇一或多個）：NTFY_TOPIC / TELEGRAM_BOT_TOKEN+TELEGRAM_CHAT_ID / DISCORD_WEBHOOK_URL / SMTP_*。
 隱私：repo 公開、Actions 日誌公開——CI 中只印筆數，不印持股與訊息內容。
 
-用法：python -m src.pipeline.alerts [--market auto|us|tw|all] [--dry-run] [--force-rebalance]
+  3) 每日建議摘要（--daily-digest，每日報告產生後各推一次）：今天要不要動、恐懼貪婪 / VIX、低檔新訊號與觀察名單。
+     不含持股資訊；多數日子會是「今天不用動」。
+
+用法：python -m src.pipeline.alerts [--market auto|us|tw|all] [--dry-run] [--force-rebalance] [--daily-digest]
 """
 from __future__ import annotations
 
@@ -28,6 +31,7 @@ import requests
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HOLDINGS_TXT = os.path.join(REPO_ROOT, "股票成本.txt")
 STRATEGY_JSON = os.path.join(REPO_ROOT, "docs", "data", "strategy.json")
+ADVICE_JSON = os.path.join(REPO_ROOT, "docs", "data", "daily_advice.json")
 STATE_PATH = os.environ.get("ALERT_STATE_PATH", os.path.join(REPO_ROOT, ".alert_state", "state.json"))
 EVENT_DEDUP_DAYS = 5
 IN_CI = os.environ.get("GITHUB_ACTIONS") == "true"
@@ -257,6 +261,53 @@ def send(title: str, body: str) -> List[str]:
     return sent
 
 
+def format_digest(advice: Dict) -> str:
+    lines = [f"🗓 每日建議 {advice.get('date')}", advice.get("headline", "")]
+    for g in advice.get("sentiment_guidance", []):
+        lines.append(f"• {g}")
+    for m, lab in (("us", "美股"), ("tw", "台股")):
+        d = (advice.get("markets") or {}).get(m)
+        if not d:
+            continue
+        lines.append(f"\n【{lab}】{d['summary']}")
+        for a in [x for x in d["actions"] if x["type"] != "rebalance_buy"][:6]:
+            lines.append(f"• {a['action']} {a['symbol']} {a.get('name') or ''}｜{a.get('close') or ''}")
+        if any(x["type"] == "rebalance_buy" for x in d["actions"]):
+            lines.append("• 月調買進／續抱：" + "、".join(x["symbol"] for x in d["actions"] if x["type"] == "rebalance_buy"))
+        for a in [x for x in d["watch"] if x["type"] != "low_entry_holding"][:5]:
+            lines.append(f"• 觀察 {a['symbol']} {a.get('name') or ''}：{a['action']}")
+    lines.append(f"\n下次月調：{advice.get('next_rebalance')}。規則化訊號，非投資建議。")
+    return "\n".join(lines)
+
+
+def send_digest(dry_run: bool) -> int:
+    try:
+        with open(ADVICE_JSON, encoding="utf-8") as f:
+            advice = json.load(f)
+    except Exception as e:
+        print(f"[alerts] 讀不到每日建議 {ADVICE_JSON}：{e}")
+        return 1
+    slot = "am" if datetime.now(TPE).hour < 12 else "pm"
+    key = f"digest:{advice.get('date')}:{slot}"
+    state = load_state()
+    if state.get(_hash(key)) and not dry_run:
+        print("[alerts] 今日此時段的每日建議已推播過。")
+        return 0
+    body = format_digest(advice)
+    if dry_run or not IN_CI:
+        print(body)
+    if dry_run:
+        return 0
+    channels = send(f"每日建議：{advice.get('headline', '')[:60]}", body)
+    if channels:
+        state[_hash(key)] = datetime.now(TPE).isoformat()
+        save_state(state)
+        print(f"[alerts] 每日建議已推播：{', '.join(channels)}")
+    else:
+        print("[alerts] 尚未設定推播管道，每日建議只產生不推送。")
+    return 0
+
+
 # ===== 主流程 =================================================================
 def resolve_markets(arg: str) -> tuple[set, Dict[str, Optional[float]]]:
     fractions = {"us": session_fraction("us"), "tw": session_fraction("tw")}
@@ -272,7 +323,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--market", default="all", choices=["auto", "us", "tw", "all"])
     ap.add_argument("--dry-run", action="store_true", help="只印出、不推播、不更新去重狀態")
     ap.add_argument("--force-rebalance", action="store_true", help="不論日期都產生月調清單（測試用）")
+    ap.add_argument("--daily-digest", action="store_true", help="推播每日建議摘要（docs/data/daily_advice.json）")
     args = ap.parse_args(argv)
+    if args.daily_digest:
+        return send_digest(args.dry_run)
 
     markets, fractions = resolve_markets(args.market)
     if not markets:

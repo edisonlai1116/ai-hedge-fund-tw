@@ -3,6 +3,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import {
   AlertTriangle,
   BriefcaseBusiness,
+  CalendarCheck,
   ChevronDown,
   Gauge,
   LineChart,
@@ -27,11 +28,13 @@ import {
 } from './services/simple-signal-api';
 import { evaluateHoldings, fetchStrategyReport, type EvaluatedHolding, type RankRow } from './services/strategy-api';
 import { OpportunityPanel } from './OpportunityView';
+import { DailyAdvicePanel } from './DailyAdviceView';
 import { MyHoldingsPanel, StockLookupPanel, StrategyBacktestPanel, StrategyPicksPanel } from './StrategyViews';
 
-type TabKey = 'analyze' | 'daily' | 'opportunity' | 'holdings' | 'backtest' | 'portfolio';
+type TabKey = 'advice' | 'analyze' | 'daily' | 'opportunity' | 'holdings' | 'backtest' | 'portfolio';
 
 const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] = [
+  { key: 'advice', label: '今日建議', icon: CalendarCheck, hint: '市場情緒・今天要不要動' },
   { key: 'analyze', label: '個股查詢', icon: Search, hint: '查任一檔的策略排名' },
   { key: 'daily', label: '策略精選', icon: Sparkles, hint: '本月買進名單（單一策略）' },
   { key: 'opportunity', label: '機會評分', icon: Gauge, hint: '跨股比較・進場區・輪動' },
@@ -41,7 +44,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Search; hint: string }[] 
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>('holdings');
+  const [activeTab, setActiveTab] = useState<TabKey>('advice');
 
   return (
     <>
@@ -54,7 +57,7 @@ export default function App() {
               </span>
               <div>
                 <div className="text-sm font-semibold leading-tight text-slate-900">AI 科技股動能策略</div>
-                <div className="text-xs text-slate-500">單一策略 ・ 我的持股提醒 ・ 對標 VOO / 0050</div>
+                <div className="text-xs text-slate-500">每日建議 ・ 市場情緒 ・ 我的持股提醒 ・ 對標 VOO / 0050</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -87,6 +90,7 @@ export default function App() {
             })}
           </nav>
 
+          {activeTab === 'advice' ? <DailyAdvicePanel /> : null}
           {activeTab === 'analyze' ? <StockLookupPanel /> : null}
           {activeTab === 'daily' ? <StrategyPicksPanel /> : null}
           {activeTab === 'opportunity' ? <OpportunityPanel /> : null}

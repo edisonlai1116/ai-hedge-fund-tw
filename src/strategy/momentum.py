@@ -51,6 +51,21 @@ LOWENTRY_HOLD_MONTHS = 12
 LOWENTRY_SLOTS = 10
 ALLOCATION = {"lowentry": 0.70, "momentum": 0.30}   # 使用者選擇：低檔布局為主
 CONCENTRATION_PCT = 20.0  # 單檔 > 總資產 20% → 減碼（集中度風險）
+
+# 2026-10-07 市場情緒研究（point-in-time，T-1 收盤訊號 → T 開盤成交，成本 0.2%；自建恐懼貪婪見 src.strategy.sentiment）：
+#   採用 1）低檔區「沒用到的槽位」資金放動能名單，而不是現金：美股 46.1% → 50.7%、台股 42.1% → 45.1%（樣本內外皆改善）。
+#   採用 2）恐懼貪婪 < 25（極度恐懼）時，月調「只買不賣」——不在恐慌低點砍掉動能股：美股 → 52.2%（回撤 -39.9% → -38.6%）、
+#          台股 → 45.8%；門檻 15~45 全部 ≥ 不用，樣本內外皆改善。
+#   不採用（回測變差或兩市場不一致）：恐慌時放寬低檔門檻到 -20/-25%、恐慌時加開低檔槽位、貪婪時暫停買進、
+#          只在恐懼時才做低檔、新資金等恐懼才投入（比立即投入少 0.4~1.8%）、每日檢查動能出場。
+IDLE_TO_MOMENTUM = True
+PANIC_NO_SELL_FG = 25.0
+# 動能排名混入 virattt/ai-hedge-fund 技術分析師分數（趨勢/動能/均值回歸加權，src.agents.technicals）：
+#   排名分數 = (1-w) × 動能百分位 + w × 技術分數百分位。完整策略（低檔 + 情緒規則）回測、取報酬最高者：
+#   台股 w=0.7：45.8% → 47.5%（樣本內 44.7→46.6、樣本外 47.1→48.5，w=0.3/0.5 也都較好）；
+#   美股 w=0 最好（52.2%；w=0.3/0.5/0.7 為 51.6/50.0/47.8%、回撤變大）→ 美股維持純動能。
+TECH_BLEND = {"us": 0.0, "tw": 0.7}
+TECH_BARS = 300
 TPE = timezone(timedelta(hours=8))
 
 US_ETFS = {
@@ -78,6 +93,17 @@ TW_AI_UNIVERSE = [
     "3324.TWO", "2059", "6415", "5274.TWO", "3529.TWO", "6488.TWO", "3105.TWO", "2344", "2337", "6531",
     "3036", "2360", "2404", "6139", "4966", "3406", "5269", "2356", "2353", "2324",
 ]
+# 台股族群（類股情緒用；股票池內等權指數）
+TW_GROUPS = {
+    "晶圓代工/矽晶圓": ["2330.TW", "2303.TW", "6488.TWO", "3105.TWO"],
+    "IC 設計": ["2454.TW", "3034.TW", "2379.TW", "3661.TW", "3443.TW", "5274.TWO", "3529.TWO", "6415.TW", "5269.TW", "6531.TW"],
+    "AI 伺服器/ODM": ["2317.TW", "2382.TW", "3231.TW", "2376.TW", "2377.TW", "2357.TW", "6669.TW", "2356.TW", "4938.TW", "2324.TW", "2353.TW"],
+    "散熱/機構": ["3017.TW", "3324.TWO", "3653.TW", "2059.TW", "2421.TW"],
+    "PCB/CCL/連接": ["2383.TW", "6274.TWO", "2368.TW", "3044.TW", "3037.TW", "3533.TW", "2345.TW"],
+    "記憶體": ["2408.TW", "2344.TW", "2337.TW", "8299.TWO"],
+    "封測/設備": ["3711.TW", "2449.TW", "2360.TW", "2404.TW", "6139.TW"],
+    "電源/零組件": ["2308.TW", "6409.TW", "2301.TW", "2327.TW", "3008.TW", "3406.TW", "2474.TW", "2395.TW", "3036.TW"],
+}
 TW_AI_NAMES = {
     "2449": "京元電子", "3533": "嘉澤", "2368": "金像電", "3044": "健鼎", "6274": "台燿", "2383": "台光電",
     "3653": "健策", "3324": "雙鴻", "2059": "川湖", "6415": "矽力-KY", "5274": "信驊", "3529": "力旺",
@@ -178,6 +204,30 @@ def _ignition(f: pd.DataFrame) -> Optional[Dict]:
         return None
 
 
+def tech_score(f: pd.DataFrame) -> Optional[float]:
+    """virattt 技術分析師綜合分數（0~100），只用 f 的最後 TECH_BARS 根 K 線。資料不足回 None。"""
+    try:
+        from src.agents import technicals as T
+        df = f.tail(TECH_BARS).rename(columns=str.lower)
+        if len(df) < 260:
+            return None
+        comps = {"trend": T.calculate_trend_signals(df), "mean_reversion": T.calculate_mean_reversion_signals(df),
+                 "momentum": T.calculate_momentum_signals(df), "volatility": T.calculate_volatility_signals(df),
+                 "stat_arb": T.calculate_stat_arb_signals(df)}
+        v = T.weighted_signal_combination(comps, T.TECHNICAL_WEIGHTS).get("score")
+        return float(v) if v is not None and np.isfinite(v) else None
+    except Exception:
+        return None
+
+
+def blend_rank_scores(mom: pd.Series, tech: Optional[pd.Series], w: float) -> pd.Series:
+    """排名分數 = (1-w) × 動能百分位 + w × 技術百分位（技術缺值視為 0.5）。w=0 時就是純動能百分位。"""
+    a = mom.dropna().rank(pct=True)
+    if not w or tech is None:
+        return a
+    return (1 - w) * a + w * tech.rank(pct=True).reindex(a.index).fillna(0.5)
+
+
 def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
     sc = sharpe_momentum(f["Close"])
     if sc is None:
@@ -206,6 +256,16 @@ def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
     row["low_entry_watch"] = bool(lt_winner and dd is not None and LOWENTRY_DD < dd <= LOWENTRY_WATCH_DD)
     row["low_entry_price"] = round(hi252 * (1 + LOWENTRY_DD), 2) if lt_winner else None
     row["long_term_broken"] = r3 is not None and r3 <= 0
+    # 連續幾天處於低檔區（每日建議用來判斷「今天新觸發」）
+    if row["low_entry"]:
+        hi = c.rolling(252, min_periods=200).max()
+        lt_ok = (c / c.shift(n3) - 1) > 0
+        ok = ((c / hi - 1) <= LOWENTRY_DD) & lt_ok
+        tail = ok.iloc[::-1].tolist()
+        row["low_entry_days"] = next((i for i, v in enumerate(tail) if not v), len(tail))
+    if TECH_BLEND.get(market_of(symbol)):
+        ts = tech_score(f)
+        row["tech_score"] = round(ts, 1) if ts is not None else None
     ign = _ignition(f)
     if ign:
         row["ignition"] = {k: ign.get(k) for k in ("ignition_days_ago", "ignition_gain_pct", "ignition_volume_ratio", "ignition_low")}
@@ -226,7 +286,12 @@ def rank_market(market: str, price_map: Optional[Dict[str, pd.DataFrame]] = None
     syms = universe(market)
     price_map = price_map if price_map is not None else download_closes(syms, period="4y")
     rows = [r for s in syms if s in price_map for r in [score_row(s, price_map[s])] if r]
-    rows.sort(key=lambda r: r["score"], reverse=True)
+    w = TECH_BLEND.get(market, 0.0)
+    rs = blend_rank_scores(pd.Series({r["symbol"]: r["score"] for r in rows}),
+                           pd.Series({r["symbol"]: r.get("tech_score") for r in rows}, dtype=float) if w else None, w)
+    for r in rows:
+        r["rank_score"] = round(float(rs.get(r["symbol"], 0.0)), 4)
+    rows.sort(key=lambda r: r["rank_score"], reverse=True)
     for i, r in enumerate(rows, 1):
         r["rank"] = i
         r["zone"] = zone_of(i, market)
@@ -240,6 +305,7 @@ def rank_market(market: str, price_map: Optional[Dict[str, pd.DataFrame]] = None
         "low_entry": [r["symbol"] for r in low],
         "low_entry_watch": [r["symbol"] for r in watch],
         "top_n": TOP_N[market],
+        "tech_blend": w,
         "threshold_top": rows[TOP_N[market] - 1]["score"] if len(rows) >= TOP_N[market] else None,
         "keep_n": KEEP_N[market],
         "threshold_keep": rows[KEEP_N[market] - 1]["score"] if len(rows) >= KEEP_N[market] else None,
@@ -277,15 +343,64 @@ def is_rebalance_window(today: Optional[date] = None) -> bool:
     return today.weekday() < 5 and n <= 3
 
 
+def us_groups(symbols: Iterable[str]) -> Dict[str, List[str]]:
+    """美股股票池依主題分組（src.ranking.themes）；不在主題表的歸到「其他科技」。"""
+    try:
+        from src.ranking.themes import theme_of
+    except Exception:
+        return {}
+    out: Dict[str, List[str]] = {}
+    for s in symbols:
+        t = theme_of(s)
+        out.setdefault(t.theme if t else "其他科技", []).append(s)
+    return {k: v for k, v in out.items() if len(v) >= 2}
+
+
+def momentum_share(n_low_entry: int) -> float:
+    """動能實際資金占比：低檔區沒用到的槽位資金也放動能（IDLE_TO_MOMENTUM，回測驗證）。"""
+    if not IDLE_TO_MOMENTUM:
+        return ALLOCATION["momentum"]
+    used = min(n_low_entry, LOWENTRY_SLOTS) / LOWENTRY_SLOTS
+    return ALLOCATION["momentum"] + ALLOCATION["lowentry"] * (1 - used)
+
+
+def panic_mode(report: Dict) -> bool:
+    fg = ((report.get("sentiment") or {}).get("fear_greed") or {}).get("score")
+    return fg is not None and fg < PANIC_NO_SELL_FG
+
+
 def build_strategy_report() -> Dict:
     now = datetime.now(TPE)
     markets = {}
+    prices: Dict[str, Dict[str, pd.DataFrame]] = {}
     for m in ("us", "tw"):
         try:
-            markets[m] = rank_market(m)
+            prices[m] = download_closes(universe(m), period="4y")
+            markets[m] = rank_market(m, prices[m])
+            markets[m]["momentum_share"] = round(momentum_share(len(markets[m]["low_entry"])), 3)
         except Exception as e:
             print(f"[strategy] {m} 排名失敗：{e}")
+    sentiment = None
+    try:
+        from src.strategy.sentiment import market_sentiment
+        groups, uclose = {}, {}
+        if "us" in prices:
+            groups.update({f"美股·{k}": v for k, v in us_groups(prices["us"]).items()})
+            uclose.update({s: f["Close"] for s, f in prices["us"].items()})
+        if "tw" in prices:
+            groups.update({f"台股·{k}": v for k, v in TW_GROUPS.items()})
+            uclose.update({s: f["Close"] for s, f in prices["tw"].items()})
+        ucl = pd.DataFrame(uclose) if uclose else None
+        if ucl is not None:
+            ucl.index = pd.to_datetime(ucl.index)
+            if ucl.index.tz is not None:
+                ucl.index = ucl.index.tz_localize(None)
+            ucl = ucl.groupby(ucl.index.normalize()).last()   # 台美股混合時區 → 以日期對齊
+        sentiment = market_sentiment(groups, ucl)
+    except Exception as e:
+        print(f"[strategy] 市場情緒計算失敗（不影響排名）：{type(e).__name__}: {e}")
     return {
+        "sentiment": sentiment,
         "generated_at": now.isoformat(timespec="seconds"),
         "strategy": {
             "name": "長線低檔布局 70% ＋ 動能輪動 30%",
@@ -294,7 +409,11 @@ def build_strategy_report() -> Dict:
                                f"持有 {LOWENTRY_HOLD_MONTHS} 個月；回落 {abs(LOWENTRY_WATCH_DD):.0%}~{abs(LOWENTRY_DD):.0%} 列入觀察。"),
             "rule": (f"資金 {ALLOCATION['lowentry']:.0%} 給長線低檔布局、{ALLOCATION['momentum']:.0%} 給動能輪動"
                      f"（美股前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；台股前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣）。"
-                     f"持股只有在動能也轉弱且 {LOWENTRY_LT_YEARS} 年長線趨勢破壞時才建議換股。"),
+                     f"持股只有在動能也轉弱且 {LOWENTRY_LT_YEARS} 年長線趨勢破壞時才建議換股。"
+                     f"低檔區沒用到的槽位資金放動能名單（不留現金）；恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}（極度恐懼）時月調只買不賣。"),
+            "idle_to_momentum": IDLE_TO_MOMENTUM, "panic_no_sell_fg": PANIC_NO_SELL_FG, "tech_blend": TECH_BLEND,
+            "ranking_rule": (f"美股排名＝Sharpe 動能；台股排名＝動能 {1 - TECH_BLEND['tw']:.0%} ＋ virattt 技術分析師分數 "
+                             f"{TECH_BLEND['tw']:.0%}（皆為股票池內百分位）。"),
             "next_rebalance": next_rebalance(now.date()),
             "in_rebalance_window": is_rebalance_window(now.date()),
         },
@@ -306,9 +425,20 @@ def build_strategy_report() -> Dict:
 # ---------------------------------------------------------------------------
 # 持股評估（網站「我的持股」與自動提醒共用）
 # ---------------------------------------------------------------------------
-def _rank_for_score(score: float, rows: List[Dict]) -> int:
-    """非股票池個股：以分數插入股票池排名，得到等效名次。"""
-    return 1 + sum(1 for r in rows if r["score"] > score)
+def _rank_for_score(row: Dict, rows: List[Dict]) -> int:
+    """非股票池個股：以同樣的排名分數（動能 / 技術百分位）插入股票池，得到等效名次。"""
+    if not rows:
+        return 1
+    n = len(rows)
+    w = TECH_BLEND.get(market_of(row["symbol"]), 0.0)
+    pm = sum(1 for r in rows if r["score"] <= row["score"]) / n
+    rs = pm
+    if w:
+        t = row.get("tech_score")
+        pt = 0.5 if t is None else sum(1 for r in rows if r.get("tech_score") is not None and r["tech_score"] <= t) / n
+        rs = (1 - w) * pm + w * pt
+    row["rank_score"] = round(rs, 4)
+    return 1 + sum(1 for r in rows if r.get("rank_score", 0) > rs)
 
 
 def evaluate_holdings(
@@ -355,7 +485,7 @@ def evaluate_holdings(
                 it["price"] = float(f["Close"].dropna().iloc[-1]) if len(f) else None
             else:
                 rows = markets.get(it["market"], {}).get("rows", [])
-                r["rank"] = _rank_for_score(r["score"], rows)
+                r["rank"] = _rank_for_score(r, rows)
                 r["zone"] = zone_of(r["rank"], it["market"])
                 r["outside_universe"] = True
                 it["row"] = r
@@ -366,7 +496,9 @@ def evaluate_holdings(
 
     total_twd = sum(it["value_twd"] for it in items) or 0.0
     sleeve = {m: sum(it["value_twd"] for it in items if it["market"] == m and not is_etf(it["symbol"])) for m in ("us", "tw")}
-    target = {m: (sleeve[m] * ALLOCATION["momentum"] / TOP_N[m] if sleeve[m] else 0.0) for m in sleeve}
+    mshare = {m: markets.get(m, {}).get("momentum_share", ALLOCATION["momentum"]) for m in sleeve}
+    target = {m: (sleeve[m] * mshare[m] / TOP_N[m] if sleeve[m] else 0.0) for m in sleeve}
+    panic = panic_mode(report)
     low_target = {m: (sleeve[m] * ALLOCATION["lowentry"] / LOWENTRY_SLOTS if sleeve[m] else 0.0) for m in sleeve}
 
     out_rows = []
@@ -400,6 +532,10 @@ def evaluate_holdings(
         elif row["rank"] <= TOP_N[it["market"]] and tgt and it["value_twd"] < tgt * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             act = "加碼"
             why = f"動能排名第 {row['rank']} 名（前 {TOP_N[it['market']]} 名買進區），部位僅目標的 {it['value_twd'] / tgt:.0%}，加碼至約 NT${tgt:,.0f}。"
+        elif row["rank"] > KEEP_N[it["market"]] and row.get("long_term_broken") and panic:
+            act = "續抱"
+            why = (f"動能排名第 {row['rank']} 名、長線趨勢也破壞，原本該換股；但市場處於極度恐懼"
+                   f"（恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}）——回測顯示恐慌時不賣、等情緒回穩再換，報酬較高、回撤較小。")
         elif row["rank"] > KEEP_N[it["market"]] and row.get("long_term_broken"):
             act = "賣出換股"
             why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名），且 {LOWENTRY_LT_YEARS} 年報酬 "
@@ -451,6 +587,8 @@ def evaluate_holdings(
         "target_per_name_twd": {m: round(v) for m, v in target.items()},
         "low_entry_target_twd": {m: round(v) for m, v in low_target.items()},
         "allocation": ALLOCATION,
+        "momentum_share": mshare,
+        "panic_no_sell": panic,
         "holdings": out_rows,
         "new_buys": new_buys,
         "low_entry_buys": low_buys,
@@ -487,7 +625,7 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
         if row is None and f is not None:
             row = score_row(sym, f)
             if row:
-                row["rank"] = _rank_for_score(row["score"], rows)
+                row["rank"] = _rank_for_score(row, rows)
                 row["zone"] = zone_of(row["rank"], m)
                 row["outside_universe"] = True
         keep = KEEP_N[m]

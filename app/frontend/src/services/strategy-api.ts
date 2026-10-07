@@ -229,3 +229,91 @@ export async function fetchRankingValidation(market: 'us' | 'tw'): Promise<Recor
   const response = await fetch(`${API_BASE_URL}/daily/data/ranking_validation_${market}.json?_=${Date.now()}`);
   return parse(response, '驗證結果讀取失敗。');
 }
+
+/* ============================== 每日建議（市場情緒） ============================== */
+
+export type SectorMood = {
+  key: string;
+  name: string;
+  kind: 'etf' | 'group';
+  ret_1m_pct: number;
+  ret_3m_pct: number;
+  ret_6m_pct: number;
+  rel_spy_3m_pct: number | null;
+  rsi14: number;
+  dist_ma50_pct: number;
+  breadth_above_ma50_pct: number | null;
+  mood: '過熱' | '強勢' | '中性' | '弱勢' | '超賣';
+  members?: number;
+};
+
+export type MarketSentiment = {
+  asof: string | null;
+  fear_greed: {
+    score: number | null;
+    label: string;
+    prev_1d: number | null;
+    prev_1w: number | null;
+    prev_1m: number | null;
+    components: { key: string; name: string; score: number }[];
+    history: { date: string; fg: number }[];
+    note: string;
+  };
+  cnn: { score: number; rating: string; timestamp: string; previous_close: number | null; previous_1_week: number | null; previous_1_month: number | null } | null;
+  cnn_validation: { n_days: number; corr: number; mean_abs_diff: number } | null;
+  vix: { value: number | null; prev_1d: number | null; ma50: number | null; vix3m: number | null; backwardation: boolean; panic: boolean };
+  taiex: { close: number; vs_ma200_pct: number; rsi14: number; ret_1m_pct: number; dd_52w_pct: number } | null;
+  sectors: SectorMood[];
+};
+
+export type AdviceItem = {
+  type: 'low_entry_new' | 'low_entry_holding' | 'near_trigger' | 'rebalance_buy' | 'panic_hold' | 'ignition';
+  symbol: string;
+  name?: string;
+  close?: number;
+  rank?: number;
+  dd_52w_pct?: number | null;
+  ret_3y_pct?: number | null;
+  high_52w?: number;
+  low_entry_price?: number | null;
+  action: string;
+  reason: string;
+};
+
+export type MarketAdvice = {
+  level: 'action' | 'watch' | 'hold';
+  summary: string;
+  actions: AdviceItem[];
+  watch: AdviceItem[];
+  hot_groups: string[];
+  oversold_groups: string[];
+  momentum_share?: number;
+};
+
+
+export type DailyAdvice = {
+  generated_at: string;
+  date: string;
+  headline: string;
+  panic_no_sell: boolean;
+  in_rebalance_window: boolean;
+  next_rebalance: string;
+  sentiment_guidance: string[];
+  markets: Partial<Record<'us' | 'tw', MarketAdvice>>;
+  rules: { rule: string; check: string }[];
+  disclaimer: string;
+  sentiment: MarketSentiment | null;
+  history: { date: string; headline: string; panic_no_sell: boolean; markets: Record<string, { level: string; summary: string; buys: string[] }> }[];
+  evidence: Record<
+    'us' | 'tw',
+    {
+      sentiment_study: { since: string; note: string; rows: { bucket: string; days: number; pool_21?: number; pool_63?: number; pool_126?: number; bench_63?: number }[] } | null;
+      sentiment_ablation: ({ name: string } & Record<string, PeriodStats | string>)[] | null;
+    }
+  > | null;
+};
+
+export async function fetchDailyAdvice(): Promise<DailyAdvice> {
+  const response = await fetch(`${API_BASE_URL}/strategy/advice`);
+  return parse<DailyAdvice>(response, '每日建議讀取失敗');
+}

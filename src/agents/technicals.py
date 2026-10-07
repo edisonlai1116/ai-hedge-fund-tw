@@ -1,15 +1,9 @@
 import math
 
-from langchain_core.messages import HumanMessage
-
-from src.graph.state import AgentState, show_agent_reasoning
-from src.utils.api_key import get_api_key_from_state
 import json
 import pandas as pd
 import numpy as np
 
-from src.tools.api import get_prices, prices_to_df
-from src.utils.progress import progress
 
 
 def safe_float(value, default=0.0):
@@ -32,7 +26,7 @@ def safe_float(value, default=0.0):
 
 
 ##### Technical Analyst #####
-def technical_analyst_agent(state: AgentState, agent_id: str = "technical_analyst_agent"):
+def technical_analyst_agent(state, agent_id: str = "technical_analyst_agent"):
     """
     Sophisticated technical analysis system that combines multiple trading strategies for multiple tickers:
     1. Trend Following
@@ -41,6 +35,14 @@ def technical_analyst_agent(state: AgentState, agent_id: str = "technical_analys
     4. Volatility Analysis
     5. Statistical Arbitrage Signals
     """
+    # 依賴 langchain / 付費資料 API 的匯入放在這裡：讓下方純價格計算函式可在免 Key 環境（策略排名、回測）單獨使用。
+    from langchain_core.messages import HumanMessage
+
+    from src.graph.state import show_agent_reasoning
+    from src.tools.api import get_prices, prices_to_df
+    from src.utils.api_key import get_api_key_from_state
+    from src.utils.progress import progress
+
     data = state["data"]
     start_date = data["start_date"]
     end_date = data["end_date"]

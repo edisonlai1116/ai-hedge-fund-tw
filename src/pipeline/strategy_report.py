@@ -16,6 +16,8 @@ BACKTEST_JSON = os.path.join(DATA_DIR, "strategy_backtest.json")
 OPPORTUNITY_JSON = os.path.join(DATA_DIR, "opportunity.json")
 SIGNAL_LOG = os.path.join(DATA_DIR, "signal_log.jsonl")
 SIGNAL_ACCURACY_JSON = os.path.join(DATA_DIR, "signal_accuracy.json")
+ADVICE_JSON = os.path.join(DATA_DIR, "daily_advice.json")
+ADVICE_LOG = os.path.join(DATA_DIR, "advice_log.jsonl")
 BACKTEST_MAX_AGE_DAYS = 7
 
 
@@ -78,6 +80,20 @@ def main(argv=None) -> int:
             for m, d in bt["markets"].items():
                 p = d["periods"]["全期"]
                 print(f"[strategy_report] 回測 {m}: 年化 {p['strategy']['cagr_pct']}% vs {d['benchmark_symbol']} {p['benchmark']['cagr_pct']}%")
+
+    # 每日建議（市場情緒 + 低檔/月調/點火）：每天都給結論，多數日子是「今天不用動」。
+    try:
+        from src.strategy.daily_advice import append_log, build_daily_advice
+        bt_json = None
+        if os.path.exists(BACKTEST_JSON):
+            with open(BACKTEST_JSON, encoding="utf-8") as f:
+                bt_json = json.load(f)
+        advice = build_daily_advice(report, bt_json)
+        _write(advice, ADVICE_JSON)
+        append_log(advice, ADVICE_LOG)
+        print(f"[strategy_report] 每日建議：{advice['headline']}")
+    except Exception as exc:
+        print(f"[strategy_report] 每日建議失敗：{type(exc).__name__}: {exc}")
     return 0
 
 

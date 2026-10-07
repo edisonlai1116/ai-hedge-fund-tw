@@ -1,0 +1,393 @@
+{
+ "generated_at": "2026-10-07T21:38:59+08:00",
+ "date": "2026-10-07",
+ "headline": "今天有操作：美股 1 檔新低檔買點｜恐懼貪婪 42（恐懼）、VIX 15.8",
+ "panic_no_sell": false,
+ "in_rebalance_window": false,
+ "next_rebalance": "2026-11-02",
+ "sentiment_guidance": [
+  "恐懼（42）：歷史上偏有利於買方；照規則執行，不需要額外動作。歷史上（2009 起）恐懼貪婪在「恐懼 25-45」時，AI 股池未來 3 個月平均 +7.7%、大盤 +4.4%。"
+ ],
+ "markets": {
+  "us": {
+   "level": "action",
+   "summary": "今天要操作：1 檔新低檔買點",
+   "actions": [
+    {
+     "symbol": "CIEN",
+     "name": "",
+     "close": 434.8,
+     "rank": 92,
+     "dd_52w_pct": -30.7,
+     "ret_3y_pct": 822.0,
+     "high_52w": 627.0,
+     "low_entry_price": 438.9,
+     "type": "low_entry_new",
+     "action": "買進（低檔布局）",
+     "reason": "長線贏家（3 年 +822%）剛跌破 52 週高點 627.0 的 -30%（目前 -31%，第 1 天）：新低檔訊號，買進後持有 12 個月。"
+    }
+   ],
+   "watch": [
+    {
+     "symbol": "OKLO",
+     "name": "",
+     "close": 36.44,
+     "rank": 96,
+     "dd_52w_pct": -79.1,
+     "ret_3y_pct": 252.8,
+     "high_52w": 174.14,
+     "low_entry_price": 121.9,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 232 天（距高點 -79%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "ORCL",
+     "name": "",
+     "close": 144.6,
+     "rank": 79,
+     "dd_52w_pct": -53.4,
+     "ret_3y_pct": 40.4,
+     "high_52w": 310.01,
+     "low_entry_price": 217.01,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 86 天（距高點 -53%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "WDC",
+     "name": "",
+     "close": 398.5,
+     "rank": 60,
+     "dd_52w_pct": -46.6,
+     "ret_3y_pct": 1065.2,
+     "high_52w": 745.99,
+     "low_entry_price": 522.19,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 36 天（距高點 -47%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "FSLR",
+     "name": "",
+     "close": 175.95,
+     "rank": 95,
+     "dd_52w_pct": -44.7,
+     "ret_3y_pct": 12.5,
+     "high_52w": 318.25,
+     "low_entry_price": 222.77,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 37 天（距高點 -45%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "NFLX",
+     "name": "",
+     "close": 68.79,
+     "rank": 102,
+     "dd_52w_pct": -44.6,
+     "ret_3y_pct": 80.9,
+     "high_52w": 124.14,
+     "low_entry_price": 86.89,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 118 天（距高點 -45%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "NRG",
+     "name": "",
+     "close": 101.78,
+     "rank": 101,
+     "dd_52w_pct": -44.3,
+     "ret_3y_pct": 186.3,
+     "high_52w": 182.82,
+     "low_entry_price": 127.97,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 46 天（距高點 -44%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "KLAC",
+     "name": "",
+     "close": 192.9,
+     "rank": 63,
+     "dd_52w_pct": -36.0,
+     "ret_3y_pct": 328.9,
+     "high_52w": 301.37,
+     "low_entry_price": 210.96,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 53 天（距高點 -36%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "GLW",
+     "name": "",
+     "close": 164.01,
+     "rank": 77,
+     "dd_52w_pct": -35.7,
+     "ret_3y_pct": 478.1,
+     "high_52w": 255.21,
+     "low_entry_price": 178.65,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 60 天（距高點 -36%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "VRT",
+     "name": "",
+     "close": 244.47,
+     "rank": 94,
+     "dd_52w_pct": -35.0,
+     "ret_3y_pct": 538.9,
+     "high_52w": 376.06,
+     "low_entry_price": 263.24,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 21 天（距高點 -35%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "AKAM",
+     "name": "",
+     "close": 107.29,
+     "rank": 87,
+     "dd_52w_pct": -33.4,
+     "ret_3y_pct": 0.4,
+     "high_52w": 161.14,
+     "low_entry_price": 112.8,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 5 天（距高點 -33%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "ARM",
+     "name": "",
+     "close": 296.49,
+     "rank": 21,
+     "dd_52w_pct": -32.5,
+     "ret_3y_pct": 467.3,
+     "high_52w": 439.46,
+     "low_entry_price": 307.62,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 8 天（距高點 -32%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "IBM",
+     "name": "",
+     "close": 221.2,
+     "rank": 90,
+     "dd_52w_pct": -32.3,
+     "ret_3y_pct": 72.3,
+     "high_52w": 326.89,
+     "low_entry_price": 228.82,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 10 天（距高點 -32%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "UBER",
+     "name": "",
+     "close": 68.83,
+     "rank": 93,
+     "dd_52w_pct": -31.0,
+     "ret_3y_pct": 50.7,
+     "high_52w": 99.72,
+     "low_entry_price": 69.8,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 12 天（距高點 -31%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "CRDO",
+     "name": "",
+     "close": 216.08,
+     "rank": 23,
+     "dd_52w_pct": -28.6,
+     "ret_3y_pct": 1255.6,
+     "high_52w": 302.52,
+     "low_entry_price": 211.76,
+     "type": "near_trigger",
+     "action": "接近低檔價（差 2.0%）",
+     "reason": "跌到 211.76（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+    },
+    {
+     "symbol": "AMAT",
+     "name": "",
+     "close": 517.38,
+     "rank": 45,
+     "dd_52w_pct": -28.4,
+     "ret_3y_pct": 279.6,
+     "high_52w": 722.23,
+     "low_entry_price": 505.56,
+     "type": "near_trigger",
+     "action": "接近低檔價（差 2.3%）",
+     "reason": "跌到 505.56（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+    }
+   ],
+   "hot_groups": [],
+   "oversold_groups": [],
+   "momentum_share": 0.3
+  },
+  "tw": {
+   "level": "watch",
+   "summary": "今天不用買賣；10 檔列入觀察",
+   "actions": [],
+   "watch": [
+    {
+     "symbol": "2327.TW",
+     "name": "國巨",
+     "close": 647.0,
+     "rank": 27,
+     "dd_52w_pct": -43.2,
+     "ret_3y_pct": 609.6,
+     "high_52w": 1140.0,
+     "low_entry_price": 798.0,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 60 天（距高點 -43%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "2337.TW",
+     "name": "旺宏",
+     "close": 118.0,
+     "rank": 55,
+     "dd_52w_pct": -36.4,
+     "ret_3y_pct": 288.3,
+     "high_52w": 185.5,
+     "low_entry_price": 129.85,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 36 天（距高點 -36%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "3529.TWO",
+     "name": "力旺",
+     "close": 3015.0,
+     "rank": 43,
+     "dd_52w_pct": -35.5,
+     "ret_3y_pct": 75.7,
+     "high_52w": 4674.57,
+     "low_entry_price": 3272.2,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 5 天（距高點 -36%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "3533.TW",
+     "name": "嘉澤",
+     "close": 1825.0,
+     "rank": 47,
+     "dd_52w_pct": -34.8,
+     "ret_3y_pct": 140.7,
+     "high_52w": 2800.34,
+     "low_entry_price": 1960.24,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 38 天（距高點 -35%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "6415.TW",
+     "name": "矽力-KY",
+     "close": 456.5,
+     "rank": 39,
+     "dd_52w_pct": -32.2,
+     "ret_3y_pct": 86.3,
+     "high_52w": 673.0,
+     "low_entry_price": 471.1,
+     "type": "low_entry_holding",
+     "action": "低檔區（已持續）",
+     "reason": "已在低檔區 36 天（距高點 -32%）；還沒買、且低檔槽位未滿可分批買；已買者續抱。"
+    },
+    {
+     "symbol": "2356.TW",
+     "name": "英業達",
+     "close": 58.1,
+     "rank": 48,
+     "dd_52w_pct": -29.8,
+     "ret_3y_pct": 14.8,
+     "high_52w": 82.72,
+     "low_entry_price": 57.9,
+     "type": "near_trigger",
+     "action": "接近低檔價（差 0.3%）",
+     "reason": "跌到 57.9（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+    },
+    {
+     "symbol": "8299.TWO",
+     "name": "群聯",
+     "close": 2060.0,
+     "rank": 46,
+     "dd_52w_pct": -27.9,
+     "ret_3y_pct": 482.3,
+     "high_52w": 2859.12,
+     "low_entry_price": 2001.38,
+     "type": "near_trigger",
+     "action": "接近低檔價（差 2.9%）",
+     "reason": "跌到 2001.38（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+    },
+    {
+     "symbol": "2383.TW",
+     "name": "台光電",
+     "close": 5950.0,
+     "rank": 6,
+     "dd_52w_pct": -5.9,
+     "ret_3y_pct": 1374.4,
+     "high_52w": 6321.14,
+     "low_entry_price": 4424.8,
+     "type": "ignition",
+     "action": "🔥 爆量長紅點火",
+     "reason": "動能第 6 名、單日 +5.18%、量 2.54 倍（事件提醒；主規則仍是月調）。"
+    },
+    {
+     "symbol": "6669.TW",
+     "name": "緯穎",
+     "close": 2240.0,
+     "rank": 23,
+     "dd_52w_pct": -14.3,
+     "ret_3y_pct": 346.9,
+     "high_52w": 2615.0,
+     "low_entry_price": 1830.5,
+     "type": "ignition",
+     "action": "🔥 爆量長紅點火",
+     "reason": "動能第 23 名、單日 +6.51%、量 1.55 倍（事件提醒；主規則仍是月調）。"
+    },
+    {
+     "symbol": "3661.TW",
+     "name": "世芯-KY",
+     "close": 4190.0,
+     "rank": 29,
+     "dd_52w_pct": -21.4,
+     "ret_3y_pct": 78.1,
+     "high_52w": 5333.31,
+     "low_entry_price": 3733.32,
+     "type": "ignition",
+     "action": "🔥 爆量長紅點火",
+     "reason": "動能第 29 名、單日 +5.82%、量 1.6 倍（事件提醒；主規則仍是月調）。"
+    }
+   ],
+   "hot_groups": [
+    "晶圓代工/矽晶圓"
+   ],
+   "oversold_groups": [],
+   "momentum_share": 0.65
+  }
+ },
+ "rules": [
+  {
+   "rule": "低檔布局：長線贏家（3 年報酬 > 0）跌破 52 週高點 -30% → 買進持有 12 個月",
+   "check": "每天"
+  },
+  {
+   "rule": "動能輪動：月初買前 N 名、跌出 KEEP_N 名且長線破壞才賣",
+   "check": "每月前 3 個平日"
+  },
+  {
+   "rule": "低檔區沒用到的資金放動能名單（不留現金）",
+   "check": "每天（低檔訊號出現時從動能部位挪錢）"
+  },
+  {
+   "rule": "恐懼貪婪 < 25：月調只買不賣",
+   "check": "月調日"
+  }
+ ],
+ "disclaimer": "規則化訊號，回測有倖存者偏差，非投資建議。"
+}

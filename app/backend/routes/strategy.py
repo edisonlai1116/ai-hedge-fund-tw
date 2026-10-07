@@ -45,6 +45,33 @@ def strategy_report() -> dict:
     return _report()
 
 
+@router.get("/advice")
+def daily_advice() -> dict:
+    """每日建議（市場情緒 + 今日該不該動）：每日 GitHub Actions 產生 docs/data/daily_advice.json。"""
+    path = os.path.join(_DOCS, "daily_advice.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            advice = json.load(f)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"每日建議尚未產生：{exc}") from exc
+    rep = _report()
+    advice["sentiment"] = rep.get("sentiment")
+    log = os.path.join(_DOCS, "advice_log.jsonl")
+    try:
+        with open(log, encoding="utf-8") as f:
+            advice["history"] = [json.loads(x) for x in f if x.strip()][-30:][::-1]
+    except Exception:
+        advice["history"] = []
+    try:
+        with open(os.path.join(_DOCS, "strategy_backtest.json"), encoding="utf-8") as f:
+            bt = json.load(f)
+        advice["evidence"] = {m: {"sentiment_study": d.get("sentiment_study"), "sentiment_ablation": d.get("sentiment_ablation")}
+                              for m, d in bt.get("markets", {}).items()}
+    except Exception:
+        advice["evidence"] = None
+    return advice
+
+
 @router.post("/evaluate")
 def evaluate(request: EvaluateRequest) -> dict:
     from src.strategy.momentum import evaluate_holdings
