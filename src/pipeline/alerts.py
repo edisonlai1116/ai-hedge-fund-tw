@@ -280,6 +280,20 @@ def format_digest(advice: Dict) -> str:
     return "\n".join(lines)
 
 
+def format_holdings_digest(ev: Dict) -> str:
+    """我的持股：今日損益 + 每檔今天該做什麼（推播私訊，不寫進公開 repo / 日誌）。"""
+    pnl, pct = ev.get("day_pnl_twd") or 0, ev.get("day_change_pct")
+    lines = [f"【我的持股】今日 {'+' if pnl >= 0 else '-'}NT${abs(pnl):,.0f}" + (f"（{pct:+.2f}%）" if pct is not None else "")
+             + f"｜總資產 NT${ev.get('total_twd', 0):,.0f}"]
+    rows = sorted(ev.get("holdings", []), key=lambda r: (r.get("today") == "不用動", -(abs(r.get("day_pnl_twd") or 0))))
+    for r in rows:
+        chg = r.get("day_change_pct")
+        chg_t = f"{chg:+.1f}%" if chg is not None else "—"
+        lines.append(f"• {r['symbol']} {chg_t}（{'+' if (r.get('day_pnl_twd') or 0) >= 0 else '-'}NT${abs(r.get('day_pnl_twd') or 0):,.0f}）"
+                     f"→ {r.get('today')}" + (f"：{r.get('today_reason')}" if r.get("today") != "不用動" and r.get("today_reason") else ""))
+    return "\n".join(lines)
+
+
 def send_digest(dry_run: bool) -> int:
     try:
         with open(ADVICE_JSON, encoding="utf-8") as f:
@@ -294,6 +308,15 @@ def send_digest(dry_run: bool) -> int:
         print("[alerts] 今日此時段的每日建議已推播過。")
         return 0
     body = format_digest(advice)
+    holdings = load_holdings()
+    if holdings:
+        try:
+            with open(STRATEGY_JSON, encoding="utf-8") as f:
+                report = json.load(f)
+            from src.strategy.momentum import evaluate_holdings, usd_twd
+            body += "\n\n" + format_holdings_digest(evaluate_holdings(holdings, report, usd_twd()))
+        except Exception as e:
+            print(f"[alerts] 持股每日建議失敗：{type(e).__name__}")
     if dry_run or not IN_CI:
         print(body)
     if dry_run:

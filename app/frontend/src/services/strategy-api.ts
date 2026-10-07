@@ -7,6 +7,19 @@ export type Ignition = {
   ignition_low: number;
 };
 
+export type Virattt = {
+  score: number;
+  signal: 'bullish' | 'neutral' | 'bearish' | string;
+  confidence: number;
+  trend: number | null;
+  momentum: number | null;
+  mean_reversion: number | null;
+  volatility: number | null;
+  stat_arb: number | null;
+};
+
+export type Spike = { date: string; gain_pct: number; limit_price: number | null };
+
 export type RankRow = {
   symbol: string;
   name: string;
@@ -26,6 +39,10 @@ export type RankRow = {
   low_entry?: boolean;
   low_entry_watch?: boolean;
   low_entry_price?: number | null;
+  virattt?: Virattt | null;
+  tech_score?: number | null;
+  spike?: Spike | null;
+  bounce_20d_pct?: number | null;
 };
 
 export type MarketRanking = {
@@ -72,6 +89,14 @@ export type EvaluatedHolding = {
   ignition: Ignition | null;
   action: HoldingAction;
   reason: string;
+  today?: string;
+  today_reason?: string;
+  day_change_pct?: number | null;
+  day_pnl_twd?: number;
+  day_pnl_local?: number;
+  spike?: Spike | null;
+  virattt?: Virattt | null;
+  dd_52w_pct?: number | null;
 };
 
 export type NewBuy = {
@@ -91,6 +116,9 @@ export type EvaluateResult = {
   in_rebalance_window: boolean;
   fx_usd_twd: number;
   total_twd: number;
+  day_pnl_twd?: number;
+  day_change_pct?: number | null;
+  day_pnl_by_market_twd?: Record<'us' | 'tw', number>;
   sleeve_twd: Record<string, number>;
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];
@@ -267,7 +295,10 @@ export type MarketSentiment = {
 };
 
 export type AdviceItem = {
-  type: 'low_entry_new' | 'low_entry_holding' | 'near_trigger' | 'rebalance_buy' | 'panic_hold' | 'ignition';
+  type: 'low_entry_new' | 'low_entry_limit' | 'low_entry_holding' | 'near_trigger' | 'rebalance_buy' | 'rebalance_wait' | 'panic_hold' | 'ignition';
+  spike?: Spike | null;
+  bounce_20d_pct?: number | null;
+  virattt?: Virattt | null;
   symbol: string;
   name?: string;
   close?: number;
@@ -288,6 +319,12 @@ export type MarketAdvice = {
   hot_groups: string[];
   oversold_groups: string[];
   momentum_share?: number;
+  virattt?: {
+    bullish: { symbol: string; name?: string; close: number; rank: number; day_change_pct?: number; virattt: Virattt }[];
+    bearish: { symbol: string; name?: string; close: number; rank: number; day_change_pct?: number; virattt: Virattt }[];
+    counts: Record<string, number>;
+    used_in_ranking: boolean;
+  };
 };
 
 

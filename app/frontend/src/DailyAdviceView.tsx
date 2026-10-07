@@ -3,6 +3,7 @@ import { Activity, CalendarCheck, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { fetchDailyAdvice, type AdviceItem, type DailyAdvice, type MarketAdvice, type SectorMood } from './services/strategy-api';
+import { HoldingsTodayCard, ViratttBadge } from './StrategyViews';
 
 const LEVEL_STYLE: Record<MarketAdvice['level'], string> = {
   action: 'bg-emerald-600 text-white',
@@ -78,6 +79,7 @@ function ItemTable({ items }: { items: AdviceItem[] }) {
             <th className="py-1.5 pr-2">建議</th>
             <th className="py-1.5 pr-2 text-right">收盤</th>
             <th className="py-1.5 pr-2 text-right">距高點</th>
+            <th className="py-1.5 pr-2">ai-hedge 技術</th>
             <th className="py-1.5 pr-2">理由</th>
           </tr>
         </thead>
@@ -91,11 +93,55 @@ function ItemTable({ items }: { items: AdviceItem[] }) {
               <td className="whitespace-nowrap py-1.5 pr-2 text-slate-800">{a.action}</td>
               <td className="py-1.5 pr-2 text-right tabular-nums">{a.close ?? '—'}</td>
               <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(a.dd_52w_pct)}`}>{a.dd_52w_pct != null ? `${a.dd_52w_pct}%` : '—'}</td>
+              <td className="py-1.5 pr-2">{a.symbol !== '—' ? <ViratttBadge v={a.virattt} /> : null}</td>
               <td className="py-1.5 pr-2 text-xs text-slate-600">{a.reason}</td>
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ViratttSection({ data }: { data: NonNullable<MarketAdvice['virattt']> }) {
+  const [open, setOpen] = useState(false);
+  const list = (title: string, rows: NonNullable<MarketAdvice['virattt']>['bullish']) => (
+    <div>
+      <div className="mb-1 text-xs font-medium text-slate-700">{title}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {rows.map((r) => (
+          <span
+            key={r.symbol}
+            title={`趨勢 ${r.virattt.trend ?? '—'}・動能 ${r.virattt.momentum ?? '—'}・均值回歸 ${r.virattt.mean_reversion ?? '—'}・波動 ${r.virattt.volatility ?? '—'}・統計套利 ${r.virattt.stat_arb ?? '—'}`}
+            className="inline-flex items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5 text-xs"
+          >
+            {r.symbol.replace(/\.TWO?$/, '')}
+            {r.name ? <span className="text-slate-400">{r.name}</span> : null}
+            <ViratttBadge v={r.virattt} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full flex-wrap items-center justify-between gap-2 text-left text-xs">
+        <span className="font-semibold text-slate-800">
+          ai-hedge-fund 技術分析師（virattt）
+          <span className="ml-2 font-normal text-slate-500">
+            看多 {data.counts.bullish ?? 0} ・ 中性 {data.counts.neutral ?? 0} ・ 看空 {data.counts.bearish ?? 0}
+            {data.used_in_ranking ? ' ・ 已占台股排名 70%' : ' ・ 美股僅參考（回測混入排名較差）'}
+          </span>
+        </span>
+        <span className="text-slate-500">{open ? '收合 ▲' : '展開最強／最弱 ▼'}</span>
+      </button>
+      {open ? (
+        <div className="mt-2 space-y-2">
+          {list('最看多 10 檔', data.bullish)}
+          {list('最看空 10 檔', data.bearish)}
+          <p className="text-[11px] text-slate-400">滑鼠移到代號上可看趨勢／動能／均值回歸／波動／統計套利子分數。</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -128,6 +174,7 @@ function MarketCard({ market, data }: { market: 'us' | 'tw'; data: MarketAdvice 
       {!data.actions.length && !data.watch.length ? (
         <p className="mt-2 text-sm text-slate-500">沒有新低檔訊號、沒有接近觸發價的股票、今天不是月調日——持股照抱即可。</p>
       ) : null}
+      {data.virattt ? <ViratttSection data={data.virattt} /> : null}
       {data.hot_groups.length || data.oversold_groups.length ? (
         <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600">
           {data.hot_groups.length ? <span>過熱族群：{data.hot_groups.join('、')}</span> : null}
@@ -347,6 +394,8 @@ export function DailyAdvicePanel() {
           </ul>
         ) : null}
       </div>
+
+      <HoldingsTodayCard />
 
       {s ? (
         <div className="grid gap-4 md:grid-cols-3">

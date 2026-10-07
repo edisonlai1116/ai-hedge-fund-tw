@@ -15,8 +15,8 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from src.strategy.momentum import (KEEP_N, LOWENTRY_DD, LOWENTRY_HOLD_MONTHS, PANIC_NO_SELL_FG, TOP_N, TPE,
-                                   is_rebalance_window, next_rebalance)
+from src.strategy.momentum import (KEEP_N, LIMIT_VALID_DAYS, LOWENTRY_DD, LOWENTRY_HOLD_MONTHS, PANIC_NO_SELL_FG,
+                                   SPIKE_DAYS, SPIKE_PCT, TOP_N, TPE, is_rebalance_window, next_rebalance)
 from src.strategy.sentiment import EXTREME_FEAR, EXTREME_GREED, VIX_PANIC
 
 NEW_SIGNAL_DAYS = 3        # 進入低檔區 ≤ 3 個交易日 → 視為「新訊號」（容許排程漏跑）
@@ -65,21 +65,33 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
     watch: List[Dict] = []
 
     def base(r: Dict) -> Dict:
-        return {k: r.get(k) for k in ("symbol", "name", "close", "rank", "dd_52w_pct", "ret_3y_pct", "high_52w", "low_entry_price")}
+        return {k: r.get(k) for k in ("symbol", "name", "close", "rank", "dd_52w_pct", "ret_3y_pct", "high_52w",
+                                      "low_entry_price", "spike", "bounce_20d_pct", "virattt")}
 
-    for s in mk.get("low_entry", []):
-        r = by.get(s)
-        if not r:
-            continue
+    def bounce_txt(r: Dict) -> str:
+        b = r.get("bounce_20d_pct")
+        return "" if b is None else ("，尚未反彈（距 20 日低點 {:+.0f}%）".format(b) if b < 5 else "，已從 20 日低點反彈 {:+.0f}%".format(b))
+
+    low_rows = [by[s] for s in mk.get("low_entry", []) if s in by]
+    low_rows.sort(key=lambda r: (r.get("bounce_20d_pct") is None, r.get("bounce_20d_pct") or 0))   # 還沒漲的排前面
+    for r in low_rows:
         days = r.get("low_entry_days")
-        if days is not None and days <= NEW_SIGNAL_DAYS:
+        sp = r.get("spike")
+        if sp:
+            lim = sp.get("limit_price")
+            actions.append({**base(r), "type": "low_entry_limit", "action": f"不追，掛 {lim} 等拉回",
+                            "reason": f"在低檔區（距高點 {r.get('dd_52w_pct'):.0f}%），但 {sp['date']} 單日大漲 +{sp['gain_pct']}%："
+                                      f"不買剛噴完的大長紅，掛大漲前收盤價 {lim}，{LIMIT_VALID_DAYS} 個交易日內沒回到就放棄。"})
+            continue
+        if days is not None and days <= NEW_SIGNAL_DAYS and not r.get("low_entry_reentry"):
             actions.append({**base(r), "type": "low_entry_new", "action": "買進（低檔布局）",
                             "reason": f"長線贏家（3 年 {r.get('ret_3y_pct'):+.0f}%）剛跌破 52 週高點 {r.get('high_52w')} 的 -30%"
                                       f"（目前 {r.get('dd_52w_pct'):.0f}%，第 {days} 天）：新低檔訊號，買進後持有 {LOWENTRY_HOLD_MONTHS} 個月。"})
         else:
+            again = "（短暫反彈出去後又跌回，不算新訊號）" if r.get("low_entry_reentry") and days is not None and days <= NEW_SIGNAL_DAYS else ""
             watch.append({**base(r), "type": "low_entry_holding", "action": "低檔區（已持續）",
-                          "reason": f"已在低檔區 {days if days is not None else '多'} 天（距高點 {r.get('dd_52w_pct'):.0f}%）；"
-                                    "還沒買、且低檔槽位未滿可分批買；已買者續抱。"})
+                          "reason": f"在低檔區 {days if days is not None else '多'} 天{again}（距高點 {r.get('dd_52w_pct'):.0f}%{bounce_txt(r)}）；"
+                                    "還沒買、且低檔槽位未滿可分批買（優先買還沒反彈的）；已買者續抱。"})
     for s in mk.get("low_entry_watch", []):
         r = by.get(s)
         if not r or r.get("low_entry_price") is None or not r.get("close"):
@@ -90,8 +102,14 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
                           "reason": f"跌到 {r['low_entry_price']}（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"})
     if rebalance:
         for r in rows[:TOP_N[market]]:
-            actions.append({**base(r), "type": "rebalance_buy", "action": "月調：動能買進／續抱",
-                            "reason": f"動能排名第 {r['rank']} 名（前 {TOP_N[market]} 名）；沒持有就等權買進。"})
+            sp = r.get("spike")
+            if sp:
+                actions.append({**base(r), "type": "rebalance_wait", "action": "月調：等大長紅過後再買",
+                                "reason": f"排名第 {r['rank']} 名，但 {sp['date']} 單日大漲 +{sp['gain_pct']}%：沒持有的先不追，"
+                                          f"等大漲超過 {SPIKE_DAYS} 個交易日、且仍在前 {TOP_N[market]} 名再買；已持有續抱。"})
+            else:
+                actions.append({**base(r), "type": "rebalance_buy", "action": "月調：動能買進／續抱",
+                                "reason": f"排名第 {r['rank']} 名（前 {TOP_N[market]} 名）；沒持有就等權買進。"})
         if panic:
             actions.append({"type": "panic_hold", "symbol": "—", "action": "本月只買不賣",
                             "reason": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：跌出前 {KEEP_N[market]} 名的持股暫不賣，等情緒回穩的下次月調再換。"})
@@ -107,7 +125,8 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
     hot = [g["name"].replace(prefix, "") for g in groups if g["mood"] == "過熱"]
     cold = [g["name"].replace(prefix, "") for g in groups if g["mood"] == "超賣"]
 
-    n_act = sum(1 for a in actions if a["type"] != "panic_hold")
+    n_act = sum(1 for a in actions if a["type"] not in ("panic_hold", "low_entry_limit", "rebalance_wait"))
+    n_lim = sum(1 for a in actions if a["type"] == "low_entry_limit")
     if n_act:
         level = "action"
         parts = []
@@ -116,14 +135,25 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
             parts.append(f"{nn} 檔新低檔買點")
         if rebalance:
             parts.append("月調日")
+        if n_lim:
+            parts.append(f"{n_lim} 檔掛限價等拉回")
         summary = "今天要操作：" + "、".join(parts)
+    elif n_lim:
+        level = "watch"
+        summary = f"今天不追高：{n_lim} 檔大漲後掛限價等拉回" + (f"；另 {len(watch)} 檔觀察" if watch else "")
     elif watch:
         level = "watch"
         summary = f"今天不用買賣；{len(watch)} 檔列入觀察"
     else:
         level = "hold"
         summary = "今天不用動：沒有新訊號、非月調日"
-    return {"level": level, "summary": summary, "actions": actions, "watch": watch[:15],
+    vr = [r for r in rows if r.get("virattt")]
+    vr.sort(key=lambda r: r["virattt"]["score"], reverse=True)
+    pick = lambda xs: [{k: r.get(k) for k in ("symbol", "name", "close", "rank", "day_change_pct", "virattt")} for r in xs]
+    virattt = {"bullish": pick(vr[:10]), "bearish": pick(vr[::-1][:10]),
+               "counts": {sig: sum(1 for r in vr if r["virattt"]["signal"] == sig) for sig in ("bullish", "neutral", "bearish")},
+               "used_in_ranking": market == "tw"}
+    return {"level": level, "summary": summary, "actions": actions, "watch": watch[:15], "virattt": virattt,
             "hot_groups": hot, "oversold_groups": cold, "momentum_share": mk.get("momentum_share")}
 
 
@@ -159,6 +189,8 @@ def build_daily_advice(report: Dict, backtest: Optional[Dict] = None) -> Dict:
             {"rule": "動能輪動：月初買前 N 名、跌出 KEEP_N 名且長線破壞才賣", "check": "每月前 3 個平日"},
             {"rule": "低檔區沒用到的資金放動能名單（不留現金）", "check": "每天（低檔訊號出現時從動能部位挪錢）"},
             {"rule": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：月調只買不賣", "check": "月調日"},
+            {"rule": f"不追大長紅：近 {SPIKE_DAYS} 日單日漲 ≥ {SPIKE_PCT:.0%} → 低檔股掛大漲前收盤價（{LIMIT_VALID_DAYS} 日有效）、動能股等 {SPIKE_DAYS} 日後再買",
+             "check": "每天"},
         ],
         "disclaimer": "規則化訊號，回測有倖存者偏差，非投資建議。",
     }

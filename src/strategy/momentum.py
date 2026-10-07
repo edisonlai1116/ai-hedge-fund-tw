@@ -65,6 +65,16 @@ PANIC_NO_SELL_FG = 25.0
 #   台股 w=0.7：45.8% → 47.5%（樣本內 44.7→46.6、樣本外 47.1→48.5，w=0.3/0.5 也都較好）；
 #   美股 w=0 最好（52.2%；w=0.3/0.5/0.7 為 51.6/50.0/47.8%、回撤變大）→ 美股維持純動能。
 TECH_BLEND = {"us": 0.0, "tw": 0.7}
+# 不追大長紅（2026-10-07 依使用者偏好「買在漲之前、不買剛噴完一根大的」）：
+#   近 SPIKE_DAYS 日任一日收盤漲幅 ≥ SPIKE_PCT → 不追。
+#   低檔布局：掛「大漲前一日收盤價」限價，LIMIT_VALID_DAYS 個交易日內沒回到就放棄（20 日內不再追）。
+#   動能月調：等大長紅超過 SPIKE_DAYS 日、且仍在前 N 名才買。
+#   回測（完整策略）：門檻 10% 美股 52.2→52.3%、台股 47.5→47.5%（不傷報酬）；門檻 7% 台股少 1.5~3%，故用 10%。
+#   「看到反彈就跳過」反而少賺 2~5%（反彈中的低檔股之後常續漲），故用限價等拉回而非跳過。
+SPIKE_PCT = 0.10
+SPIKE_DAYS = 3
+LIMIT_VALID_DAYS = 20
+LOWENTRY_REENTRY_DAYS = 60   # 離開低檔區不到 60 個交易日又跌回 → 不算「新訊號」
 TECH_BARS = 300
 TPE = timezone(timedelta(hours=8))
 
@@ -204,8 +214,8 @@ def _ignition(f: pd.DataFrame) -> Optional[Dict]:
         return None
 
 
-def tech_score(f: pd.DataFrame) -> Optional[float]:
-    """virattt 技術分析師綜合分數（0~100），只用 f 的最後 TECH_BARS 根 K 線。資料不足回 None。"""
+def tech_detail(f: pd.DataFrame) -> Optional[Dict]:
+    """virattt/ai-hedge-fund 技術分析師（src.agents.technicals）：綜合分數 0~100、訊號、各子策略分數。只用最後 TECH_BARS 根。"""
     try:
         from src.agents import technicals as T
         df = f.tail(TECH_BARS).rename(columns=str.lower)
@@ -214,10 +224,22 @@ def tech_score(f: pd.DataFrame) -> Optional[float]:
         comps = {"trend": T.calculate_trend_signals(df), "mean_reversion": T.calculate_mean_reversion_signals(df),
                  "momentum": T.calculate_momentum_signals(df), "volatility": T.calculate_volatility_signals(df),
                  "stat_arb": T.calculate_stat_arb_signals(df)}
-        v = T.weighted_signal_combination(comps, T.TECHNICAL_WEIGHTS).get("score")
-        return float(v) if v is not None and np.isfinite(v) else None
+        c = T.weighted_signal_combination(comps, T.TECHNICAL_WEIGHTS)
+        v = c.get("score")
+        if v is None or not np.isfinite(v):
+            return None
+        sub = lambda k: (round(float(comps[k]["score"]), 0) if comps[k].get("score") is not None else None)
+        return {"score": round(float(v), 1), "signal": c.get("signal"), "confidence": round(float(c.get("confidence") or 0) * 100),
+                "trend": sub("trend"), "momentum": sub("momentum"), "mean_reversion": sub("mean_reversion"),
+                "volatility": sub("volatility"), "stat_arb": sub("stat_arb")}
     except Exception:
         return None
+
+
+def tech_score(f: pd.DataFrame) -> Optional[float]:
+    """virattt 技術分析師綜合分數（0~100）；資料不足回 None。"""
+    d = tech_detail(f)
+    return d["score"] if d else None
 
 
 def blend_rank_scores(mom: pd.Series, tech: Optional[pd.Series], w: float) -> pd.Series:
@@ -256,20 +278,41 @@ def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
     row["low_entry_watch"] = bool(lt_winner and dd is not None and LOWENTRY_DD < dd <= LOWENTRY_WATCH_DD)
     row["low_entry_price"] = round(hi252 * (1 + LOWENTRY_DD), 2) if lt_winner else None
     row["long_term_broken"] = r3 is not None and r3 <= 0
-    # 連續幾天處於低檔區（每日建議用來判斷「今天新觸發」）
+    # 連續幾天處於低檔區；若這段之前 60 日內也在低檔區（只是短暫反彈出去又跌回）→ 不算新訊號
     if row["low_entry"]:
         hi = c.rolling(252, min_periods=200).max()
         lt_ok = (c / c.shift(n3) - 1) > 0
         ok = ((c / hi - 1) <= LOWENTRY_DD) & lt_ok
         tail = ok.iloc[::-1].tolist()
-        row["low_entry_days"] = next((i for i, v in enumerate(tail) if not v), len(tail))
-    if TECH_BLEND.get(market_of(symbol)):
-        ts = tech_score(f)
-        row["tech_score"] = round(ts, 1) if ts is not None else None
+        streak = next((i for i, v in enumerate(tail) if not v), len(tail))
+        row["low_entry_days"] = streak
+        row["low_entry_reentry"] = any(tail[streak:streak + LOWENTRY_REENTRY_DAYS])
+    # 不追大長紅 / 是否已從低點反彈（買在漲之前）
+    rets = c.pct_change()
+    last = rets.tail(SPIKE_DAYS)
+    big = last[last >= SPIKE_PCT]
+    if len(big):
+        bday = big.index[0]
+        pos_b = c.index.get_loc(bday)
+        row["spike"] = {"date": pd.Timestamp(bday).strftime("%Y-%m-%d"), "gain_pct": round(float(big.iloc[0]) * 100, 1),
+                        "limit_price": round(float(c.iloc[pos_b - 1]), 2) if pos_b >= 1 else None}
+    row["bounce_20d_pct"] = round((float(c.iloc[-1]) / float(c.tail(20).min()) - 1) * 100, 1) if len(c) >= 20 else None
+    vd = tech_detail(f)   # 每檔都算（網站顯示 ai-hedge-fund 技術分析師）；只有 TECH_BLEND > 0 的市場混入排名
+    row["virattt"] = vd
+    row["tech_score"] = vd["score"] if vd else None
     ign = _ignition(f)
     if ign:
         row["ignition"] = {k: ign.get(k) for k in ("ignition_days_ago", "ignition_gain_pct", "ignition_volume_ratio", "ignition_low")}
     return row
+
+
+def no_chase_note(row: Optional[Dict]) -> str:
+    """近 3 日有大長紅 → 不追，掛大漲前收盤價。"""
+    sp = (row or {}).get("spike")
+    if not sp:
+        return ""
+    lim = f"掛 {sp['limit_price']} 限價等拉回，{LIMIT_VALID_DAYS} 個交易日內沒回到就放棄" if sp.get("limit_price") else "等拉回再買"
+    return f" ⚠️ {sp['date']} 單日大漲 +{sp['gain_pct']}%，不追：{lim}（低檔布局）；動能名單則等大漲超過 {SPIKE_DAYS} 天再買。"
 
 
 def _pct(v, signed: bool = True) -> str:
@@ -441,6 +484,42 @@ def _rank_for_score(row: Dict, rows: List[Dict]) -> int:
     return 1 + sum(1 for r in rows if r.get("rank_score", 0) > rs)
 
 
+def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dict) -> tuple:
+    """持股「今天」該做什麼（每天都有結論）。規則與回測一致：低檔加碼/集中度/不追大長紅每天檢查；動能買賣在月調窗口執行。"""
+    window = report.get("strategy", {}).get("in_rebalance_window")
+    nxt = report.get("strategy", {}).get("next_rebalance")
+    sp = (row or {}).get("spike")
+    if act in ("核心 ETF", "資料不足"):
+        return "不用動", ""
+    if act == "減碼":
+        return "今天減碼", "集中度風險每天檢查，不必等月調。"
+    if act == "低檔加碼":
+        if sp:
+            return "掛單等拉回", f"{sp['date']} 大漲 +{sp['gain_pct']}%，不追；掛 {sp.get('limit_price')}，{LIMIT_VALID_DAYS} 個交易日內有效。"
+        return "今天可加碼", "在低檔區、部位不足：低檔訊號每天有效，可今天分批加碼。"
+    if act == "加碼":
+        if not window:
+            return "不用動", f"動能加碼在月調日（{nxt}）執行，月中不動。"
+        if sp:
+            return "等 3 天再加碼", f"{sp['date']} 大漲 +{sp['gain_pct']}%，等大長紅超過 {SPIKE_DAYS} 個交易日、仍在前段再加碼。"
+        return "今天加碼", "月調窗口內、排名前段且部位不足。"
+    if act == "賣出換股":
+        if window:
+            return "今天賣出換股", "月調窗口內：動能轉弱且長線破壞，賣出後換到低檔/動能名單。"
+        return "續抱到月調日", f"轉弱，但賣出在月調日（{nxt}）執行；屆時仍跌出名單且長線破壞就賣。"
+    # 續抱
+    if row:
+        lep, close = row.get("low_entry_price"), row.get("close")
+        if row.get("low_entry_watch") and lep and close and (close / lep - 1) * 100 <= NEAR_TRIGGER_PCT_HOLD:
+            return "準備加碼", f"距低檔加碼價 {lep} 只差 {(close / lep - 1) * 100:.1f}%：跌到就是加碼點。"
+        if sp:
+            return "不用動", f"{sp['date']} 大漲 +{sp['gain_pct']}%：續抱，不追加。"
+    return "不用動", "續抱，沒有新訊號。"
+
+
+NEAR_TRIGGER_PCT_HOLD = 3.0
+
+
 def evaluate_holdings(
     holdings: Iterable[Dict],
     report: Dict,
@@ -493,6 +572,13 @@ def evaluate_holdings(
             it["price"] = it["row"]["close"]
         fx = 1.0 if it["market"] == "tw" else fx_usd_twd
         it["value_twd"] = (it.get("price") or 0) * it["shares"] * fx
+        # 今日漲跌（最後一根收盤 vs 前一根）
+        chg = (it.get("row") or {}).get("day_change_pct")
+        if chg is None and it["symbol"] in prices:
+            c_ = prices[it["symbol"]]["Close"].dropna()
+            chg = round((float(c_.iloc[-1]) / float(c_.iloc[-2]) - 1) * 100, 2) if len(c_) > 1 else None
+        it["day_change_pct"] = chg
+        it["day_pnl_twd"] = (it["value_twd"] - it["value_twd"] / (1 + chg / 100)) if chg is not None else 0.0
 
     total_twd = sum(it["value_twd"] for it in items) or 0.0
     sleeve = {m: sum(it["value_twd"] for it in items if it["market"] == m and not is_etf(it["symbol"])) for m in ("us", "tw")}
@@ -514,6 +600,10 @@ def evaluate_holdings(
             "rank": row.get("rank") if row else None, "score": row.get("score") if row else None,
             "ret_6m_pct": row.get("ret_6m_pct") if row else None,
             "target_twd": round(tgt) if tgt else None, "ignition": (row or {}).get("ignition"),
+            "day_change_pct": it.get("day_change_pct"), "day_pnl_twd": round(it.get("day_pnl_twd") or 0),
+            "day_pnl_local": round((it.get("day_pnl_twd") or 0) / (1.0 if it["market"] == "tw" else fx_usd_twd), 2),
+            "spike": (row or {}).get("spike"),
+            "virattt": (row or {}).get("virattt"), "dd_52w_pct": (row or {}).get("dd_52w_pct"),
         }
         if is_etf(sym):
             act, why = "核心 ETF", "ETF 屬核心部位，不套用個股動能輪動；長期持有即可。"
@@ -552,16 +642,19 @@ def evaluate_holdings(
                        + (f"跌到 {row.get('low_entry_price')}（回落 30%）才是低檔加碼點。" if row.get("low_entry_price") else ""))
         if row and row.get("outside_universe") and act not in ("核心 ETF", "資料不足"):
             why += " 註：此股不在 AI 科技股池，排名為換算參考；策略不會新買或加碼它。"
+        if act in ("低檔加碼", "加碼"):
+            why += no_chase_note(row)
         if base["ignition"] and act in ("續抱", "加碼"):
             why += f" 🔥 近 {base['ignition']['ignition_days_ago']} 日爆量長紅點火。"
-        out_rows.append({**base, "action": act, "reason": why})
+        today, today_why = daily_holding_advice(act, row, it["market"], report)
+        out_rows.append({**base, "action": act, "reason": why, "today": today, "today_reason": today_why})
 
     held = {it["symbol"] for it in items}
     new_buys = {}
     for m in ("us", "tw"):
         rows = markets.get(m, {}).get("rows", [])
         new_buys[m] = [
-            {**{k: r.get(k) for k in ("symbol", "name", "rank", "score", "close", "ret_6m_pct", "ignition")},
+            {**{k: r.get(k) for k in ("symbol", "name", "rank", "score", "close", "ret_6m_pct", "ignition", "spike")},
              "target_twd": round(target[m]) if target[m] else None}
             for r in rows[:TOP_N[m]] if r["symbol"] not in held
         ]
@@ -570,7 +663,7 @@ def evaluate_holdings(
         mk = markets.get(m, {})
         by = {r["symbol"]: r for r in mk.get("rows", [])}
         low_buys[m] = [
-            {**{k: by[s_].get(k) for k in ("symbol", "name", "rank", "close", "dd_52w_pct", "ret_3y_pct", "high_52w")},
+            {**{k: by[s_].get(k) for k in ("symbol", "name", "rank", "close", "dd_52w_pct", "ret_3y_pct", "high_52w", "spike", "bounce_20d_pct")},
              "target_twd": round(low_target[m]) if low_target[m] else None}
             for s_ in mk.get("low_entry", [])[:LOWENTRY_SLOTS] if s_ in by and s_ not in held
         ]
@@ -583,6 +676,10 @@ def evaluate_holdings(
         "in_rebalance_window": report.get("strategy", {}).get("in_rebalance_window"),
         "fx_usd_twd": round(fx_usd_twd, 3),
         "total_twd": round(total_twd),
+        "day_pnl_twd": round(sum(it.get("day_pnl_twd") or 0 for it in items)),
+        "day_change_pct": round(sum(it.get("day_pnl_twd") or 0 for it in items) / (total_twd - sum(it.get("day_pnl_twd") or 0 for it in items)) * 100, 2)
+                          if total_twd else None,
+        "day_pnl_by_market_twd": {m: round(sum(it.get("day_pnl_twd") or 0 for it in items if it["market"] == m)) for m in ("us", "tw")},
         "sleeve_twd": {m: round(v) for m, v in sleeve.items()},
         "target_per_name_twd": {m: round(v) for m, v in target.items()},
         "low_entry_target_twd": {m: round(v) for m, v in low_target.items()},
@@ -649,6 +746,8 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
                 lep = row.get("low_entry_price")
                 verdict, detail = "等低檔", (f"動能排名第 {row['rank']} 名偏弱、尚未跌到低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}）；"
                                             + (f"跌到 {lep} 以下（回落 30%）才進入低檔布局區。已持有者長線續抱。" if lep else "觀望。"))
+        if verdict in ("低檔布局可買", "可買進"):
+            detail += no_chase_note(row)
         closes = []
         if f is not None:
             c = f["Close"].dropna()

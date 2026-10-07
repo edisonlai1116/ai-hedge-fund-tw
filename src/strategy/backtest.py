@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from src.strategy.momentum import (ALLOCATION, KEEP_N, LOOKBACK, LOWENTRY_DD, LOWENTRY_LT_YEARS, LOWENTRY_SLOTS,
-                                   PANIC_NO_SELL_FG, TECH_BLEND, TOP_N, blend_rank_scores, download_closes, tech_score,
+                                   LIMIT_VALID_DAYS, PANIC_NO_SELL_FG, SPIKE_DAYS, SPIKE_PCT, TECH_BLEND, TOP_N, blend_rank_scores, download_closes, tech_score,
                                    universe)
 
 REBALANCE_DAYS = 21
@@ -37,12 +37,14 @@ def _stats(eq: pd.Series) -> Dict:
 
 def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str = "2017-07-01",
                  extra: Optional[Dict[str, pd.Series]] = None, opens: Optional[pd.DataFrame] = None,
-                 fg: Optional[pd.Series] = None, tech: Optional[Dict] = None) -> Dict:
+                 fg: Optional[pd.Series] = None, tech: Optional[Dict] = None, no_chase: bool = True) -> Dict:
     """時序（point-in-time）：T-1 收盤算分數 → T 開盤成交 → 持有報酬以開盤對開盤計算。
     2026-10-07 修正：舊版用 T-1 收盤的分數、又從同一個 T-1 收盤開始計報酬（等於看完收盤價再用收盤價成交）。
     未提供 opens 時退而用「T 收盤成交」（訊號後下一個收盤，仍不使用訊號當日的價格成交）。
     fg（恐懼貪婪，已對齊為「T-1 收盤可知」）：月調日 T-1 值 < PANIC_NO_SELL_FG → 只買不賣。
-    tech：{T-1 日期: 各股 virattt 技術分數}（只用 T-1 以前的 K 線），依 TECH_BLEND[market] 混入排名。"""
+    tech：{T-1 日期: 各股 virattt 技術分數}（只用 T-1 以前的 K 線），依 TECH_BLEND[market] 混入排名。
+    no_chase：月調要新買的股票若 T-1 以前 SPIKE_DAYS 日內有單日漲 ≥ SPIKE_PCT → 先不買，之後每天檢查，
+    大長紅超過 SPIKE_DAYS 日且仍在前 TOP_N 名才買（到下次月調為止）。"""
     closes = closes.sort_index().ffill(limit=3)
     rets = closes.pct_change()
     if opens is not None:
@@ -51,7 +53,9 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
     else:
         hold_ret = rets.shift(-1)                          # 第 i 天收盤買進，賺第 i+1 天的報酬
     score = rets.rolling(LOOKBACK).mean() / rets.rolling(LOOKBACK).std()
+    spiky = (rets.rolling(SPIKE_DAYS, min_periods=1).max() >= SPIKE_PCT)
     idx = closes.index[closes.index >= start]
+    spiky = spiky.loc[idx]
     closes, rets, score = closes.loc[idx], rets.loc[idx].fillna(0.0), score.loc[idx]
     hold_ret = hold_ret.loc[idx].fillna(0.0)
     bench = bench.reindex(idx).ffill()
@@ -59,6 +63,8 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         fg = fg.reindex(idx)
 
     held: List[str] = []
+    pending: List[str] = []
+    t_last = None
     eq = [1.0]
     trades = 0
     log: List[Dict] = []
@@ -67,6 +73,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         if (i - 1) % REBALANCE_DAYS == 0:
             w = TECH_BLEND.get(market, 0.0)
             t_prev = tech.get(idx[i - 1]) if (tech and w) else None
+            t_last = t_prev
             s = blend_rank_scores(score.iloc[i - 1], t_prev, w if t_prev is not None else 0.0).sort_values(ascending=False)
             pos = {k: j for j, k in enumerate(s.index)}
             f_prev = float(fg.iloc[i - 1]) if fg is not None and np.isfinite(fg.iloc[i - 1]) else None
@@ -75,7 +82,8 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
             else:
                 stay = [h for h in held if pos.get(h, 10 ** 9) < KEEP_N[market]]
             new = [k for k in s.index if k not in stay][: max(0, TOP_N[market] - len(stay))]
-            nxt = stay + new
+            pending = [k for k in new if no_chase and bool(spiky.iloc[i - 1].get(k, False))]
+            nxt = stay + [k for k in new if k not in pending]
             changed = set(nxt) ^ set(held)
             trades += len(changed)
             cost = COST * len(changed) / TOP_N[market]
@@ -83,6 +91,17 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
                 log.append({"date": idx[i].strftime("%Y-%m-%d"),
                             "buy": sorted(set(nxt) - set(held)), "sell": sorted(set(held) - set(nxt))})
             held = nxt
+        elif pending:                                              # 等大長紅過後再買
+            w = TECH_BLEND.get(market, 0.0)
+            s = blend_rank_scores(score.iloc[i - 1], t_last, w if t_last is not None else 0.0).sort_values(ascending=False)
+            top = set(s.index[:TOP_N[market]])
+            buy = [k for k in pending if k in top and not bool(spiky.iloc[i - 1].get(k, False))][: max(0, TOP_N[market] - len(held))]
+            pending = [k for k in pending if k not in buy and k in top]
+            if buy:
+                held = held + buy
+                trades += len(buy)
+                cost = COST * len(buy) / TOP_N[market]
+                log.append({"date": idx[i].strftime("%Y-%m-%d"), "buy": sorted(buy), "sell": []})
         day = float(hold_ret.iloc[i][held].mean()) if held else 0.0
         eq.append(eq[-1] * (1 + day - cost))
     eq_s = pd.Series(eq, index=idx)
@@ -125,11 +144,14 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
 
 
 def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int = 252,
-                     opens: Optional[pd.DataFrame] = None, idle_ret: Optional[pd.Series] = None) -> Tuple[pd.Series, List[Dict]]:
+                     opens: Optional[pd.DataFrame] = None, idle_ret: Optional[pd.Series] = None,
+                     lows: Optional[pd.DataFrame] = None, no_chase: bool = True) -> Tuple[pd.Series, List[Dict]]:
     """長線低檔布局：T-1 收盤符合（3 年報酬 > 0 且距 52 週高點 ≤ -30%）→ T 成交，持有 hold 日。
     提供 opens 時：T 開盤成交、開盤對開盤計報酬（與動能回測同一時間基準，組合時才不會虛增分散效果）；
     否則 T 收盤成交、收盤對收盤。每檔 1/LOWENTRY_SLOTS 權重；同檔出場後 60 日內不重複進場。
-    idle_ret（與本函式同一時間基準的日報酬）：空槽資金放在這裡（動能名單），進出低檔時多付一次換股成本；None = 空槽為現金。"""
+    idle_ret（與本函式同一時間基準的日報酬）：空槽資金放在這裡（動能名單），進出低檔時多付一次換股成本；None = 空槽為現金。
+    no_chase（需 opens 與 lows）：T-1 以前 SPIKE_DAYS 日內有單日漲 ≥ SPIKE_PCT → 不在 T 開盤買，改掛「大漲前一日收盤」限價，
+    之後 LIMIT_VALID_DAYS 日內盤中低點觸及即以 min(開盤, 限價) 成交；逾時放棄、20 日內不再掛。限價單佔用槽位。"""
     closes = closes.sort_index().ffill(limit=3)
     if opens is not None:
         px_exec = opens.reindex(closes.index).ffill(limit=3)
@@ -140,13 +162,27 @@ def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int 
     dd = closes / closes.rolling(252, min_periods=200).max() - 1
     lt = closes / closes.shift(252 * LOWENTRY_LT_YEARS) - 1
     ok = (dd <= LOWENTRY_DD) & (lt > 0)
+    use_limit = no_chase and opens is not None and lows is not None
+    if use_limit:
+        lows = lows.reindex(closes.index).ffill(limit=3)
+        cr = closes.pct_change()
+        spiky = cr.rolling(SPIKE_DAYS, min_periods=1).max() >= SPIKE_PCT
+    orders: Dict[str, Tuple[float, int]] = {}
+    fresh: Dict[str, float] = {}
     idx = closes.index[closes.index >= start]
     pos: Dict[str, Tuple[int, float]] = {}
     cool: Dict[str, int] = {}
     daily, trades = [], []
     for j in range(1, len(idx)):
         d, prev = idx[j], idx[j - 1]
-        r = sum(float(rets.at[d, k]) for k in pos if np.isfinite(rets.at[d, k])) / LOWENTRY_SLOTS
+        r = 0.0
+        for k in pos:
+            v = rets.at[d, k]
+            if k in fresh and pos[k][0] == j - 1:          # 昨天以限價成交：報酬從成交價起算
+                v = px_exec.at[d, k] / fresh.pop(k) - 1
+            if np.isfinite(v):
+                r += float(v)
+        r /= LOWENTRY_SLOTS
         if idle_ret is not None:
             ir = idle_ret.get(d, 0.0)
             r += (LOWENTRY_SLOTS - len(pos)) / LOWENTRY_SLOTS * (float(ir) if np.isfinite(ir) else 0.0)
@@ -160,13 +196,34 @@ def lowentry_returns(closes: pd.DataFrame, start: str = "2017-07-01", hold: int 
                 del pos[k]
                 cool[k] = j + 60
                 cost += switch * COST / LOWENTRY_SLOTS
-        if len(pos) < LOWENTRY_SLOTS:
+        for k in list(orders):                             # 限價單：今天盤中低點觸及即成交
+            lim, exp = orders[k]
+            if np.isfinite(lows.at[d, k]) and lows.at[d, k] <= lim and np.isfinite(px_exec.at[d, k]):
+                px = min(float(px_exec.at[d, k]), lim)
+                pos[k] = (j, px)
+                if px != float(px_exec.at[d, k]):
+                    fresh[k] = px
+                cost += switch * COST / LOWENTRY_SLOTS
+                del orders[k]
+            elif j >= exp:
+                del orders[k]
+                cool[k] = j + 20
+        if len(pos) + len(orders) < LOWENTRY_SLOTS:
             row = ok.loc[prev]
-            cands = sorted([k for k in row[row].index if k not in pos and cool.get(k, 0) <= j], key=lambda k: dd.at[prev, k])
-            for k in cands[: LOWENTRY_SLOTS - len(pos)]:
-                if np.isfinite(px_exec.at[d, k]):
-                    pos[k] = (j, float(px_exec.at[d, k]))
-                    cost += switch * COST / LOWENTRY_SLOTS
+            cands = sorted([k for k in row[row].index if k not in pos and k not in orders and cool.get(k, 0) <= j],
+                           key=lambda k: dd.at[prev, k])
+            for k in cands[: LOWENTRY_SLOTS - len(pos) - len(orders)]:
+                if not np.isfinite(px_exec.at[d, k]):
+                    continue
+                if use_limit and bool(spiky.at[prev, k]):
+                    hist = cr[k].loc[:prev].tail(SPIKE_DAYS)
+                    b = hist.index[(hist >= SPIKE_PCT).values][0]
+                    lim = closes[k].shift(1).at[b]
+                    if np.isfinite(lim):
+                        orders[k] = (float(lim), j + LIMIT_VALID_DAYS)
+                    continue
+                pos[k] = (j, float(px_exec.at[d, k]))
+                cost += switch * COST / LOWENTRY_SLOTS
         daily.append((d, r - cost))
     ser = pd.Series([x for _, x in daily], index=[d for d, _ in daily])
     return ser, trades
@@ -211,23 +268,25 @@ def tech_scores_at_rebalances(pm: Dict[str, pd.DataFrame], index: pd.Index, star
     return out
 
 
-def _sentiment_ablation(m, closes, bench, opens, fg, combo_eq, b, tech=None) -> List[Dict]:
-    """同一資料比較：原規則 / + 空槽放動能 / + 極度恐懼只買不賣 / + virattt 技術分數混入排名（有啟用的市場）。"""
+def _sentiment_ablation(m, closes, bench, opens, fg, combo_eq, b, tech=None, lows=None) -> List[Dict]:
+    """同一資料比較：原規則 → 逐步加上 空槽放動能 / 極度恐懼只買不賣 / virattt 技術分數（台股）/ 不追大長紅（目前規則）。"""
     rows = []
     try:
         variants = []
-        steps = [("原規則（空槽現金、恐慌照賣）", False, False, False), ("＋ 空槽放動能", True, False, False)]
+        steps = [("原規則（空槽現金、恐慌照賣）", False, False, False), ("＋ 空槽放動能", True, False, False),
+                 ("＋ 極度恐懼只買不賣", True, True, False)]
         if tech:
-            steps.append(("＋ 極度恐懼只買不賣", True, True, False))
+            steps.append(("＋ virattt 技術分數混入排名", True, True, True))
         for name, use_idle, use_fg, use_tech in steps:
-            r = run_backtest(m, closes, bench, opens=opens, fg=fg if use_fg else None, tech=tech if use_tech else None)
+            r = run_backtest(m, closes, bench, opens=opens, fg=fg if use_fg else None, tech=tech if use_tech else None,
+                             no_chase=False)
             e = r["_eq_daily"]
             e.index = pd.to_datetime(e.index)
             mr = e.pct_change().shift(1)
-            lr, _ = lowentry_returns(closes, opens=opens, idle_ret=mr if use_idle else None)
+            lr, _ = lowentry_returns(closes, opens=opens, idle_ret=mr if use_idle else None, no_chase=False)
             cr = ALLOCATION["lowentry"] * lr + ALLOCATION["momentum"] * mr.reindex(lr.index).fillna(0)
             variants.append((name, (1 + cr).cumprod()))
-        variants.append(("＋ virattt 技術分數混入排名（目前規則）" if tech else "＋ 極度恐懼只買不賣（目前規則）", combo_eq))
+        variants.append(("＋ 不追大長紅（目前規則）", combo_eq))
         for name, eq in variants:
             ps = _period_stats(eq, b)
             rows.append({"name": name, **{lab: ps[lab]["strategy"] for lab in ps}})
@@ -289,6 +348,7 @@ def build_backtest_report(period: str = "max") -> Dict:
         closes = pd.DataFrame({s: f["Close"] for s, f in pm.items()})
         closes = closes[closes.index >= "2013-01-01"]
         opens = pd.DataFrame({s: f["Open"] for s, f in pm.items() if "Open" in f}).reindex(closes.index)
+        lows = pd.DataFrame({s: f["Low"] for s, f in pm.items() if "Low" in f}).reindex(closes.index)
         fg = _fg_for(closes.index, m, fg_all)
         tech = None
         if TECH_BLEND.get(m):
@@ -301,7 +361,7 @@ def build_backtest_report(period: str = "max") -> Dict:
         # 動能 eq_m 第 i 筆 = 開盤(i) → 開盤(i+1)；低檔 low_r 第 j 筆 = 開盤(j-1) → 開盤(j)：動能往後平移一格（shift(1)）對齊同一段時間
         mom_r_all = eq_m.pct_change().shift(1)
         # 長線低檔布局：空槽資金放動能（IDLE_TO_MOMENTUM）
-        low_r, low_trades = lowentry_returns(closes, opens=opens, idle_ret=mom_r_all)
+        low_r, low_trades = lowentry_returns(closes, opens=opens, idle_ret=mom_r_all, lows=lows)
         mom_r = mom_r_all.reindex(low_r.index).fillna(0)
         combo_r = ALLOCATION["lowentry"] * low_r + ALLOCATION["momentum"] * mom_r
         low_eq, combo_eq = (1 + low_r).cumprod(), (1 + combo_r).cumprod()
@@ -315,7 +375,7 @@ def build_backtest_report(period: str = "max") -> Dict:
             "combo": {"name": f"組合：低檔 {ALLOCATION['lowentry']:.0%} ＋ 動能 {ALLOCATION['momentum']:.0%}（含情緒規則）",
                       "periods": _period_stats(combo_eq, b)},
         }
-        res["sentiment_ablation"] = _sentiment_ablation(m, closes, bench["Close"], opens, fg, combo_eq, b, tech)
+        res["sentiment_ablation"] = _sentiment_ablation(m, closes, bench["Close"], opens, fg, combo_eq, b, tech, lows)
         res["sentiment_study"] = _sentiment_study(closes, b, fg)
         weekly = combo_eq.iloc[::5]
         low_w = low_eq.reindex(weekly.index)

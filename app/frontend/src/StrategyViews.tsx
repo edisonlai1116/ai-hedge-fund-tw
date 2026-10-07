@@ -14,6 +14,8 @@ import {
   type Ignition,
   type StrategyBacktest,
   type StrategyReport,
+  type EvaluatedHolding,
+  type Virattt,
 } from './services/strategy-api';
 
 /* ============================== 共用 ============================== */
@@ -464,6 +466,7 @@ export function MyHoldingsPanel() {
             <span>
               總市值 <b>{ntd(result.total_twd)}</b>
             </span>
+            <DayPnl result={result} />
             <span className="text-slate-600">
               美股個股 {ntd(result.sleeve_twd.us)}（每檔目標 {ntd(result.target_per_name_twd.us)}）
             </span>
@@ -476,11 +479,15 @@ export function MyHoldingsPanel() {
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
-                  <th className="py-1.5 pr-2">動作</th>
+                  <th className="py-1.5 pr-2">今天</th>
+                  <th className="py-1.5 pr-2">策略動作</th>
                   <th className="py-1.5 pr-2">標的</th>
                   <th className="py-1.5 pr-2 text-right">排名</th>
                   <th className="py-1.5 pr-2 text-right">現價</th>
-                  <th className="py-1.5 pr-2 text-right">損益</th>
+                  <th className="py-1.5 pr-2 text-right">今日漲跌</th>
+                  <th className="py-1.5 pr-2 text-right">今日損益</th>
+                  <th className="py-1.5 pr-2 text-right">總損益</th>
+                  <th className="py-1.5 pr-2">ai-hedge 技術</th>
                   <th className="py-1.5 pr-2 text-right">佔比</th>
                   <th className="py-1.5">理由</th>
                 </tr>
@@ -488,6 +495,9 @@ export function MyHoldingsPanel() {
               <tbody>
                 {result.holdings.map((h) => (
                   <tr key={h.symbol} className="border-b border-slate-100 align-top">
+                    <td className="py-1.5 pr-2">
+                      <TodayBadge h={h} />
+                    </td>
                     <td className="py-1.5 pr-2">
                       <span className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-xs font-medium ${ACTION_STYLE[h.action]}`}>{h.action}</span>
                     </td>
@@ -497,9 +507,17 @@ export function MyHoldingsPanel() {
                     </td>
                     <td className="py-1.5 pr-2 text-right text-slate-700">{h.rank ?? '—'}</td>
                     <td className="py-1.5 pr-2 text-right">{h.price ?? '—'}</td>
+                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`}>{pct(h.day_change_pct, 2)}</td>
+                    <td className={`whitespace-nowrap py-1.5 pr-2 text-right tabular-nums ${tone(h.day_pnl_twd)}`}>{signedNtd(h.day_pnl_twd)}</td>
                     <td className={`py-1.5 pr-2 text-right ${tone(h.pnl_pct)}`}>{pct(h.pnl_pct)}</td>
+                    <td className="py-1.5 pr-2">
+                      <ViratttBadge v={h.virattt} />
+                    </td>
                     <td className="py-1.5 pr-2 text-right text-slate-600">{h.weight_pct.toFixed(1)}%</td>
-                    <td className="py-1.5 text-xs leading-relaxed text-slate-600">{h.reason}</td>
+                    <td className="py-1.5 text-xs leading-relaxed text-slate-600">
+                      {h.today_reason && h.today !== '不用動' ? <div className="mb-0.5 font-medium text-slate-800">今天：{h.today_reason}</div> : null}
+                      {h.reason}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -857,6 +875,7 @@ export function StockLookupPanel() {
               {r.row.low_entry_price ? <span className="text-slate-600">低檔價 {r.row.low_entry_price}</span> : null}
             </div>
           ) : null}
+          {r.row?.virattt ? <ViratttDetail v={r.row.virattt} market={r.market} /> : null}
           <PriceLine closes={r.closes} />
         </div>
       ))}
@@ -885,6 +904,160 @@ function PriceLine({ closes }: { closes: LookupResult['closes'] }) {
         <span>近一年收盤</span>
         <span>{closes[closes.length - 1].date}</span>
       </div>
+    </div>
+  );
+}
+
+/* ============================== 每日：持股今天 / ai-hedge-fund 技術分析師 ============================== */
+
+export const signedNtd = (v: number | null | undefined) =>
+  v == null ? '—' : `${v >= 0 ? '+' : '-'}NT$${Math.abs(Math.round(v)).toLocaleString()}`;
+
+const SIGNAL_LABEL: Record<string, string> = { bullish: '看多', neutral: '中性', bearish: '看空' };
+const SIGNAL_STYLE: Record<string, string> = {
+  bullish: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  neutral: 'bg-slate-50 text-slate-600 border-slate-200',
+  bearish: 'bg-rose-50 text-rose-800 border-rose-200',
+};
+
+export function ViratttBadge({ v }: { v?: Virattt | null }) {
+  if (!v) return <span className="text-xs text-slate-400">—</span>;
+  const tip = `ai-hedge-fund 技術分析師 ${v.score}｜趨勢 ${v.trend ?? '—'}・動能 ${v.momentum ?? '—'}・均值回歸 ${v.mean_reversion ?? '—'}・波動 ${v.volatility ?? '—'}・統計套利 ${v.stat_arb ?? '—'}`;
+  return (
+    <span title={tip} className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-xs ${SIGNAL_STYLE[v.signal] ?? SIGNAL_STYLE.neutral}`}>
+      {SIGNAL_LABEL[v.signal] ?? v.signal} {Math.round(v.score)}
+    </span>
+  );
+}
+
+const todayStyle = (t?: string) =>
+  !t || t === '不用動'
+    ? 'bg-slate-100 text-slate-600'
+    : /賣|減碼/.test(t)
+      ? 'bg-rose-600 text-white'
+      : /加碼|買/.test(t) && !/等|準備|掛/.test(t)
+        ? 'bg-emerald-600 text-white'
+        : 'bg-amber-100 text-amber-900';
+
+export function TodayBadge({ h }: { h: EvaluatedHolding }) {
+  return <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium ${todayStyle(h.today)}`}>{h.today ?? '—'}</span>;
+}
+
+export function DayPnl({ result }: { result: EvaluateResult }) {
+  if (result.day_pnl_twd == null) return null;
+  return (
+    <span>
+      今日 <b className={tone(result.day_pnl_twd)}>{signedNtd(result.day_pnl_twd)}</b>
+      {result.day_change_pct != null ? <span className={`ml-1 ${tone(result.day_change_pct)}`}>（{pct(result.day_change_pct, 2)}）</span> : null}
+      {result.day_pnl_by_market_twd ? (
+        <span className="ml-2 text-xs text-slate-500">
+          美股 {signedNtd(result.day_pnl_by_market_twd.us)} ・ 台股 {signedNtd(result.day_pnl_by_market_twd.tw)}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** 今日建議頁用：讀瀏覽器裡「我的持股」，每天給每檔今天該做什麼 + 今日損益。 */
+export function HoldingsTodayCard() {
+  const [result, setResult] = useState<EvaluateResult | null>(null);
+  const [error, setError] = useState('');
+  const holdings = useMemo(() => loadHoldings(), []);
+  useEffect(() => {
+    if (!holdings.length) return;
+    evaluateHoldings(holdings)
+      .then(setResult)
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+  }, [holdings]);
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm font-semibold text-slate-900">我的持股 · 今天</div>
+        {result ? (
+          <div className="text-sm">
+            總資產 <b>{ntd(result.total_twd)}</b>
+            <span className="ml-3">
+              <DayPnl result={result} />
+            </span>
+          </div>
+        ) : null}
+      </div>
+      {!holdings.length ? <p className="text-sm text-slate-500">還沒輸入持股：到「我的持股」分頁輸入後，這裡每天會列出每檔今天該做什麼。</p> : null}
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {holdings.length && !result && !error ? <p className="text-sm text-slate-500">評估中…</p> : null}
+      {result ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                <th className="py-1.5 pr-2">今天</th>
+                <th className="py-1.5 pr-2">標的</th>
+                <th className="py-1.5 pr-2 text-right">今日漲跌</th>
+                <th className="py-1.5 pr-2 text-right">今日損益</th>
+                <th className="py-1.5 pr-2 text-right">總損益</th>
+                <th className="py-1.5 pr-2">ai-hedge 技術</th>
+                <th className="py-1.5">說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...result.holdings]
+                .sort(
+                  (a, b) =>
+                    Number(a.today === '不用動') - Number(b.today === '不用動') || Math.abs(b.day_pnl_twd ?? 0) - Math.abs(a.day_pnl_twd ?? 0),
+                )
+                .map((h) => (
+                  <tr key={h.symbol} className="border-b border-slate-100 align-top">
+                    <td className="py-1.5 pr-2">
+                      <TodayBadge h={h} />
+                    </td>
+                    <td className="py-1.5 pr-2 font-medium text-slate-900">{h.symbol.replace(/\.TWO?$/, '')}</td>
+                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`}>{pct(h.day_change_pct, 2)}</td>
+                    <td className={`whitespace-nowrap py-1.5 pr-2 text-right tabular-nums ${tone(h.day_pnl_twd)}`}>{signedNtd(h.day_pnl_twd)}</td>
+                    <td className={`py-1.5 pr-2 text-right ${tone(h.pnl_pct)}`}>{pct(h.pnl_pct)}</td>
+                    <td className="py-1.5 pr-2">
+                      <ViratttBadge v={h.virattt} />
+                    </td>
+                    <td className="py-1.5 text-xs text-slate-600">{h.today_reason || h.reason}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function ViratttDetail({ v, market }: { v: Virattt; market: 'us' | 'tw' }) {
+  const parts: [string, number | null][] = [
+    ['趨勢', v.trend],
+    ['動能', v.momentum],
+    ['均值回歸', v.mean_reversion],
+    ['波動', v.volatility],
+    ['統計套利', v.stat_arb],
+  ];
+  return (
+    <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
+        <span className="font-medium text-slate-800">ai-hedge-fund 技術分析師</span>
+        <ViratttBadge v={v} />
+        <span>信心 {v.confidence}%</span>
+        <span className="text-slate-400">{market === 'tw' ? '（台股排名採用 70%）' : '（美股僅參考，回測混入排名較差）'}</span>
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {parts.map(([lab, val]) => (
+          <div key={lab}>
+            <div className="flex justify-between">
+              <span>{lab}</span>
+              <span className="tabular-nums">{val ?? '—'}</span>
+            </div>
+            <div className="mt-0.5 h-1.5 rounded bg-slate-200">
+              <div className={`h-1.5 rounded ${val != null && val >= 60 ? 'bg-emerald-500' : val != null && val <= 40 ? 'bg-rose-500' : 'bg-slate-500'}`} style={{ width: `${Math.max(2, val ?? 0)}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 text-[11px] text-slate-400">總分 = 趨勢 40% + 動能 40% + 均值回歸 20%；波動/統計套利僅供參考。大師人設（巴菲特等）需付費 LLM 與財報 API，無法回測，未納入。</div>
     </div>
   );
 }

@@ -114,3 +114,31 @@ def test_tech_scores_do_not_look_ahead():
     e1 = sb.run_backtest("tw", cl, cl["S0"], start=start, opens=op, tech=a)["_eq_daily"]
     e2 = sb.run_backtest("tw", cl2, cl2["S0"], start=start, opens=op2, tech=b)["_eq_daily"]
     pd.testing.assert_series_equal(e1[:DAYS[t - 2]], e2[:DAYS[t - 2]])
+
+
+def test_no_chase_rules_do_not_look_ahead_and_wait_for_pullback():
+    """不追大長紅：限價單/等待只用 T-1 以前資料；大長紅後不在隔天開盤買。"""
+    from src.strategy import backtest as sb
+    cl, op = _universe(seed=3)
+    rng = np.random.default_rng(7)
+    for k in cl.columns[:10]:                       # 製造大長紅
+        for t0 in rng.integers(450, 850, 6):
+            cl.iloc[t0:, cl.columns.get_loc(k)] *= 1.15
+            op.iloc[t0 + 1:, op.columns.get_loc(k)] *= 1.15
+    lo = np.minimum(cl, op) * 0.98
+    start = str(DAYS[400].date())
+    t = 820
+
+    def run(cl_, op_, lo_):
+        r = sb.run_backtest("us", cl_, cl_["S0"], start=start, opens=op_)["_eq_daily"]
+        l, _ = sb.lowentry_returns(cl_, start=start, opens=op_, idle_ret=r.pct_change().shift(1), lows=lo_)
+        return r, l
+
+    r1, l1 = run(cl, op, lo)
+    cl2, op2, lo2 = cl.copy(), op.copy(), lo.copy()
+    for x in (cl2, op2, lo2):
+        x.iloc[t:] *= 2.0
+    r2, l2 = run(cl2, op2, lo2)
+    cut = DAYS[t - 2]
+    pd.testing.assert_series_equal(r1[:cut], r2[:cut])
+    pd.testing.assert_series_equal(l1[:cut], l2[:cut])
