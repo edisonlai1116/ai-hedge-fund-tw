@@ -49,8 +49,12 @@ def test_evaluate_holdings_actions():
         {"ticker": "S080", "cost": 50, "shares": 1},     # 低檔布局區、部位小 → 低檔加碼
         {"ticker": "VOO", "cost": 400, "shares": 20},    # ETF → 核心（也讓單檔佔比 < 20%）
     ]
-    ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0,
-                             extra_prices={"VOO": pd.DataFrame({"Close": [500.0] * 10})})
+    voo = {"VOO": pd.DataFrame({"Close": [500.0] * 10})}
+    # 2026-10-08 規則：跌深只是價格位置；排名 Tier B（81/150）的低檔股，要回撤分類屬「基本面折價／暫時衝擊」才加碼
+    ev0 = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0, extra_prices=dict(voo))
+    assert {h["symbol"]: h["action"] for h in ev0["holdings"]}["S080"] == "續抱"     # 未分類 → 不加碼
+    rep["drawdown_types"] = {"S080": {"type": "FUNDAMENTAL_DISCOUNT", "confirmations": []}}
+    ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0, extra_prices=dict(voo))
     acts = {h["symbol"]: h["action"] for h in ev["holdings"]}
     assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "S090": "續抱", "S080": "低檔加碼", "VOO": "核心 ETF"}
     assert [b["symbol"] for b in ev["low_entry_buys"]["us"]] == []          # 唯一低檔股已持有

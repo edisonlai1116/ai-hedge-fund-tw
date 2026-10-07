@@ -65,3 +65,26 @@ def test_gemini_falls_back_to_next_model_when_busy(monkeypatch):
     monkeypatch.setattr(requests, "post", fake_post)
     out = ask.call_gemini("hi", api_key="k")
     assert out["answer"] == "答案" and len(calls) == 2 and out["model"] == ask.GEMINI_MODELS[1]
+
+
+def _hold_report(rank, tier, dd_type):
+    row = {"symbol": "XX", "name": "", "rank": rank, "score": 0.1, "close": 100.0, "ret_6m_pct": -30.0, "dd_52w_pct": -43.0,
+           "ret_3y_pct": 190.0, "high_52w": 175.0, "low_entry": True, "low_entry_price": 122.0, "long_term_broken": False,
+           "quality_tier": tier, "price_location": "DEEPLY_DISCOUNTED", "zone": "out"}
+    return {"markets": {"us": {"rows": [row], "universe_size": 102, "low_entry": ["XX"]}, "tw": {"rows": [], "universe_size": 55}},
+            "drawdown_types": {"XX": {"type": dd_type, "confirmations": []}}, "strategy": {}}
+
+
+def test_holdings_low_entry_add_follows_tier_and_prompt_is_consistent():
+    """回歸：Tier D 跌深（不買）不得在「我的持股」變成「低檔加碼／今天可加碼」；Tier A 可買者才加碼。"""
+    from src.strategy.momentum import evaluate_holdings
+    small = [{"symbol": "XX", "cost": 150, "shares": 1}, {"symbol": "YY.TW", "cost": 1, "shares": 1}]
+    d = evaluate_holdings(small, _hold_report(101, "D", "UNKNOWN"), 32.0, extra_prices={})
+    h = next(x for x in d["holdings"] if x["symbol"] == "XX")
+    assert h["action"] != "低檔加碼" and "可加碼" not in (h.get("today") or "")
+    a = evaluate_holdings(small, _hold_report(10, "A", "FUNDAMENTAL_DISCOUNT"), 32.0, extra_prices={})
+    assert next(x for x in a["holdings"] if x["symbol"] == "XX")["action"] in ("低檔加碼", "減碼")
+    ctx = ask.build_context(small, _hold_report(101, "D", "UNKNOWN"), None, 32.0)
+    p = ask.build_prompt("NRG 要不要加碼？", ctx)
+    line = next(l for l in p.splitlines() if l.startswith("| XX |"))
+    assert "| D |" in line and "高風險反轉觀察" in line and "低檔加碼" not in line

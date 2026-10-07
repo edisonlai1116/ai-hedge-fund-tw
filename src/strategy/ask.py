@@ -78,8 +78,15 @@ def raise_cash_plan(ev: Dict, report: Dict) -> List[Dict]:
 
 def build_context(holdings: List[Dict], report: Dict, advice: Optional[Dict], fx: float) -> Dict:
     from src.strategy.momentum import evaluate_holdings
+    from src.strategy.momentum import low_view
     ev = evaluate_holdings(holdings, report, fx) if holdings else None
-    return {"evaluation": ev, "cash_plan": raise_cash_plan(ev, report) if ev else [], "advice": advice,
+    rows_by = {r["symbol"]: r for m in report.get("markets", {}).values() for r in m.get("rows", [])}
+    tiers = {}
+    for h in (ev or {}).get("holdings", []):
+        row = rows_by.get(h["symbol"])
+        lv = low_view(row, report) if row else None
+        tiers[h["symbol"]] = {"tier": (row or {}).get("quality_tier"), "low_label": (lv or {}).get("label")}
+    return {"evaluation": ev, "cash_plan": raise_cash_plan(ev, report) if ev else [], "advice": advice, "tiers": tiers,
             "sentiment": report.get("sentiment") or {}, "strategy": report.get("strategy") or {}}
 
 
@@ -107,12 +114,16 @@ def build_prompt(question: str, ctx: Dict) -> str:
         L.append("## 我的持股（系統評估，金額為新台幣）")
         L.append(f"總資產 NT${_fmt(ev.get('total_twd'))}；今日損益 NT${_fmt(ev.get('day_pnl_twd'), sign=True)}"
                  f"（{_fmt(ev.get('day_change_pct'), 2, True, True)}）；美元匯率 {ev.get('fx_usd_twd')}")
-        L.append("| 代號 | 股數 | 成本 | 現價 | 市值 NT$ | 佔比 | 總損益 | 今日 | 排名 | 系統動作 | 今天該做 | 理由 |")
-        L.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+        L.append("排名級別：A = 前 30/102、B = 31–60、C = 61–85、D = 85 名以後；跌深只代表價格位置，"
+                 "是否加碼看「低檔分級」（只有「低檔布局可買」「低檔分批」才可加碼；「觀察」「高風險反轉觀察」「不買」都不加碼）。")
+        L.append("| 代號 | 股數 | 成本 | 現價 | 市值 NT$ | 佔比 | 總損益 | 今日 | 排名 | 級別 | 低檔分級 | 系統動作 | 今天該做 | 理由 |")
+        L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         for h in ev["holdings"]:
+            info = ctx.get("tiers", {}).get(h["symbol"], {})
             L.append(f"| {h['symbol']} | {_fmt(h['shares'])} | {h['cost']} | {h.get('price') or '—'} | {_fmt(h['value_twd'])} | "
                      f"{h['weight_pct']}% | {_fmt(h.get('pnl_pct'), 1, True, True)} | {_fmt(h.get('day_change_pct'), 2, True, True)} | "
-                     f"{h.get('rank') or '—'} | {h['action']} | {h.get('today') or '—'} | {(h.get('reason') or '').replace('|', '/')[:160]} |")
+                     f"{h.get('rank') or '—'} | {info.get('tier') or '—'} | {info.get('low_label') or '—'} | {h['action']} | "
+                     f"{h.get('today') or '—'} | {(h.get('reason') or '').replace('|', '/')[:160]} |")
         L.append("")
         plan = ctx.get("cash_plan") or []
         if plan:

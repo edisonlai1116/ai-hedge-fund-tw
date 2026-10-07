@@ -638,6 +638,7 @@ def evaluate_holdings(
             act = "續抱"
             why = (f"價格跌深（距高點 {_pct(row.get('dd_52w_pct'), False)}），但{lv.get('label', '')}：{lv.get('why', '')}"
                    "不加碼。")
+        elif row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             lt = low_target[it["market"]]
             act = "低檔加碼"
             why = (f"{(low_view(row, report) or {}).get('label', '')}｜長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點回落 {_pct(abs(row['dd_52w_pct']) if row.get('dd_52w_pct') is not None else None, False)}，進入低檔布局區；"
