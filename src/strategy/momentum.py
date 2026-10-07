@@ -484,6 +484,11 @@ def _rank_for_score(row: Dict, rows: List[Dict]) -> int:
     return 1 + sum(1 for r in rows if r.get("rank_score", 0) > rs)
 
 
+def _dd_type(report: Dict, sym: str) -> str:
+    """機會評分的回撤分類（strategy_report 寫入 report["drawdown_types"]）；沒有就是 UNKNOWN。"""
+    return ((report.get("drawdown_types") or {}).get(sym) or {}).get("type") or "UNKNOWN"
+
+
 def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dict) -> tuple:
     """持股「今天」該做什麼（每天都有結論）。規則與回測一致：低檔加碼/集中度/不追大長紅每天檢查；動能買賣在月調窗口執行。"""
     window = report.get("strategy", {}).get("in_rebalance_window")
@@ -614,7 +619,16 @@ def evaluate_holdings(
             act = "減碼"
             why = (f"單檔佔總資產 {it['value_twd'] / total_twd:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限；"
                    f"減碼到 {CONCENTRATION_PCT:.0f}% 以下，資金分散到低檔布局/動能名單。")
-        elif row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
+        elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
+              and _dd_type(report, sym) == "FUNDAMENTAL_DAMAGE"):
+            act = "續抱"
+            why = (f"在低檔區，但回撤分類為基本面受損（{(report.get('drawdown_types') or {}).get(sym, {}).get('why') or ''}）："
+                   "不加碼；若長線趨勢也破壞，月調時換股。")
+        elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
+              and _dd_type(report, sym) not in ("FUNDAMENTAL_DISCOUNT", "TEMPORARY_SHOCK")):
+            act = "續抱"
+            why = (f"在低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}），但回撤分類為 {_dd_type(report, sym)}：跌深不等於便宜，"
+                   "不自動加碼；最多在更深的價位小量。")
             lt = low_target[it["market"]]
             act = "低檔加碼"
             why = (f"長線贏家（3 年 {_pct(row.get('ret_3y_pct'))}）已自 52 週高點回落 {_pct(abs(row['dd_52w_pct']) if row.get('dd_52w_pct') is not None else None, False)}，進入低檔布局區；"

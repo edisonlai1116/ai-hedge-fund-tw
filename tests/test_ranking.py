@@ -175,8 +175,10 @@ def test_news_relevance_filter():
 
 
 def test_above_avoid_forces_pullback_and_mid_score_buys_on_pullback():
-    assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False, above_avoid=True)["status"] == "BUY_ON_PULLBACK"
-    assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False)["status"] == "BUY_NOW"
+    assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False, above_avoid=True, entry_ok=True)["status"] == "BUY_ON_PULLBACK"
+    assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False, entry_ok=True)["status"] == "BUY_NOW"
+    # 2026-10-08 規格：沒有進場條件（現價不在 Buy1）就不能 BUY_NOW
+    assert sc.decide_status(80, 20, 70, 50, 50, 60, held=False)["status"] == "BUY_ON_PULLBACK"
     assert sc.decide_status(60, 20, 70, 50, 50, 60, held=False)["status"] == "BUY_ON_PULLBACK"
     assert sc.decide_status(45, 20, 70, 50, 50, 60, held=False)["status"] == "WAIT"
 
@@ -187,9 +189,14 @@ def test_low_entry_score_and_status():
     assert sc.low_entry_score(-0.50, 0.5) == pytest.approx(100.0)
     assert sc.low_entry_score(-0.30, -0.1) == pytest.approx(24.0)      # 非長線贏家打三折
     assert sc.low_entry_score(None, 0.5) is None
-    # 長線贏家落入低檔區：沒持有 → BUY_NOW；持有 → HOLD_CORE（不因動能弱賣出）
-    st = sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True)
+    # 長線贏家落入低檔區：沒持有且回撤屬可買類（基本面折價/暫時衝擊）且現價可進場 → BUY_NOW；持有 → HOLD_CORE
+    st = sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
+                          drawdown_type="FUNDAMENTAL_DISCOUNT")
     assert st["status"] == "BUY_NOW" and "LOW_ENTRY_ZONE" in st["flags"]
+    # 2026-10-08 規格：跌深本身不等於可買——回撤類型未知/投機下修 → 最多 BUY_ON_PULLBACK
+    for dt in ("UNKNOWN", "SPECULATIVE_DE_RATING", "VALUATION_RESET"):
+        assert sc.decide_status(40, 10, 60, 60, 50, 20, held=False, low_entry=True, entry_ok=True,
+                                drawdown_type=dt)["status"] == "BUY_ON_PULLBACK"
     assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True)["status"] == "HOLD_CORE"
     # 基本面結構性受損時不套低檔規則
     assert sc.decide_status(20, 10, 60, 60, 50, 10, held=True, low_entry=True, damage=70)["status"] == "SELL"

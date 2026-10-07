@@ -22,7 +22,7 @@ from src.ranking import features as fx
 from src.ranking import scoring as sc
 from src.ranking.regime import classify_regime
 from src.ranking.shocks import detect_shocks, fundamental_damage, shock_verdict
-from src.ranking.themes import THEMES, TW_THEMES, industry_benchmark, theme_of
+from src.ranking.themes import THEMES, TW_THEMES, industry_benchmark, theme_exposures, theme_of
 
 US_BENCHMARKS = ["SPY", "QQQ", "SMH", "XLK", "XLU", "XLE", "XLI", "XLC", "XLY", "IGV"]
 TW_BENCHMARKS = ["0050.TW"]
@@ -149,7 +149,9 @@ def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, 
         worse = [o["ticker"] for o in good if o["opportunity"] > r["opportunity"] + 5][-3:]
         r["rotation_view"] = {"better_than": better, "worse_than": worse}
     rotations = sc.rotation_suggestions(good, calibration)
-    sizes = sc.position_sizes(good, profile, calibration)
+    # 組合層級：主題曝險只影響部位大小，不回寫任何個股分數
+    exposures = {r["ticker"]: r.get("theme_exposure") or {"Other": 1.0} for r in good}
+    sizes = sc.position_sizes(good, profile, calibration, exposures=exposures)
     for r in good:
         r["target_weight"] = sizes.get(r["ticker"], 0.0)
     return {
@@ -160,14 +162,20 @@ def rank_stocks(tickers: List[str], holdings: Optional[Dict[str, Dict]] = None, 
         "ranking": good + [r for r in rows if r.get("opportunity") is None],
         "rotations": rotations,
         "target_weights": sizes,
+        "theme_exposure": {k: round(v, 4) for k, v in sc.theme_exposure(sizes, exposures).items()},
+        "theme_cap": sc.THEME_CAP,
         "weights_used": sc.regime_weights(profile),
         "notes": [
-            "Opportunity Score 衡量的是『現在』的風險報酬，不是公司好壞。",
-            "Opportunity = 70% 長線低檔分數（長線贏家距 52 週高點深度，已驗證）＋ 30% 動能機會分數（使用者設定）。",
+            "Opportunity Score = 股票本身值不值得投資（動能排名 + 品質/成長/財報/估值/AI/催化），不含進場時機與組合資訊。",
+            "Entry Score / entry_condition = 現在這個價格適不適合進場；BUY_NOW 一定要 entry_condition 成立。",
+            "Overextension 依歷史百分位分層（Normal/Warm/Extended/Overheated/Extreme）；好公司但過熱 → GOOD_BUT_OVEREXTENDED，不追。",
+            "大跌先做回撤分類，只有 FUNDAMENTAL_DISCOUNT / TEMPORARY_SHOCK 允許大跌 → BUY_NOW。",
+            "主題曝險上限只縮小部位，不改個股分數。",
             "基本面、新聞只有即時資料，沒有 point-in-time 歷史 → 不參與回測；回測只驗證價格模組。",
             "AI 曝險分數為專家先驗，不參與回測。",
             "權重依驗證結果：已驗證的動能排名占 61%；其餘模組未經回測驗證，每檔顯示 validated_share。",
-            "過熱不扣分數，改為進場規則：過熱 ≥ 60 → BUY_ON_PULLBACK（回測：延後進場報酬約持平，±1%）。",
+            "過熱不扣 Opportunity 分數，改為進場規則：Extended（≥ 50）→ BUY_ON_PULLBACK、Extreme（≥ 85）→ WAIT。"
+            "注意：歷史上過熱股之後的報酬並不較差（動能延續），不追高是紀律／風險控制，不是額外報酬來源。",
             "市場狀態只調整風險上限（高 beta 單檔上限），不調整總曝險：回測顯示依狀態減碼會降低 Sharpe。",
         ],
     }
@@ -179,6 +187,57 @@ def _num(x) -> Optional[float]:
         return v if math.isfinite(v) else None
     except (TypeError, ValueError):
         return None
+
+
+def decision_pipeline(ohlcv: pd.DataFrame, scores: Dict, profile: Optional[Dict], dd52: Optional[float], ret_3y: Optional[float],
+                      dist_ma50: Optional[float], shock_view: Optional[Dict], fund_metrics: Optional[Dict],
+                      days_to_earnings: Optional[int], held: bool) -> Dict:
+    """確定性決策（純函式，不連網）：A Opportunity → B Entry → C Overextension（已在 scores）→ D Risk → 回撤分類 → E Action。
+    會在 scores 補上 low_entry、price_risk、fundamental_uncertainty 並把 risk 改為合成風險。正式流程與測試共用。"""
+    weights = sc.regime_weights(profile)
+    comp = {k: v for k, v in scores.items() if k in sc.BASE_WEIGHTS}
+    opp = sc.opportunity_score(comp, None, weights)
+    low_score = sc.low_entry_score(dd52, ret_3y, None)
+    scores["low_entry"] = low_score
+    is_low = bool(dd52 is not None and dd52 <= sc.LOW_ENTRY_DD and ret_3y is not None and ret_3y > 0)
+    lt_broken = ret_3y is not None and ret_3y <= 0
+    damage = (shock_view or {}).get("fundamental_damage_score")
+    oversold = bool(shock_view and shock_view.get("verdict") == "POTENTIAL_OVERSOLD")
+    zones = sc.entry_zones(ohlcv, scores.get("valuation"), days_to_earnings)
+    close_s = ohlcv["Close"].dropna()
+    low_line = (round(float(close_s.tail(252).max()) * (1 + sc.LOW_ENTRY_DD), 2)
+                if (ret_3y is not None and ret_3y > 0 and len(close_s) >= 200) else None)
+    fu = sc.fundamental_uncertainty(fund_metrics)
+    dclass = sc.classify_drawdown(dd52, scores.get("quality"), scores.get("growth"), scores.get("earnings_acceleration"),
+                                  scores.get("valuation"), damage, fu, (fund_metrics or {}).get("eps_revision_90d"),
+                                  ((shock_view or {}).get("shock") or {}).get("causes"))
+    # 低檔區、且回撤屬可買類：Buy1 = 已驗證低檔區（現價 + 0.5 ATR，上限為 52 週高點 −30% 線）
+    px, atr = zones.get("price"), zones.get("atr")
+    if (is_low and dclass["type"] in sc.BUYABLE_DRAWDOWNS and low_line and px and atr and zones.get("zone_1")
+            and px <= low_line and zones["zone_1"]["high"] < px):
+        hi = round(min(low_line, px + 0.5 * atr), 2)
+        zones["zone_1"] = {"low": zones["zone_1"]["low"], "high": hi,
+                           "basis": f"已驗證低檔區（52 週高點 −30% 線 {low_line} 以下）", "pct_from_price": round((hi / px - 1) * 100, 1)}
+    cond = sc.entry_condition(zones.get("price"), zones, scores.get("overextension"), low_line)
+    zones["low_entry_line"] = low_line
+    zones["condition"] = cond
+    e_score = sc.entry_score(cond, low_score, scores.get("valuation"), dist_ma50)
+    scores["price_risk"] = scores.get("risk")
+    scores["fundamental_uncertainty"] = fu["score"] if fu else None
+    scores["risk"] = sc.combined_risk(scores["price_risk"], fu)
+    args = dict(opp=opp["score"], overext=scores.get("overextension"), quality=scores.get("quality"), risk=scores["risk"],
+                valuation=scores.get("valuation"), relative_strength=scores.get("relative_strength"), damage=damage,
+                oversold=oversold, entry_ok=cond["ok"], low_entry=is_low, long_term_broken=lt_broken,
+                growth=scores.get("growth"), drawdown_type=dclass["type"])
+    st = sc.decide_action(held=held, **args)
+    new_money = sc.decide_action(held=False, **args) if held else st
+    for a in {id(st): st, id(new_money): new_money}.values():
+        target = {"ABOVE_ENTRY": "zone_1", "COOLING_REQUIRED": "zone_2", "CONFIRMATION_REQUIRED": "zone_2"}.get(a.get("pullback_reason"))
+        if a["status"] == "BUY_ON_PULLBACK" and target and zones.get(target):
+            z = zones[target]
+            a["why"] += f"（{'Buy1' if target == 'zone_1' else 'Buy2'} {z['low']}–{z['high']}）"
+    return {"opp": opp, "weights": weights, "zones": zones, "cond": cond, "entry_score": e_score, "fu": fu, "drawdown": dclass,
+            "action": st, "new_money": new_money, "low_score": low_score, "is_low": is_low, "lt_broken": lt_broken}
 
 
 def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_fund, live_news, calibration) -> Dict:
@@ -194,6 +253,7 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
         "ai_exposure": float(th.ai_exposure) if (th and live_fund) else None,
     }
     fundamentals, catalyst, positioning, valuation_class, next_er = {}, None, None, None, None
+    fund_metrics: Optional[Dict] = None
     if live_fund:
         try:
             from src.ranking.fundamentals import FundamentalSnapshot
@@ -209,6 +269,16 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
             ner = snap.next_earnings_date()
             next_er = None if ner is None else int((ner - pd.Timestamp.now(tz=ner.tz)).days)
             company = snap.info.get("shortName") or ""
+            inf = snap.info
+            fund_metrics = {
+                "operating_margin": _num(inf.get("operatingMargins")),
+                "fcf_margin": (q.get("metrics") or {}).get("fcf_margin"),
+                "revenue": _num(inf.get("totalRevenue")),
+                "net_debt_to_ebitda": (q.get("metrics") or {}).get("net_debt_to_ebitda"),
+                "eps_revision_90d": (ea.get("metrics") or {}).get("eps_estimate_revision_90d"),
+                "days_to_earnings": next_er,
+                "sector": inf.get("sector"),
+            }
         except Exception as exc:
             fundamentals = {"error": f"{type(exc).__name__}: {exc}"}
             company = ""
@@ -258,26 +328,12 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
                                  ea_m.get("eps_estimate_revision_90d"), ea_m.get("latest_surprise_pct"), since)
         shock_view = {"shock": worst, **dmg, "verdict": shock_verdict(worst, dmg)}
 
-    comp = {k: v for k, v in scores.items() if k in sc.BASE_WEIGHTS}
-    weights = sc.regime_weights(profile)
-    mom_opp = sc.opportunity_score(comp, scores["overextension"], weights)
+    d = decision_pipeline(ohlcv, scores, profile, dd52=g("drawdown_252"), ret_3y=g("ret_756"), dist_ma50=g("dist_ma50"),
+                          shock_view=shock_view, fund_metrics=fund_metrics, days_to_earnings=next_er, held=holding is not None)
+    opp, zones, cond, e_score, fu, dclass, st, new_money = (d[k] for k in ("opp", "zones", "cond", "entry_score", "fu",
+                                                                         "drawdown", "action", "new_money"))
+    weights, low_score, is_low, lt_broken, held = d["weights"], d["low_score"], d["is_low"], d["lt_broken"], holding is not None
     dd52, r3 = g("drawdown_252"), g("ret_756")
-    low_score = sc.low_entry_score(dd52, r3, scores.get("valuation"))
-    scores["low_entry"] = low_score
-    is_low = bool(dd52 is not None and dd52 <= sc.LOW_ENTRY_DD and r3 is not None and r3 > 0)
-    lt_broken = r3 is not None and r3 <= 0
-    opp = dict(mom_opp)
-    if mom_opp["score"] is not None and low_score is not None:
-        opp["score"] = round(sc.ALLOCATION["lowentry"] * low_score + sc.ALLOCATION["momentum"] * mom_opp["score"], 1)
-        opp["momentum_opportunity"], opp["low_entry_score"] = mom_opp["score"], low_score
-    held = holding is not None
-    damage = (shock_view or {}).get("fundamental_damage_score")
-    oversold = bool(shock_view and shock_view.get("verdict") == "POTENTIAL_OVERSOLD")
-    zones = sc.entry_zones(ohlcv, scores.get("valuation"), next_er)
-    above_avoid = bool(zones.get("avoid_above") and zones.get("price") and zones["price"] > zones["avoid_above"])
-    st = sc.decide_status(opp["score"], scores["overextension"], scores.get("quality"), scores["risk"],
-                          scores.get("valuation"), scores["relative_strength"], held, damage, oversold, above_avoid,
-                          low_entry=is_low, long_term_broken=lt_broken)
     price = zones.get("price") or _num(ohlcv["Close"].dropna().iloc[-1])
     vol63 = g("vol_63")
     row = {
@@ -289,7 +345,14 @@ def _build_row(sym, ohlcv, F, last, lastF, bench_close, profile, holding, live_f
                                                                     if k in sc.VALIDATED_COMPONENTS) /
                                                                 sum(weights[k] for k in opp.get("components_used", [])) , 2)
                                                           if opp.get("components_used") else 0.0},
-        "status": st["status"], "flags": st["flags"], "status_why": st["why"],
+        "status": st["status"], "flags": st["flags"], "status_why": st["why"], "state": st.get("state"),
+        "pullback_reason": st.get("pullback_reason"),
+        "new_money_action": {"status": new_money["status"], "why": new_money["why"], "state": new_money.get("state")},
+        "entry_score": e_score, "entry_condition": cond,
+        "overextension_tier": fx.overextension_tier(scores["overextension"]),
+        "drawdown": dclass, "drawdown_type": dclass["type"],
+        "risk_detail": {"price_risk": scores["price_risk"], "fundamental_uncertainty": fu},
+        "theme_exposure": theme_exposures(sym, (fund_metrics or {}).get("sector")),
         "scores": {**scores, "earnings": scores.get("earnings_acceleration"), "ai": scores.get("ai_exposure"),
                    "industry": scores.get("industry_momentum")},
         "ai": {"exposure": th.ai_exposure if th else None, "demand_sensitivity": th.ai_demand_sensitivity if th else None,

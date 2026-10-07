@@ -60,7 +60,7 @@ def compute_features(
     F: Dict[str, pd.DataFrame] = {"close": close}
 
     # 複利報酬
-    for n in (5,) + HORIZONS:
+    for n in (5, 50) + HORIZONS:
         F[f"ret_{n}"] = close / close.shift(n) - 1
 
     # 相對報酬（vs SPY、QQQ、產業 ETF、同主題平均）
@@ -119,6 +119,7 @@ def compute_features(
         F["spy_ret_1"] = pd.DataFrame({s: mret for s in close.columns}, index=idx)
     F["drawdown_252"] = close / close.rolling(252, min_periods=60).max() - 1
     F["ret_1"] = rets
+    F["max_gain_5"] = rets.rolling(5).max()          # 近 5 日最大單日漲幅（跳空／加速）
 
     # 長線低檔布局（已驗證）：3 年報酬（長線贏家判定）
     F["ret_756"] = close / close.shift(756) - 1
@@ -166,26 +167,55 @@ def technical_score(F: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     return (0.5 * trend + 0.5 * momentum).where(momentum.notna())
 
 
-def overextension_score(F: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """短線過熱（0~100，高=過熱）。以「波動單位」衡量漲幅，避免高波動股天生被判過熱。"""
-    dv = F["daily_vol_63"].replace(0, np.nan)
-    z5 = F["ret_5"] / (dv * math.sqrt(5))
-    z20 = F["ret_20"] / (dv * math.sqrt(20))
-    atr_pct = (F["atr14"] / F["close"]).replace(0, np.nan)
-    ma20_atr = F["dist_ma20"] / atr_pct
-    ma50_atr = F["dist_ma50"] / atr_pct
+# 過熱分層（0~100）
+OVEREXTENSION_TIERS = ((85, "Extreme"), (70, "Overheated"), (50, "Extended"), (25, "Warm"), (0, "Normal"))
+
+
+# 原始分數 → 校準分數的錨點：美股 AI 池 + 台股 AI 池 2015-01 ~ 2026-10 全部（股票 × 日）共 417,981 筆的原始分數分位數
+#   P75 = 12.8、P90 = 30.6、P96 = 54.5、P99 = 89.3（依此映射；非針對任何個股調整）。
+OVEREXTENSION_CALIBRATION = ((0.0, 0.0), (12.8, 25.0), (30.6, 50.0), (54.5, 70.0), (89.3, 85.0), (100.0, 100.0))
+
+
+def overextension_tier(score: Optional[float]) -> Optional[str]:
+    if score is None or not np.isfinite(score):
+        return None
+    return next(name for lo, name in OVEREXTENSION_TIERS if score >= lo)
+
+
+def overextension_parts(F: Dict[str, pd.DataFrame]) -> Dict[str, tuple]:
+    """各成分 0~100 與權重。漲幅一律用「絕對漲幅」：舊版以波動單位衡量，高波動股同樣的急漲反而被判成不熱
+    （例：20 日 +26%、RSI 69 只得 34 分）；同樣的漲幅，低波動股也不能比高波動股更「熱」。"""
     parts = {
-        "z5": (_ramp(z5, 0.5, 3.0), 0.15),
-        "z20": (_ramp(z20, 0.5, 3.0), 0.20),
-        "ma20": (_ramp(ma20_atr, 1.0, 4.0), 0.20),
-        "ma50": (_ramp(ma50_atr, 2.0, 8.0), 0.15),
-        "rsi": (_ramp(F["rsi14"], 60, 85), 0.20),
-        "vol_spike": (_ramp(F["vol_spike"], 1.5, 3.5), 0.05),
-        "near_high": (_ramp(F["dist_52w_high"], -0.05, 0.0), 0.05),
+        "ret_5": (_ramp(F["ret_5"], 0.03, 0.15), 0.10),
+        "ret_20": (_ramp(F["ret_20"], 0.08, 0.35), 0.18),
+        "ret_50": (_ramp(F["ret_50"], 0.15, 0.60), 0.10),
+        "rsi": (_ramp(F["rsi14"], 55, 80), 0.15),
+        "ma20": (_ramp(F["dist_ma20"], 0.04, 0.20), 0.12),
+        "ma50": (_ramp(F["dist_ma50"], 0.08, 0.35), 0.10),
+        "ma200": (_ramp(F["dist_ma200"], 0.20, 0.80), 0.08),
+        "near_high": (_ramp(F["dist_52w_high"], -0.10, 0.0), 0.05),
+        "gap": (_ramp(F["max_gain_5"], 0.04, 0.12), 0.05),
     }
+    if "rel_SPY_20" in F:
+        parts["rel_strength"] = (_ramp(F["rel_SPY_20"], 0.05, 0.25), 0.07)
+    return parts
+
+
+def overextension_score(F: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """短線過熱（0~100，高=過熱）。多成分（5/20/50 日報酬、RSI、距 20/50/200 日線、距 52 週高、
+    相對強度、跳空加速），漲幅用絕對漲幅；上漲中的高波動股再放大（vol 0.4 → ×1.0、0.8 以上 → ×1.2），
+    高波動只會讓「快速上漲」更容易被判過熱，不會降低過熱分數。
+    分層：0–24 Normal、25–49 Warm、50–69 Extended、70–84 Overheated、85–100 Extreme。"""
+    parts = overextension_parts(F)
     num = sum(p.fillna(0) * w for p, w in parts.values())
     den = sum(p.notna().astype(float) * w for p, w in parts.values()).replace(0, np.nan)
-    return (num / den).where(F["rsi14"].notna())
+    base = num / den
+    amp = 1 + 0.2 * _ramp(F["vol_63"], 0.40, 0.80) / 100 * (F["ret_20"] > 0).astype(float)
+    raw = (base * amp).clip(0, 100)
+    # 校準：把原始分數依「歷史橫斷面百分位」映射到分層（P75→25 Warm、P90→50 Extended、P96→70 Overheated、P99→85 Extreme）
+    xp, fp = zip(*OVEREXTENSION_CALIBRATION)
+    cal = pd.DataFrame(np.interp(raw.to_numpy(dtype=float), xp, fp), index=raw.index, columns=raw.columns)
+    return cal.where(raw.notna() & F["rsi14"].notna())
 
 
 def risk_score(F: Dict[str, pd.DataFrame]) -> pd.DataFrame:

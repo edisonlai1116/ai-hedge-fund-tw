@@ -175,4 +175,46 @@ def peers_of(symbol: str, universe: List[str]) -> List[str]:
     return [u for u in universe if u != symbol and (theme_of(u) or ThemeInfo("", "", 0, 0, "C", "")).theme == t.theme]
 
 
+# ---------------------------------------------------------------------------
+# 主題曝險（Portfolio-level，只用於部位上限；不影響個股分數）
+# 依 ThemeInfo 的 theme / sub_theme 以通用規則對應到曝險桶，一檔可同時屬於多個桶（權重 0~1）。
+# ---------------------------------------------------------------------------
+EXPOSURE_BUCKETS = ("AI Semiconductors", "AI Networking / Optical", "Memory / Storage", "AI Data Center Power", "Nuclear",
+                    "Cooling / Power Infrastructure", "Semiconductor Equipment", "AI Servers / Hardware",
+                    "Software / AI Platform", "Financial", "Other")
+
+
+def theme_exposures(symbol: str, sector: Optional[str] = None) -> Dict[str, float]:
+    """{曝險桶: 權重}。例：核電股 → Nuclear 1.0 + AI Data Center Power 0.7。"""
+    t = theme_of(symbol)
+    if t is None:
+        if sector == "Financial Services":
+            return {"Financial": 1.0}
+        if sector == "Technology":
+            return {"Software / AI Platform": 0.5, "Other": 0.5}
+        return {"Other": 1.0}
+    th, sub = t.theme, t.sub_theme.lower()
+    if th == "AI Compute":
+        if any(k in sub for k in ("server", "ems", "rails", "boards")):
+            return {"AI Servers / Hardware": 1.0, "AI Semiconductors": 0.3}
+        return {"AI Semiconductors": 1.0}
+    if th in ("Memory", "Storage"):
+        return {"Memory / Storage": 1.0}
+    if th in ("Networking", "Optical"):
+        return {"AI Networking / Optical": 1.0}
+    if th == "Power":
+        if "nuclear" in sub:
+            return {"Nuclear": 1.0, "AI Data Center Power": 0.7}
+        if any(k in sub for k in ("generation", "retail", "fuel cell", "onsite")):
+            return {"AI Data Center Power": 1.0}
+        return {"Cooling / Power Infrastructure": 1.0, "AI Data Center Power": 0.5}
+    if th == "Cooling":
+        return {"Cooling / Power Infrastructure": 1.0, "AI Data Center Power": 0.5}
+    if th == "Semiconductor Equipment":
+        return {"Semiconductor Equipment": 1.0, "AI Semiconductors": 0.3}
+    if th in ("AI Platform", "AI Software"):
+        return {"Software / AI Platform": 1.0}
+    return {"Other": 1.0}
+
+
 ACCEPTANCE_TICKERS = ["AVGO", "VST", "CEG", "NRG", "LITE", "BE", "TER", "STX", "AMAT", "RMBS", "CRDO", "VRT", "ARM", "INTC"]

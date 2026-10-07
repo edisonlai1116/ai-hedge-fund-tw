@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 
 from src.strategy.momentum import (KEEP_N, LIMIT_VALID_DAYS, LOWENTRY_DD, LOWENTRY_HOLD_MONTHS, PANIC_NO_SELL_FG,
                                    SPIKE_DAYS, SPIKE_PCT, TOP_N, TPE, is_rebalance_window, next_rebalance)
+from src.ranking.scoring import BUYABLE_DRAWDOWNS
 from src.strategy.sentiment import EXTREME_FEAR, EXTREME_GREED, VIX_PANIC
 
 NEW_SIGNAL_DAYS = 3        # 進入低檔區 ≤ 3 個交易日 → 視為「新訊號」（容許排程漏跑）
@@ -58,7 +59,11 @@ def _sentiment_guidance(sent: Dict, backtest: Optional[Dict]) -> List[str]:
     return out
 
 
-def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: bool) -> Dict:
+DD_LABEL = {"SPECULATIVE_DE_RATING": "投機股預期修正", "VALUATION_RESET": "估值修正（仍不便宜）", "UNKNOWN": "回撤原因不明",
+            "FUNDAMENTAL_DAMAGE": "基本面受損"}
+
+
+def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: bool, dd_types: Optional[Dict] = None) -> Dict:
     rows = mk.get("rows", [])
     by = {r["symbol"]: r for r in rows}
     actions: List[Dict] = []
@@ -72,6 +77,11 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
         b = r.get("bounce_20d_pct")
         return "" if b is None else ("，尚未反彈（距 20 日低點 {:+.0f}%）".format(b) if b < 5 else "，已從 20 日低點反彈 {:+.0f}%".format(b))
 
+    dd_types = dd_types or {}
+
+    def dd_of(sym: str) -> Dict:
+        return dd_types.get(sym) or {"type": "UNKNOWN", "why": "尚未做回撤分類"}
+
     low_rows = [by[s] for s in mk.get("low_entry", []) if s in by]
     low_rows.sort(key=lambda r: (r.get("bounce_20d_pct") is None, r.get("bounce_20d_pct") or 0))   # 還沒漲的排前面
     for r in low_rows:
@@ -83,13 +93,21 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
                             "reason": f"在低檔區（距高點 {r.get('dd_52w_pct'):.0f}%），但 {sp['date']} 單日大漲 +{sp['gain_pct']}%："
                                       f"不買剛噴完的大長紅，掛大漲前收盤價 {lim}，{LIMIT_VALID_DAYS} 個交易日內沒回到就放棄。"})
             continue
+        dd = dd_of(r["symbol"])
+        if dd["type"] not in BUYABLE_DRAWDOWNS:
+            act = "低檔區但基本面受損：不買" if dd["type"] == "FUNDAMENTAL_DAMAGE" else f"低檔區但{DD_LABEL.get(dd['type'], dd['type'])}：不自動買"
+            watch.append({**base(r), "type": "low_entry_not_buyable", "drawdown_type": dd["type"], "action": act,
+                          "reason": f"跌深（距高點 {r.get('dd_52w_pct'):.0f}%）不等於便宜——回撤分類 {dd['type']}：{dd.get('why') or ''}"
+                                    + ("" if dd["type"] == "FUNDAMENTAL_DAMAGE" else "；最多在 Buy2/Deep 小量分批，等基本面改善證據。")})
+            continue
         if days is not None and days <= NEW_SIGNAL_DAYS and not r.get("low_entry_reentry"):
             actions.append({**base(r), "type": "low_entry_new", "action": "買進（低檔布局）",
-                            "reason": f"長線贏家（3 年 {r.get('ret_3y_pct'):+.0f}%）剛跌破 52 週高點 {r.get('high_52w')} 的 -30%"
+                            "drawdown_type": dd["type"],
+                            "reason": f"長線贏家（3 年 {r.get('ret_3y_pct'):+.0f}%）剛跌破 52 週高點 {r.get('high_52w')} 的 -30%，回撤分類 {dd['type']}"
                                       f"（目前 {r.get('dd_52w_pct'):.0f}%，第 {days} 天）：新低檔訊號，買進後持有 {LOWENTRY_HOLD_MONTHS} 個月。"})
         else:
             again = "（短暫反彈出去後又跌回，不算新訊號）" if r.get("low_entry_reentry") and days is not None and days <= NEW_SIGNAL_DAYS else ""
-            watch.append({**base(r), "type": "low_entry_holding", "action": "低檔區（已持續）",
+            watch.append({**base(r), "type": "low_entry_holding", "action": "低檔區（已持續）", "drawdown_type": dd["type"],
                           "reason": f"在低檔區 {days if days is not None else '多'} 天{again}（距高點 {r.get('dd_52w_pct'):.0f}%{bounce_txt(r)}）；"
                                     "還沒買、且低檔槽位未滿可分批買（優先買還沒反彈的）；已買者續抱。"})
     for s in mk.get("low_entry_watch", []):
@@ -163,7 +181,8 @@ def build_daily_advice(report: Dict, backtest: Optional[Dict] = None) -> Dict:
     fg = (sent.get("fear_greed") or {}).get("score")
     panic = fg is not None and fg < PANIC_NO_SELL_FG
     rebalance = is_rebalance_window(now.date())
-    markets = {m: _market_actions(m, mk, sent, rebalance, panic) for m, mk in (report.get("markets") or {}).items()}
+    markets = {m: _market_actions(m, mk, sent, rebalance, panic, report.get("drawdown_types"))
+               for m, mk in (report.get("markets") or {}).items()}
     levels = [d["level"] for d in markets.values()]
     if "action" in levels:
         head = "今天有操作：" + "；".join(f"{MARKET_LABEL[m]} {d['summary'].replace('今天要操作：', '')}"
@@ -185,7 +204,8 @@ def build_daily_advice(report: Dict, backtest: Optional[Dict] = None) -> Dict:
         "sentiment_guidance": _sentiment_guidance(sent, backtest),
         "markets": markets,
         "rules": [
-            {"rule": f"低檔布局：長線贏家（3 年報酬 > 0）跌破 52 週高點 {LOWENTRY_DD:.0%} → 買進持有 {LOWENTRY_HOLD_MONTHS} 個月", "check": "每天"},
+            {"rule": f"低檔布局：長線贏家（3 年報酬 > 0）跌破 52 週高點 {LOWENTRY_DD:.0%}，且回撤分類為基本面折價／暫時衝擊 → 買進持有 {LOWENTRY_HOLD_MONTHS} 個月"
+                      "（投機股修正、估值修正、原因不明 → 不自動買；基本面受損 → 不買）", "check": "每天"},
             {"rule": "動能輪動：月初買前 N 名、跌出 KEEP_N 名且長線破壞才賣", "check": "每月前 3 個平日"},
             {"rule": "低檔區沒用到的資金放動能名單（不留現金）", "check": "每天（低檔訊號出現時從動能部位挪錢）"},
             {"rule": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：月調只買不賣", "check": "月調日"},

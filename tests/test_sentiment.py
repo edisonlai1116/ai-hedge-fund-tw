@@ -84,6 +84,13 @@ def test_daily_advice_levels():
         "markets": {"us": {"rows": [row], "low_entry": ["AAA"], "low_entry_watch": [], "momentum_share": 0.93},
                     "tw": {"rows": [], "low_entry": [], "low_entry_watch": []}},
     }
+    # 沒有回撤分類（或分類為投機修正）→ 跌深不等於便宜，不能直接給「買進」
+    adv = build_daily_advice(report)
+    assert not any(a["type"] == "low_entry_new" for a in adv["markets"]["us"]["actions"])
+    assert adv["markets"]["us"]["watch"][0]["type"] == "low_entry_not_buyable"
+    report["drawdown_types"] = {"AAA": {"type": "SPECULATIVE_DE_RATING", "why": "x"}}
+    assert not any(a["type"] == "low_entry_new" for a in build_daily_advice(report)["markets"]["us"]["actions"])
+    report["drawdown_types"] = {"AAA": {"type": "FUNDAMENTAL_DISCOUNT", "why": "x"}}
     adv = build_daily_advice(report)
     assert adv["panic_no_sell"] is True
     assert adv["markets"]["us"]["level"] == "action"

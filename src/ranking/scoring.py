@@ -1,10 +1,14 @@
-"""Opportunity Score、狀態、進場區、輪動與部位大小。
+"""決策流程（2026-10-08 Decision Logic Consistency Audit 後）——五個概念分開，最後才合成動作：
 
-Opportunity Score 回答「今天在這批股票裡，哪一支的 forward risk/reward 最好」，不是「哪家公司最好」：
-  * 品質/成長只是其中幾項；短線過熱會直接扣分（overextension penalty），所以
-    「品質 95、成長 98、催化 95、過熱 90」會落到 HOLD / BUY_ON_PULLBACK，而不是追高 BUY。
-  * 缺資料的模組排除後重新加權（不當中性），並回報 coverage。
-  * 市場狀態（regime）調整動能/估值/風險/產業動能的權重。
+  A. Opportunity Score（股票本身值不值得投資/研究）：已驗證的 6 個月動能排名 + 品質、成長、財報加速、估值、AI、催化。
+     不含進場時機（低檔深度、距支撐距離），不含任何組合資訊（持股、主題曝險）。
+  B. Entry Score / Entry Condition（現在這個價格適不適合進場）：距 Buy1 幾個 ATR、已驗證的低檔深度、現價估值、距 50 日線。
+     entry_condition() 明確回答「現價是否可立即進場」與理由。
+  C. Overextension（短線過熱，features.overextension_score，歷史百分位校準，分 Normal/Warm/Extended/Overheated/Extreme）。
+  D. Risk（價格風險 + 基本面不確定性：虧損、負 FCF、營收小、高槓桿、財報在即）。
+  E. Final Action：decide_action(A, B, C, D, 回撤分類, 基本面受損, 持有與否)。
+  F. Position Sizing（組合層級）：position_sizes() 依預期報酬/風險配置，再套單檔、高 beta、主題曝險上限。
+     主題曝險只縮小部位，不改任何個股分數。
 """
 from __future__ import annotations
 
@@ -22,15 +26,18 @@ import pandas as pd
 #   * 相對強度 / 技術 / 低風險：消融測試未增加 alpha → 權重 0，只當診斷資訊顯示。
 #   * 基本面、財報加速、估值、催化、AI 曝險：沒有 point-in-time 歷史無法回測 → 保留但權重有限，
 #     並在輸出中標記「未經回測驗證」。
+# 2026-10-08：Opportunity 改為「公司/股票本身」——不再混入低檔深度（那是進場時機，移到 Entry Score）。
+# 價格面仍以已驗證的動能排名為核心；只有價格資料時（回測、台股缺財報）就等於動能排名，回測結果不變。
 BASE_WEIGHTS = {
-    "momentum_rank": 0.61,          # 已驗證（唯一在組合層級穩定增加 alpha 的價格因子）
-    "earnings_acceleration": 0.10,  # 未驗證
-    "valuation": 0.08,              # 未驗證
-    "quality": 0.06,                # 未驗證
-    "growth": 0.06,                 # 未驗證
-    "catalyst": 0.05,               # 未驗證
-    "ai_exposure": 0.04,            # 未驗證（專家先驗）
+    "momentum_rank": 0.32,          # 已驗證（唯一在組合層級穩定增加 alpha 的價格因子）
+    "quality": 0.15,                # 未驗證
+    "growth": 0.13,                 # 未驗證
+    "earnings_acceleration": 0.13,  # 未驗證
+    "valuation": 0.13,              # 未驗證
+    "ai_exposure": 0.08,            # 未驗證（專家先驗）
+    "catalyst": 0.06,               # 未驗證
 }
+OPPORTUNITY_WEIGHTS = BASE_WEIGHTS
 VALIDATED_COMPONENTS = ("momentum_rank",)
 
 # 長線低檔布局（使用者風格：低檔為主 70%、動能 30%）
@@ -95,58 +102,241 @@ def opportunity_panel(comp_panels: Dict[str, pd.DataFrame], overext: pd.DataFram
 
 
 # ---------------------------------------------------------------------------
-# 狀態
+# 決策常數（集中在這裡，不散落各處）
 # ---------------------------------------------------------------------------
+OX_EXTENDED, OX_OVERHEATED, OX_EXTREME = 50.0, 70.0, 85.0      # 與 features.OVEREXTENSION_TIERS 一致
+OX_NORMAL_MAX = 25.0
+ACCEPTABLE_ABOVE_BUY1_ATR = 0.75     # 現價高於 Buy1 上緣不超過 0.75 ATR、且過熱 < 25 → 仍可立即進場（會明確標示）
+GOOD_OPPORTUNITY = 60.0              # 「好公司/好股票」：Opportunity ≥ 60，或品質 ≥ 65 且成長 ≥ 60
+BUY_NOW_OPPORTUNITY = 65.0
+PULLBACK_OPPORTUNITY = 55.0
+MAX_RISK_FOR_BUY_NOW = 90.0
+DAMAGE_BLOCK = 60.0                  # 基本面受損 ≥ 60 → 不買、持有者賣
+DRAWDOWN_MIN = -0.20                 # 距 52 週高點跌超過 20% 才做回撤分類
+BUYABLE_DRAWDOWNS = ("FUNDAMENTAL_DISCOUNT", "TEMPORARY_SHOCK")
+THEME_CAP = 0.35                     # 單一主題曝險上限（Σ 權重 × 曝險）
+MAX_SINGLE = 0.12
+MAX_HIGH_BETA_BUCKET = 0.50
+
+
+def is_good_company(opp: Optional[float], quality: Optional[float], growth: Optional[float]) -> bool:
+    return bool((opp is not None and opp >= GOOD_OPPORTUNITY) or
+                (quality is not None and growth is not None and quality >= 65 and growth >= 60))
+
+
+# ---------------------------------------------------------------------------
+# B. Entry Score / Entry Condition
+# ---------------------------------------------------------------------------
+def entry_condition(price: Optional[float], zones: Dict, overextension: Optional[float],
+                    low_entry_price: Optional[float] = None) -> Dict:
+    """現價是否可「立即」進場（BUY_NOW 的必要條件）。三種情況才成立，且一定附理由：
+      1. 現價 ≤ Buy1 上緣；
+      2. 高於 Buy1 不超過 ACCEPTABLE_ABOVE_BUY1_ATR 個 ATR、且過熱 < 25（明確標示「高於偏好區但仍可接受」）；
+      3. 現價 ≤ 52 週高點 -30% 的已驗證低檔線（長線低檔布局的進場條件）。
+    現價高於 avoid_above 一律不成立。"""
+    z1 = (zones or {}).get("zone_1") or {}
+    atr = (zones or {}).get("atr")
+    if price is None or not z1 or not atr:
+        return {"ok": False, "reason": "資料不足：無 Buy1 或 ATR", "atr_above_buy1": None, "basis": None}
+    above = max(0.0, (price - z1["high"]) / atr)
+    avoid = (zones or {}).get("avoid_above")
+    if avoid and price > avoid:
+        return {"ok": False, "reason": f"現價 {price} 高於 avoid_above {avoid}", "atr_above_buy1": round(above, 2), "basis": None}
+    if price <= z1["high"]:
+        return {"ok": True, "reason": f"現價 {price} 在 Buy1（≤ {z1['high']}）內", "atr_above_buy1": 0.0, "basis": "IN_BUY1"}
+    if low_entry_price is not None and price <= low_entry_price:
+        return {"ok": True, "reason": f"現價 {price} 低於已驗證低檔線 {low_entry_price}（52 週高點 -30%）",
+                "atr_above_buy1": round(above, 2), "basis": "BELOW_LOW_ENTRY_LINE"}
+    if above <= ACCEPTABLE_ABOVE_BUY1_ATR and (overextension or 0) < OX_NORMAL_MAX:
+        return {"ok": True, "reason": (f"current price is still acceptable despite being above preferred entry zone："
+                                       f"高於 Buy1 {above:.2f} ATR（≤ {ACCEPTABLE_ABOVE_BUY1_ATR}）且未過熱"),
+                "atr_above_buy1": round(above, 2), "basis": "ACCEPTABLE_ABOVE_BUY1"}
+    return {"ok": False, "reason": f"現價高於 Buy1 上緣 {z1['high']} 約 {above:.1f} ATR：等回到 Buy1",
+            "atr_above_buy1": round(above, 2), "basis": None}
+
+
+def entry_score(cond: Dict, low_entry: Optional[float], valuation: Optional[float], dist_ma50: Optional[float]) -> Optional[float]:
+    """0~100（高 = 現在的價格位置好）：距 Buy1（45%）、已驗證低檔深度（30%）、現價估值（15%）、距 50 日線（10%）。"""
+    a = cond.get("atr_above_buy1")
+    parts = {
+        "location": (None if a is None else max(0.0, 100.0 - a / 3.0 * 100.0), 0.45),
+        "low_entry": (low_entry, 0.30),
+        "valuation": (valuation, 0.15),
+        "ma50": (None if dist_ma50 is None else float(np.clip((0.15 - dist_ma50) / 0.20 * 100, 0, 100)), 0.10),
+    }
+    used = {k: v for k, v in parts.items() if v[0] is not None}
+    if not used:
+        return None
+    return round(sum(v * w for v, w in used.values()) / sum(w for _, w in used.values()), 1)
+
+
+# ---------------------------------------------------------------------------
+# D. Risk：價格風險 + 基本面不確定性
+# ---------------------------------------------------------------------------
+def fundamental_uncertainty(m: Optional[Dict]) -> Optional[Dict]:
+    """m：operating_margin、fcf_margin、revenue、net_debt_to_ebitda、eps_revision_90d、days_to_earnings。"""
+    if not m or all(m.get(k) is None for k in ("operating_margin", "fcf_margin", "revenue")):
+        return None
+    score, why = 0.0, []
+    om, fcf, rev = m.get("operating_margin"), m.get("fcf_margin"), m.get("revenue")
+    if om is not None and om < 0:
+        score += 30; why.append(f"營業利益率 {om:.0%}（虧損）")
+    if fcf is not None and fcf < -0.05:
+        score += 25; why.append(f"FCF 率 {fcf:.0%}（燒錢）")
+    if rev is None or rev < 100e6:
+        score += 25; why.append("營收極小或尚無營收（商業化未證實）")
+    nd = m.get("net_debt_to_ebitda")
+    if nd is not None and nd > 4:
+        score += 10; why.append(f"淨負債/EBITDA {nd:.1f}")
+    rv = m.get("eps_revision_90d")
+    if rv is not None and rv < -0.05:
+        score += 10; why.append(f"EPS 預估 90 天下修 {rv:.0%}")
+    dte = m.get("days_to_earnings")
+    if dte is not None and 0 <= dte <= 10:
+        score += 10; why.append(f"{dte} 天後公布財報（事件風險）")
+    return {"score": round(min(100.0, score)), "evidence": why, "speculative": bool((om is not None and om < 0) or
+                                                                                  (rev is None or rev < 100e6))}
+
+
+def combined_risk(price_risk: Optional[float], fu: Optional[Dict]) -> Optional[float]:
+    if price_risk is None:
+        return None if fu is None else float(fu["score"])
+    if fu is None:
+        return round(price_risk, 1)
+    return round(0.6 * price_risk + 0.4 * fu["score"], 1)
+
+
+# ---------------------------------------------------------------------------
+# 回撤分類：跌很多 ≠ 便宜
+# ---------------------------------------------------------------------------
+def classify_drawdown(dd_52w: Optional[float], quality: Optional[float], growth: Optional[float],
+                      earnings_accel: Optional[float], valuation: Optional[float], damage: Optional[float],
+                      fu: Optional[Dict], eps_revision_90d: Optional[float] = None,
+                      shock_causes: Optional[List[str]] = None) -> Dict:
+    """FUNDAMENTAL_DISCOUNT / TEMPORARY_SHOCK / VALUATION_RESET / SPECULATIVE_DE_RATING / FUNDAMENTAL_DAMAGE / UNKNOWN / NONE。
+    只有 FUNDAMENTAL_DISCOUNT、TEMPORARY_SHOCK（且受損低）允許大跌 → BUY_NOW。
+    原則：價格證據（公司特有跌幅、跌後破底、關鍵字新聞）只能「提示」受損，要有基本面確認（預估下修、財報/成長轉弱）
+    才判 FUNDAMENTAL_DAMAGE；價格與新聞證據極強（受損 ≥ 75）時例外。"""
+    if dd_52w is None or dd_52w > DRAWDOWN_MIN:
+        return {"type": "NONE", "why": "距 52 週高點跌幅 < 20%，不做回撤分類"}
+    rev = eps_revision_90d
+    fund_weak = ((rev is not None and rev <= -0.03) or (earnings_accel is not None and earnings_accel < 40)
+                 or (growth is not None and growth < 40))
+    fund_intact = ((earnings_accel is not None and earnings_accel >= 50) and (rev is None or rev >= 0)
+                   and (quality is None or quality >= 50))
+    if (damage is not None and damage >= 75) or (damage is not None and damage >= 50 and fund_weak) \
+            or (rev is not None and rev <= -0.10) \
+            or (growth is not None and earnings_accel is not None and growth < 25 and earnings_accel < 30 and rev is not None and rev <= -0.03):
+        return {"type": "FUNDAMENTAL_DAMAGE",
+                "why": "基本面受損：大跌伴隨基本面確認（預估下修／財報、成長轉弱）或極強的負面證據"}
+    have_fund = any(v is not None for v in (quality, growth, earnings_accel)) or fu is not None
+    if not have_fund:
+        return {"type": "UNKNOWN", "why": "無基本面資料，無法判斷跌的是價格還是價值"}
+    if fu and fu.get("speculative"):
+        return {"type": "SPECULATIVE_DE_RATING",
+                "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（" + "；".join(fu.get("evidence", [])[:2]) + "）"}
+    causes = set(shock_causes or [])
+    if causes and (damage or 0) < 40 and (causes <= {"macro", "industry", "technical"} or fund_intact):
+        return {"type": "TEMPORARY_SHOCK",
+                "why": "近期大跌" + ("主因為大盤/產業/技術面" if causes <= {"macro", "industry", "technical"} else "為公司特有，但財報動能與預估未轉差")
+                       + "：基本面未受損"}
+    if valuation is not None and valuation < 35:
+        return {"type": "VALUATION_RESET", "why": f"跌深後估值分數仍僅 {valuation:.0f}：是昂貴估值的修正，尚未便宜"}
+    if (quality or 0) >= 50 and (earnings_accel is None or earnings_accel >= 35) and not fund_weak:
+        return {"type": "FUNDAMENTAL_DISCOUNT", "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價"}
+    return {"type": "UNKNOWN", "why": "基本面證據不足以判定為折價或受損"}
+
+
+# ---------------------------------------------------------------------------
+# E. Final Action
+# ---------------------------------------------------------------------------
+def decide_action(opp: Optional[float], overext: Optional[float], quality: Optional[float], risk: Optional[float],
+                  valuation: Optional[float], relative_strength: Optional[float], held: bool,
+                  damage: Optional[float] = None, oversold: bool = False, entry_ok: bool = False,
+                  low_entry: bool = False, long_term_broken: bool = False, growth: Optional[float] = None,
+                  drawdown_type: str = "UNKNOWN") -> Dict:
+    """回傳 status、state（例如 GOOD_BUT_OVEREXTENDED）、flags、why、pullback_reason。
+    BUY_NOW 的必要條件：entry_ok、過熱 < 50、非基本面受損、風險 < 90；低檔區另需回撤類型屬可買類。"""
+    flags: List[str] = []
+    if opp is None:
+        return {"status": "WAIT", "state": None, "flags": ["INSUFFICIENT_DATA"], "why": "資料不足，無法評分", "pullback_reason": None}
+    ox = overext or 0.0
+    good = is_good_company(opp, quality, growth)
+    damaged = drawdown_type == "FUNDAMENTAL_DAMAGE" or (damage is not None and damage >= DAMAGE_BLOCK)
+    state = "GOOD_BUT_OVEREXTENDED" if (good and ox >= OX_EXTENDED) else None
+    if oversold:
+        flags.append("POTENTIAL_OVERSOLD")
+    if low_entry:
+        flags.append("LOW_ENTRY_ZONE")
+    if state:
+        flags += ["BUY_QUALITY", "WAIT_ENTRY"]
+    if damaged:
+        flags.append("THESIS_AT_RISK")
+
+    def out(status, why, pb=None):
+        return {"status": status, "state": state, "flags": flags, "why": why, "pullback_reason": pb}
+
+    tier = "極度過熱" if ox >= OX_EXTREME else ("過熱" if ox >= OX_OVERHEATED else "偏熱")
+    if held:
+        if damaged:
+            return out("SELL", "基本面受損（回撤分類 FUNDAMENTAL_DAMAGE 或受損分數 ≥ 60）")
+        if ox >= OX_EXTREME and (valuation is None or valuation < 50):
+            return out("PARTIAL_PROFIT", f"{tier}（{ox:.0f}）且估值不便宜：先分批獲利了結")
+        if ox >= OX_OVERHEATED and valuation is not None and valuation < 35:
+            return out("PARTIAL_PROFIT", f"{tier}（{ox:.0f}）且估值偏貴（{valuation:.0f}）：先分批獲利了結")
+        if low_entry:
+            return out("HOLD_CORE", "長線贏家落入低檔區：續抱（是否加碼看新資金建議）")
+        if quality is not None and quality >= 70 and opp >= 45:
+            return out("HOLD_CORE", "高品質核心部位，機會分數仍在中上" + ("；短線過熱，不加碼" if ox >= OX_EXTENDED else ""))
+        if opp < 30 and (relative_strength or 50) < 30 and long_term_broken:
+            return out("SELL", "機會分數與相對強度同時轉弱，且 3 年長線趨勢已破壞")
+        if opp >= 30 or not long_term_broken:
+            return out("HOLD", "續抱觀察" if opp >= 30 else "短線動能弱，但 3 年長線趨勢未破壞：續抱、不加碼")
+        return out("SELL", "機會分數偏低且 3 年長線趨勢已破壞")
+
+    # ---- 新資金 ----
+    if damaged:
+        return out("WAIT", "基本面受損：不承接（大跌不等於便宜）")
+    if ox >= OX_EXTREME:
+        return out("WAIT", (f"基本面與成長性仍然優秀，但{tier}（{ox:.0f}）：目前不適合追價，等降溫後回到進場區" if good
+                            else f"{tier}（{ox:.0f}）且機會分數普通（{opp:.0f}）：不追"))
+    if ox >= OX_EXTENDED:
+        if good:
+            return out("BUY_ON_PULLBACK", f"基本面與成長性仍然優秀，但短期漲幅與技術位置{tier}（{ox:.0f}）：目前不適合追價；"
+                                          "等降溫（過熱 < 50）或回撤至 Buy2", "COOLING_REQUIRED")
+        return out("WAIT", f"{tier}（{ox:.0f}）且機會分數普通（{opp:.0f}）：不追")
+    if low_entry:
+        allowed = drawdown_type in BUYABLE_DRAWDOWNS and (damage or 0) < 40
+        if allowed and entry_ok and (risk is None or risk < MAX_RISK_FOR_BUY_NOW):
+            return out("BUY_NOW", f"長線贏家回落 ≥30%，回撤分類 {drawdown_type}：低檔布局分批買進，持有 12 個月")
+        if allowed:
+            return out("BUY_ON_PULLBACK", f"回撤分類 {drawdown_type} 可承接，但{'風險過高' if entry_ok else '現價不在進場區'}：等回到 Buy1/Buy2",
+                       "ABOVE_ENTRY" if not entry_ok else "CONFIRMATION_REQUIRED")
+        return out("BUY_ON_PULLBACK", f"跌深但回撤分類為 {drawdown_type}（不等於便宜）：只在 Buy2/Deep 小量分批，需基本面改善證據",
+                   "CONFIRMATION_REQUIRED")
+    if opp >= BUY_NOW_OPPORTUNITY:
+        if entry_ok and (risk is None or risk < MAX_RISK_FOR_BUY_NOW):
+            return out("BUY_NOW", "機會分數高、現價在可進場區且未過熱")
+        if entry_ok:
+            return out("BUY_ON_PULLBACK", f"機會分數高但風險 {risk:.0f} 過高：只在更深的進場區小量", "CONFIRMATION_REQUIRED")
+        return out("BUY_ON_PULLBACK", "機會分數高，但現價高於進場區：等回到 Buy1", "ABOVE_ENTRY")
+    if opp >= PULLBACK_OPPORTUNITY:
+        return out("BUY_ON_PULLBACK", "機會分數中上：只在 Buy1 以下分批，不追價", "CONFIRMATION_REQUIRED" if entry_ok else "ABOVE_ENTRY")
+    if oversold and opp >= 50 and (damage or 0) < 40:
+        return out("BUY_ON_PULLBACK", "大跌但基本面受損低，分批於進場區承接", "CONFIRMATION_REQUIRED")
+    if ox >= OX_NORMAL_MAX and opp >= 45:
+        return out("WAIT", f"機會分數中等（{opp:.0f}）且短線偏熱（{ox:.0f}）：觀望")
+    return out("WAIT", f"機會分數不足（{opp:.0f}），觀望")
+
+
 def decide_status(opp: Optional[float], overext: Optional[float], quality: Optional[float], risk: Optional[float],
                   valuation: Optional[float], relative_strength: Optional[float], held: bool,
                   damage: Optional[float] = None, oversold: bool = False, above_avoid: bool = False,
-                  low_entry: bool = False, long_term_broken: bool = False) -> Dict:
-    flags = []
-    if opp is None:
-        return {"status": "WAIT", "flags": ["INSUFFICIENT_DATA"], "why": "資料不足，無法評分"}
-    ox = overext or 0
-    if oversold:
-        flags.append("POTENTIAL_OVERSOLD")
-    if quality is not None and quality >= 70 and ox >= 60:
-        flags += ["BUY_QUALITY", "WAIT_ENTRY"]
-    if low_entry:
-        flags.append("LOW_ENTRY_ZONE")
-    structural = damage is not None and damage >= 60
-    if low_entry and not structural:
-        # 已驗證規則：長線贏家回落 ≥30% → 低檔布局（持有 12 個月），不因動能弱而賣出
-        if held:
-            return {"status": "HOLD_CORE", "flags": flags, "why": "長線贏家落入低檔區：續抱並可分批加碼（低檔布局，持有 12 個月）"}
-        return {"status": "BUY_NOW", "flags": flags, "why": "長線贏家回落 ≥30%：低檔布局分批買進（回測勝率約 8 成），持有 12 個月"}
-    if held:
-        if (opp < 30 and (relative_strength or 50) < 30 and long_term_broken) or structural:
-            return {"status": "SELL", "flags": flags, "why": "機會分數與相對強度同時轉弱，或基本面受損"}
-        if ox >= 80 and (valuation is None or valuation < 50):
-            return {"status": "PARTIAL_PROFIT", "flags": flags, "why": "短線過熱且估值不便宜，先分批獲利了結"}
-        if quality is not None and quality >= 70 and opp >= 45:
-            return {"status": "HOLD_CORE", "flags": flags, "why": "高品質核心部位，機會分數仍在中上"}
-        if opp >= 30:
-            return {"status": "HOLD", "flags": flags, "why": "機會分數中性，續抱觀察"}
-        if not long_term_broken:
-            return {"status": "HOLD", "flags": flags, "why": "短線動能弱，但 3 年長線趨勢未破壞：長線續抱、不加碼，等跌到低檔區再加碼"}
-        return {"status": "SELL", "flags": flags, "why": "機會分數偏低且 3 年長線趨勢已破壞"}
-    if opp >= 55 and above_avoid:
-        if "WAIT_ENTRY" not in flags:
-            flags.append("WAIT_ENTRY")
-        return {"status": "BUY_ON_PULLBACK", "flags": flags, "why": "條件不錯，但現價已高於 avoid_above：等回到進場區再買"}
-    if opp >= 65 and ox < OVEREXTENSION_WAIT:
-        return {"status": "BUY_NOW", "flags": flags, "why": "機會分數高且未過熱"}
-    if opp >= 55 and ox >= OVEREXTENSION_WAIT:
-        if "WAIT_ENTRY" not in flags:
-            flags.append("WAIT_ENTRY")
-        return {"status": "BUY_ON_PULLBACK", "flags": flags,
-                "why": "條件好但短線過熱：等降溫或回到進場區再買（回測：延後進場報酬不輸直接追）"}
-    if opp >= 65:
-        return {"status": "BUY_NOW", "flags": flags, "why": "機會分數高"}
-    if opp >= 55:
-        return {"status": "BUY_ON_PULLBACK", "flags": flags, "why": "機會分數中上：只在 Zone 1 以下分批，不追價"}
-    if oversold and opp >= 50:
-        return {"status": "BUY_ON_PULLBACK", "flags": flags, "why": "大跌但基本面受損低，分批於進場區承接"}
-    return {"status": "WAIT", "flags": flags, "why": "機會分數不足，觀望"}
+                  low_entry: bool = False, long_term_broken: bool = False, entry_ok: bool = False,
+                  drawdown_type: str = "UNKNOWN", growth: Optional[float] = None) -> Dict:
+    """相容舊介面：轉呼叫 decide_action。entry_ok 預設 False——沒有進場條件就不會給 BUY_NOW。"""
+    return decide_action(opp, overext, quality, risk, valuation, relative_strength, held, damage, oversold,
+                         entry_ok and not above_avoid, low_entry, long_term_broken, growth, drawdown_type)
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +398,8 @@ def entry_zones(ohlcv: pd.DataFrame, valuation_score: Optional[float] = None,
     z2, n2 = next(((v, k) for v, k in rest if v >= px - 3.5 * atr), (z1 - atr, f"{n1}−1 ATR"))
     deeper = [(v, k) for v, k in below if v < z2 - 0.5 * atr]
     z3, n3 = deeper[0] if deeper else (max(z2 - 1.5 * atr, lo252), "52 週區間下緣")
+    if z3 > z2 - 0.5 * atr:                       # 排序保證：Buy1 > Buy2 > Deep
+        z3, n3 = z2 - 1.5 * atr, f"{n2}−1.5 ATR"
     band = 0.25 * atr
 
     def zone(v, name):
@@ -276,9 +468,22 @@ def rotation_suggestions(rows: List[Dict], calibration: Optional[Dict] = None, m
     return out[:max_pairs]
 
 
+def theme_exposure(weights: Dict[str, float], exposures: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+    """Σ 部位權重 × 主題曝險權重。"""
+    out: Dict[str, float] = {}
+    for k, w in weights.items():
+        for th, e in (exposures.get(k) or {"Other": 1.0}).items():
+            out[th] = out.get(th, 0.0) + w * e
+    return out
+
+
 def position_sizes(rows: List[Dict], profile: Dict, calibration: Optional[Dict] = None,
-                   max_single: float = 0.12, max_theme: float = 0.35, max_high_beta_bucket: float = 0.50) -> Dict[str, float]:
-    """目標權重 ∝ 預期超額報酬 / 預期風險 × 信心；套單檔、主題、因子（高 beta）上限與 regime 曝險。"""
+                   max_single: float = MAX_SINGLE, theme_cap: float = THEME_CAP,
+                   max_high_beta_bucket: float = MAX_HIGH_BETA_BUCKET,
+                   exposures: Optional[Dict[str, Dict[str, float]]] = None) -> Dict[str, float]:
+    """組合層級：目標權重 ∝ 預期超額報酬 / 預期風險 × 資料覆蓋；再套單檔、高 beta、主題曝險上限。
+    exposures：{ticker: {主題: 權重}}（themes.theme_exposures）；缺則用 row["theme"] 當單一主題。
+    只回傳權重，不修改任何 row 的分數（Score 是股票本身，Sizing 是組合脈絡）。"""
     raw = {}
     for r in rows:
         if r["status"] not in ("BUY_NOW", "BUY_ON_PULLBACK", "HOLD", "HOLD_CORE"):
@@ -295,24 +500,24 @@ def position_sizes(rows: List[Dict], profile: Dict, calibration: Optional[Dict] 
     w = {k: v / tot * profile.get("exposure", 1.0) for k, v in raw.items()}
     hb_cap = profile.get("max_high_beta_weight", max_single)
     beta = {r["ticker"]: r.get("beta") or 1.0 for r in rows}
-    theme = {r["ticker"]: r.get("theme") or "Other" for r in rows}
-    for _ in range(5):   # 反覆套上限並把多出的權重按比例分給未觸頂者
-        capped = {}
-        for k, v in w.items():
-            cap = min(max_single, hb_cap) if beta.get(k, 1) >= 1.5 else max_single
-            capped[k] = min(v, cap)
-        by_theme: Dict[str, float] = {}
-        for k, v in capped.items():
-            by_theme[theme[k]] = by_theme.get(theme[k], 0) + v
-        for th, tv in by_theme.items():
-            if tv > max_theme:
+    exp = {r["ticker"]: (exposures or {}).get(r["ticker"]) or {(r.get("theme") or "Other"): 1.0} for r in rows}
+    for _ in range(20):   # 反覆套上限（主題縮減會影響其他主題，迭代到收斂）
+        capped = {k: min(v, min(max_single, hb_cap) if beta.get(k, 1) >= 1.5 else max_single) for k, v in w.items()}
+        te = theme_exposure(capped, exp)
+        for th, tv in te.items():
+            if tv > theme_cap + 1e-12:
+                f = theme_cap / tv
                 for k in capped:
-                    if theme[k] == th:
-                        capped[k] *= max_theme / tv
+                    ek = exp[k].get(th, 0.0)
+                    if ek > 0:
+                        capped[k] *= 1 - ek * (1 - f)   # 曝險越高的股票縮越多
         hb = sum(v for k, v in capped.items() if beta.get(k, 1) >= 1.5)
         if hb > max_high_beta_bucket:
             for k in capped:
                 if beta.get(k, 1) >= 1.5:
                     capped[k] *= max_high_beta_bucket / hb
+        done = all(abs(capped[k] - w[k]) < 1e-9 for k in w)
         w = capped
+        if done:
+            break
     return {k: round(v, 4) for k, v in sorted(w.items(), key=lambda x: -x[1]) if v >= 0.005}

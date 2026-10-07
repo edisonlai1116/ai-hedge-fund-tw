@@ -27,6 +27,12 @@ def _write(obj, path):
         json.dump(obj, f, ensure_ascii=False, indent=1, default=str)
 
 
+def drawdown_map(opp: dict) -> dict:
+    """{代號: {type, why, status}}：機會評分的回撤分類，給每日建議與持股建議共用（同一套規則）。"""
+    return {r["ticker"]: {"type": r.get("drawdown_type"), "why": (r.get("drawdown") or {}).get("why"), "status": r.get("status")}
+            for r in opp.get("ranking", []) if r.get("drawdown_type")}
+
+
 def _backtest_stale() -> bool:
     try:
         with open(BACKTEST_JSON, encoding="utf-8") as f:
@@ -58,7 +64,7 @@ def main(argv=None) -> int:
         from src.ranking import tracking
         watch = list(ACCEPTANCE_TICKERS)
         for m in ("us", "tw"):
-            watch += report["markets"].get(m, {}).get("low_entry", [])[:8]          # 低檔布局（主力 70%）
+            watch += report["markets"].get(m, {}).get("low_entry", [])[:15]         # 低檔布局：全部做回撤分類（大跌 ≠ 便宜）
             watch += [r["symbol"] for r in report["markets"].get(m, {}).get("rows", [])[:6]]   # 動能前段
         watch = list(dict.fromkeys(watch))
         opp = rank_stocks(watch)
@@ -66,6 +72,8 @@ def main(argv=None) -> int:
             for k in ("fundamentals",):
                 r.pop(k, None)
         _write(opp, OPPORTUNITY_JSON)
+        report["drawdown_types"] = drawdown_map(opp)
+        _write(report, STRATEGY_JSON)
         n = tracking.log_signals(opp, SIGNAL_LOG)
         _write(tracking.evaluate(SIGNAL_LOG), SIGNAL_ACCURACY_JSON)
         print(f"[strategy_report] 機會評分 {len(opp['ranking'])} 檔（regime {opp['regime']['regime']}），新增訊號紀錄 {n} 筆")
