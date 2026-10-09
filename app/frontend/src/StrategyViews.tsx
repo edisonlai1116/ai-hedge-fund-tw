@@ -1030,7 +1030,7 @@ export function ViratttBadge({ v }: { v?: Virattt | null }) {
 const todayStyle = (t?: string) =>
   !t || t === '不用動'
     ? 'bg-slate-100 text-slate-600'
-    : /^(月調日|調整日|排隊)/.test(t)
+    : /^(月調日|調整日|下一步|排隊)/.test(t)
       ? 'bg-amber-100 text-amber-900'
       : /賣|減碼/.test(t)
       ? 'bg-rose-600 text-white'
@@ -1300,18 +1300,17 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
 /** 今天要做的事：持股的今日動作 ＋ 配置建議裡「今天」執行的步驟（與「我的持股」同一份評估結果）。 */
 function TodayTodo({ result }: { result: EvaluateResult }) {
   const isAlert = (t?: string) => !!t && /準備|掛單|等 3 天/.test(t);
-  const isLater = (t?: string) => !!t && /^(月調日|調整日|排隊換股)/.test(t);
+  const isLater = (t?: string) => !!t && /^(月調日|調整日|下一步|排隊換股)/.test(t);
   const isToday = (t?: string) => !!t && t !== '不用動' && !isLater(t) && !isAlert(t);
   const alerts = result.holdings.filter((h) => isAlert(h.today));
   const acts = result.holdings.filter((h) => isToday(h.today));
   const monthly = result.holdings.filter((h) => isLater(h.today) && h.today !== '排隊換股');
-  const queued = result.holdings.filter((h) => h.today === '排隊換股');
+  const queued = result.holdings.filter((h) => h.queued || h.today === '排隊換股');
   const held = new Set(acts.map((h) => h.symbol));
   const steps = (result.allocation_plan?.steps ?? []).filter((st) => st.when.startsWith('今天') && !held.has(st.symbol));
-  const later = (result.allocation_plan?.steps ?? []).filter((st) => !st.when.startsWith('今天') && st.kind !== 'fx');
-  const laterNote = monthly.length || later.length
-    ? `下次調整日（${rebalanceText(result.rebalance, result.next_rebalance)}）要做：${[...monthly.map((h) => `${h.today?.replace(/^(月調日|調整日)/, '')} ${h.symbol.replace(/\.TWO?$/, '')}`), ...(later.length ? [`配置建議 ${later.length} 筆`] : [])].join('、')}。`
-      + (queued.length ? `排隊換股（之後的調整日再換）：${queued.map((h) => h.symbol.replace(/\.TWO?$/, '')).join('、')}。` : '')
+    const laterNote = monthly.length || queued.length
+    ? (monthly.length ? `下一步換股：${monthly.map((h) => h.symbol.replace(/\.TWO?$/, '')).join('、')}（現在不用動，時間到頁面會提醒）。` : '')
+      + (queued.length ? `另有 ${queued.length} 檔名單外持股，之後一次最多換 2 檔、陸續處理。` : '')
     : '';
   const alertBox = alerts.length ? (
     <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -1371,5 +1370,5 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
 /** 下次調整日：分市場顯示（美股每 4 週、台股每週）。 */
 export function rebalanceText(rb?: RebalanceInfo, fallback?: string): string {
   if (!rb) return fallback ?? '—';
-  return `美股 ${rb.us.next}（${rb.us.every}）・ 台股 ${rb.tw.next}（${rb.tw.every}）`;
+  return `美股約${rb.us.every}、台股約${rb.tw.every}檢查一次，到了頁面會提醒`;
 }

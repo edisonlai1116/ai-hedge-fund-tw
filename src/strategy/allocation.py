@@ -116,7 +116,8 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
         return bool((rbi.get(m) or {}).get("in_window", in_window))
 
     def when_of(m: str) -> str:
-        return "今天" if win(m) else f"調整日 {(rbi.get(m) or {}).get('next', next_reb)}"
+        nx = (rbi.get(m) or {}).get("next", next_reb) or ""
+        return "今天" if win(m) else f"下一步（約 {nx[5:].replace('-', '/')}）"
     steps: List[Dict] = []
     notes: List[str] = []
 
@@ -132,7 +133,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             when = when_of(h["market"])
             steps.append({"kind": "sell", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(h["value_twd"]),
                           "shares": int(h["shares"]), "shares_note": f"全部 {h['shares']:,.0f} 股",
-                          "when": when, "why": "跌出動能保留名單：賣出，錢轉入下方同一天的買進（換股）。"})
+                          "when": when, "why": "跌出動能保留名單、目前最弱：賣出，錢轉入下方同一天的買進（換股）。"})
             if win(h["market"]):
                 proceeds += h["value_twd"]
             else:
@@ -221,9 +222,9 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             left2 = swap_cash[mk_]
             if left2 < MIN_TRADE_TWD:
                 continue
-            tag = f"（用調整日賣出 {'、'.join(swap_names[mk_])} 的錢）"
+            tag = f"（用賣出 {'、'.join(swap_names[mk_])} 的錢）"
             by_sym = {st["symbol"]: st for st in steps if st["kind"] == "buy"}
-            for c in [c for c in cands if c["market"] == mk_ and c["when"].startswith("調整日")]:
+            for c in [c for c in cands if c["market"] == mk_ and c["when"].startswith("下一步")]:
                 if left2 < MIN_TRADE_TWD:
                     break
                 st = by_sym.get(c["symbol"])
@@ -241,7 +242,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 if tag not in st["why"]:
                     st["why"] += tag
                 left2 -= buy
-            mom2 = [st for st in steps if st["kind"] == "buy" and st["market"] == mk_ and st["when"].startswith("調整日") and "動能新買" in st["why"]]
+            mom2 = [st for st in steps if st["kind"] == "buy" and st["market"] == mk_ and st["when"].startswith("下一步") and "動能新買" in st["why"]]
             while left2 >= MIN_TRADE_TWD and mom2:
                 room = [st for st in mom2 if st["amount_twd"] < total * MAX_NAME_PCT / 100 - MIN_TRADE_TWD]
                 if not room:
@@ -294,7 +295,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     low_tgt = ev.get("low_entry_target_twd") or {}
     for h in holdings:
         t = h.get("today") or ""
-        if not (("加碼" in t) and not t.startswith(("月調日", "調整日"))):
+        if not (("加碼" in t) and not t.startswith(("月調日", "調整日", "下一步"))):
             continue
         want = max(0.0, (low_tgt.get(h["market"]) or h.get("target_twd") or 0) - (h["value_twd"] or 0))
         h["add_twd"] = round(want) if want else None

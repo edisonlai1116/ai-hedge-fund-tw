@@ -113,6 +113,7 @@ export type EvaluatedHolding = {
   trim_twd?: number;
   trim_shares?: number | null;
   add_twd?: number | null;
+  queued?: number;
   funding_note?: string | null;
   quote_as_of?: string | null;
   quote_source?: 'twse' | 'yfinance' | 'daily_close';

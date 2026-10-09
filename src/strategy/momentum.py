@@ -546,15 +546,15 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
         return "今天可加碼", "在低檔區、部位不足：低檔訊號每天有效，可今天分批加碼。"
     if act == "加碼":
         if not window:
-            return "調整日加碼", f"動能加碼排在下次調整日（{nxt}），其他日子不動：{FREQ_EVIDENCE}"
+            return "下一步加碼", f"動能加碼排在下一步（約 {nxt[5:].replace('-', '/')}），現在不用動：{FREQ_EVIDENCE}"
         if sp:
             return "等 3 天再加碼", f"{sp['date']} 大漲 +{sp['gain_pct']}%，等大長紅超過 {SPIKE_DAYS} 個交易日、仍在前段再加碼。"
         return "今天加碼", "調整日：排名前段且部位不足。"
     if act == "賣出換股":
         if window:
             return "今天賣出換股", "調整日：已跌出保留名單，今天全部賣出，換成排名前段的股票。"
-        return "調整日賣出", (f"轉弱：預計下次調整日（{nxt}）全部賣出換股（屆時仍在保留名單外才賣）。"
-                              f"不提前賣：{FREQ_EVIDENCE}")
+        return "下一步換股", (f"已跌出保留名單、是目前最弱的持股：下一步（約 {nxt[5:].replace('-', '/')}）賣出換成排名前段的股票"
+                              f"（屆時仍在名單外才賣）。不必現在賣：{FREQ_EVIDENCE}")
     # 續抱
     if row:
         lep, close = row.get("low_entry_price"), row.get("close")
@@ -795,10 +795,10 @@ def evaluate_holdings(
         sells = sorted([r for r in out_rows if r["market"] == m and r["action"] == "賣出換股"],
                        key=lambda r: -(r.get("rank") or 0))
         for k, r in enumerate(sells[MAX_SWAPS[m]:], start=MAX_SWAPS[m] + 1):
-            msg = (f"已在保留名單外，但每次調整最多換 {MAX_SWAPS[m]} 檔、最弱的先換：排第 {k} 順位，之後的調整日再換"
+            msg = (f"在保留名單外，但一次最多換 {MAX_SWAPS[m]} 檔、最弱的先換：排第 {k} 順位，之後陸續換；現在不用動"
                    f"（回測：分批換報酬不輸一次全換）。")
-            r["action"], r["today"], r["today_reason"] = "排隊換股", "排隊換股", msg
-            r["reason"] = r["reason"] + " " + msg
+            r["action"], r["today"], r["today_reason"], r["queued"] = "續抱", "不用動", msg, k
+            r["reason"] = msg
     order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "排隊換股": 4, "續抱": 5, "核心 ETF": 6, "資料不足": 7}
     out_rows.sort(key=lambda r: (order.get(r["action"], 9), -(r["value_twd"] or 0)))
     return {
