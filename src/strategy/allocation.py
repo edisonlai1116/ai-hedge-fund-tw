@@ -49,28 +49,30 @@ def asset_class(symbol: str) -> str:
 
 
 def target_mix(report: Dict) -> Dict:
-    """依市場狀態決定目標股 / 債 / 現金（%）。"""
+    """目標股 / 債 / 現金（%）：使用者選擇「報酬最大化、不需緊急預備金」→ 全部放股票。
+    依據 2026-10-10 回測（2017 起，低檔 30% / 動能 70%，現金年化 2%）：全額投入 美 52.3% / 台 49.2%；
+    恐懼貪婪 > 75 留 15% 現金 49.3% / 45.9%；指數乖離 > 20% 留 15% —（美未觸發）/ 47.0%；VIX < 13 留 10% 51.2% / 49.3%；
+    跌破 200 日線留 20% 51.6% / 48.1%（回撤少約 4.5 點）。沒有規則在兩市場都勝過全額投入 → 使用者選擇全額投入。"""
     sent = report.get("sentiment") or {}
     fg = ((sent.get("fear_greed") or {}).get("score"))
     vix = (sent.get("vix") or {}).get("value")
-    taiex = sent.get("taiex") or {}
-    reasons: List[str] = []
+    mix = {"stock": 100, "bond": 0, "cash": 0}
     if (fg is not None and fg < 25) or (vix is not None and vix >= 30):
-        mix, label = {"stock": 90, "bond": 5, "cash": 5}, "極度恐懼／恐慌"
-        reasons.append("恐慌期歷史上之後 3~6 個月報酬最高：現金壓到最低、只買不賣。")
+        label = "極度恐懼／恐慌"
+        reasons = ["恐慌期：只買不賣（回測：恐慌時不賣、照常買進，報酬較高）。"]
     elif fg is not None and fg < 45:
-        mix, label = {"stock": 85, "bond": 7, "cash": 8}, "恐懼"
-        reasons.append("恐懼區歷史上偏有利買方：股票比例略高於中性。")
+        label = "恐懼"
+        reasons = ["恐懼區歷史上偏有利買方：照規則全額投入。"]
     elif fg is not None and fg > 75:
-        mix, label = {"stock": 80, "bond": 10, "cash": 10}, "極度貪婪"
-        reasons.append("貪婪時不減股（回測顯示貪婪時賣出/等待反而變差），但新資金分批進場、不追大長紅。")
+        label = "極度貪婪"
+        reasons = ["貪婪時不減股（回測：貪婪時賣出/等待反而較差），新買不追大長紅。"]
     else:
-        mix, label = {"stock": 80, "bond": 10, "cash": 10}, "中性／貪婪"
-        reasons.append("中性：維持基準 80/10/10。")
+        label = "中性／貪婪"
+        reasons = ["照規則全額投入。"]
+    reasons.append("目標 100% 股票：回測 9 種依市場狀況留現金的規則（恐懼貪婪過熱、指數乖離、VIX 偏低、跌破 200 日線…），"
+                   "沒有一種在美股與台股都比全額投入賺得多；停利賣掉創新高的股也較差。代價是回撤可能到 -35%~-40%。")
     if fg is not None:
         reasons.append(f"恐懼貪婪 {fg:.0f}" + (f"、VIX {vix:.1f}" if vix is not None else "") + "。")
-    if (taiex.get("vs_ma200_pct") or 0) >= 20:
-        reasons.append(f"台股加權距 200 日線 {taiex['vs_ma200_pct']:+.0f}%（乖離大）：台股新資金建議分 3 批、遇回檔再加。")
     return {"mix": mix, "label": label, "reasons": reasons, "fear_greed": fg, "vix": vix}
 
 
@@ -223,7 +225,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
         else:
             notes.append(f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%，但沒有多出的現金：之後的新資金可先補債券（約 NT${bond_gap:,.0f}）。")
     elif -bond_gap > total * 5 / 100:
-        notes.append(f"債券 {pct['bond']}% 高於目標 {tgt_pct['bond']}%：股市恐慌（恐懼貪婪 < 25）時可把多出的債券轉進股票。")
+        notes.append(f"債券 {pct['bond']}%：目標是全部股票，可在月調日把債券轉進動能／低檔買進名單。")
     if amt["cash"] < tgt["cash"] - total * TOLERANCE / 100:
         notes.append(f"現金 {pct['cash']}% 低於目標 {tgt_pct['cash']}%：不用賣股補現金；新資金先留一部分當現金（約 NT${tgt['cash'] - amt['cash']:,.0f}）。")
 
