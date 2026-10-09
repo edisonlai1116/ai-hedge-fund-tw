@@ -544,6 +544,9 @@ export function MyHoldingsPanel() {
         {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
       </div>
 
+      {/* 持股決策 */}
+      {result?.decision_report ? <DecisionCard result={result} /> : null}
+
       {/* 資產配置 */}
       {result?.allocation_plan ? <AllocationCard plan={result.allocation_plan} /> : null}
 
@@ -1135,6 +1138,11 @@ export function HoldingsTodayCard() {
           </table>
         </div>
       ) : null}
+      {result?.decision_report ? (
+        <div className="mt-4">
+          <DecisionCard result={result} />
+        </div>
+      ) : null}
       {result?.allocation_plan ? (
         <div className="mt-4">
           <AllocationCard plan={result.allocation_plan} />
@@ -1299,7 +1307,7 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
 
 /** 今天要做的事：持股的今日動作 ＋ 配置建議裡「今天」執行的步驟（與「我的持股」同一份評估結果）。 */
 function TodayTodo({ result }: { result: EvaluateResult }) {
-  const isAlert = (t?: string) => !!t && /準備|掛單|等 3 天/.test(t);
+  const isAlert = (t?: string) => !!t && /準備|掛單|等 3 天|等第 1 筆/.test(t);
   const isLater = (t?: string) => !!t && /^(月調日|調整日|下一步|排隊換股)/.test(t);
   const isToday = (t?: string) => !!t && t !== '不用動' && !isLater(t) && !isAlert(t);
   const alerts = result.holdings.filter((h) => isAlert(h.today));
@@ -1371,4 +1379,252 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
 export function rebalanceText(rb?: RebalanceInfo, fallback?: string): string {
   if (!rb) return fallback ?? '—';
   return `美股約${rb.us.every}、台股約${rb.tw.every}檢查一次，到了頁面會提醒`;
+}
+
+/* ============================== 持股決策（四分組／左側布局／資金調度） ============================== */
+
+const GROUP_STYLE: Record<string, string> = {
+  核心持有: 'border-sky-200 bg-sky-50 text-sky-900',
+  左側布局候選: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  等待確認: 'border-amber-200 bg-amber-50 text-amber-900',
+  退出候選: 'border-rose-200 bg-rose-50 text-rose-900',
+};
+const sym = (s: string) => s.replace(/\.TWO?$/, '');
+
+export function DecisionCard({ result }: { result: EvaluateResult }) {
+  const r = result.decision_report;
+  const [cashIdx, setCashIdx] = useState(0);
+  const [showConf, setShowConf] = useState(false);
+  if (!r) return null;
+  if (r.error) return <p className="text-sm text-rose-600">持股決策失敗：{r.error}</p>;
+  const byDecision = Object.fromEntries(result.holdings.map((h) => [h.symbol, h.decision]));
+  const sc = r.cash_scenarios[cashIdx];
+  return (
+    <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-semibold text-slate-900">持股決策</div>
+        <div className="text-xs text-slate-500">基本面複查／加碼評分未經回測（基本面沒有歷史時點資料）</div>
+      </div>
+
+      <section>
+        <div className="text-xs font-semibold text-slate-500">今日整體操作</div>
+        <div className="mt-1 text-base font-semibold text-slate-900">{r.overall.verdict}</div>
+        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-slate-700">
+          <li>
+            現金 {ntd(r.overall.cash.cash_twd)}（{r.overall.cash.cash_pct ?? '—'}%）
+            {r.overall.cash.fully_invested ? `：在保留水位 ${ntd(r.overall.cash.reserve_twd)} 內，等於滿倉` : ''}
+          </li>
+          <li>
+            最大單檔 {r.overall.concentration.max_symbol ? sym(r.overall.concentration.max_symbol) : '—'} {r.overall.concentration.max_pct ?? '—'}%
+            {r.overall.concentration.over_cap.length ? `；超過上限：${r.overall.concentration.over_cap.map(sym).join('、')}` : '；沒有超過上限'}
+          </li>
+          <li>{r.overall.left_side_count ? `有 ${r.overall.left_side_count} 檔值得左側布局（見下方清單）` : '目前沒有值得左側布局的持股'}</li>
+          {r.overall.reallocation ? <li>{r.overall.reallocation}</li> : null}
+        </ul>
+      </section>
+
+      <section>
+        <div className="text-xs font-semibold text-slate-500">持股分組</div>
+        <div className="mt-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {Object.entries(r.groups).map(([g, list]) => (
+            <div key={g} className={`rounded-md border p-2 text-sm ${GROUP_STYLE[g] ?? ''}`}>
+              <div className="font-semibold">
+                {g} <span className="text-xs font-normal">{list.length} 檔</span>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {list.length ? (
+                  list.map((s) => (
+                    <span key={s} className="rounded bg-white/70 px-1.5 py-0.5 text-xs" title={byDecision[s]?.why}>
+                      {sym(s)}
+                      {byDecision[s]?.queued ? <span className="text-slate-400"> #{byDecision[s]?.queued}</span> : null}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs opacity-60">—</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {r.left_side.length ? (
+        <section>
+          <div className="text-xs font-semibold text-slate-500">左側布局清單</div>
+          <div className="mt-1 space-y-2">
+            {r.left_side.map((x) => (
+              <div key={x.symbol} className="rounded-md border border-emerald-200 p-2 text-sm">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <b>{sym(x.symbol)}</b>
+                  <span className="rounded bg-emerald-100 px-1.5 text-xs text-emerald-900">{x.grade}</span>
+                  <span className="text-xs">
+                    加碼評分 <b>{x.add_score.score ?? '—'}</b>
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    市值 {ntd(x.value_twd)}・損益 {pct(x.pnl_pct)}
+                  </span>
+                </div>
+                <div className="mt-1 grid gap-x-4 text-xs text-slate-700 sm:grid-cols-2">
+                  <div>下跌原因：{x.decline_reason}{x.decline_detail ? `（${x.decline_detail}）` : ''}</div>
+                  <div>長期邏輯：{x.thesis}</div>
+                  <div>估值：{x.valuation}</div>
+                  <div>
+                    評分組成：{Object.entries(x.add_score.components).map(([k, v]) => `${k} ${v}`).join('、')}
+                    {x.add_score.missing.length ? `；缺：${x.add_score.missing.join('、')}` : ''}
+                  </div>
+                </div>
+                {x.plan?.tranches?.length ? (
+                  <table className="mt-1.5 w-full text-xs">
+                    <tbody>
+                      {x.plan.tranches.map((t) => (
+                        <tr key={t.n} className="border-t border-slate-100 align-top">
+                          <td className="whitespace-nowrap py-1 pr-2 font-medium">
+                            第 {t.n} 筆 {t.pct}%
+                          </td>
+                          <td className="whitespace-nowrap py-1 pr-2 tabular-nums">
+                            {ntd(t.amount_twd)}
+                            {t.shares ? `（約 ${t.shares} 股）` : ''}
+                          </td>
+                          <td className="py-1 text-slate-600">{t.trigger}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : x.plan?.note ? (
+                  <div className="mt-1 text-xs text-slate-500">{x.plan.note}</div>
+                ) : null}
+                {x.plan?.invalidation?.length ? <div className="mt-1 text-xs text-rose-700">失效條件：{x.plan.invalidation.join('；')}</div> : null}
+                {x.plan?.basis ? <div className="mt-0.5 text-[11px] text-slate-400">{x.plan.basis}</div> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {r.sells.length ? (
+        <section>
+          <div className="text-xs font-semibold text-slate-500">賣出與資金調度清單（依釋出優先順序）</div>
+          <div className="mt-1 overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                  <th className="py-1 pr-2">標的</th>
+                  <th className="py-1 pr-2">建議</th>
+                  <th className="py-1 pr-2 text-right">金額</th>
+                  <th className="py-1 pr-2">時間</th>
+                  <th className="py-1">理由／資金用途</th>
+                </tr>
+              </thead>
+              <tbody>
+                {r.sells.map((x) => (
+                  <tr key={x.symbol} className="border-b border-slate-100 align-top">
+                    <td className="py-1 pr-2 font-medium">{sym(x.symbol)}</td>
+                    <td className="whitespace-nowrap py-1 pr-2">
+                      {x.type}
+                      {x.shares ? <div className="text-xs text-slate-500">{x.shares} 股</div> : null}
+                    </td>
+                    <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{ntd(x.amount_twd)}</td>
+                    <td className="whitespace-nowrap py-1 pr-2 text-xs text-slate-500">{x.when}</td>
+                    <td className="py-1 text-xs text-slate-600">
+                      {x.reason}
+                      <div className="text-slate-400">
+                        用途：{x.use_of_funds}・{x.why_this_one}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {r.cash_scenarios.length ? (
+        <section>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-xs font-semibold text-slate-500">需要現金時：回收方案</div>
+            {r.cash_scenarios.map((c, i) => (
+              <button
+                key={c.target_twd}
+                type="button"
+                onClick={() => setCashIdx(i)}
+                className={`rounded border px-2 py-0.5 text-xs ${i === cashIdx ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700'}`}
+              >
+                {Math.round(c.target_twd / 10000)} 萬
+              </button>
+            ))}
+          </div>
+          {sc ? (
+            <div className="mt-1 text-sm">
+              <ul className="space-y-0.5">
+                {sc.sells.map((p) => (
+                  <li key={p.symbol} className="text-xs text-slate-700">
+                    <b>{sym(p.symbol)}</b> {p.full_exit ? '全部賣出' : '賣'} {ntd(p.amount_twd)}
+                    {p.shares ? `（約 ${p.shares} 股）` : ''}：{p.reason}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-1 text-xs text-slate-500">
+                {sc.enough ? '' : `持股不夠回收到目標（只湊到 ${ntd(sc.raised_twd)}）。`}賣出後：股票 {sc.after.stock_pct}%・現金 {sc.after.cash_pct}%・最大單檔{' '}
+                {sc.after.max_single_pct}%
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {r.no_action.length ? (
+        <section>
+          <div className="text-xs font-semibold text-slate-500">今日不動作的理由（主要持股）</div>
+          <ul className="mt-1 space-y-0.5 text-xs text-slate-700">
+            {r.no_action.map((x) => (
+              <li key={x.symbol}>
+                <b>{sym(x.symbol)}</b>（{x.group}・{x.decision}）：{x.why}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section>
+        <div className="text-xs font-semibold text-slate-500">和原規則（回測基準）的差異</div>
+        {r.baseline_diff.length ? (
+          <ul className="mt-1 space-y-0.5 text-xs text-slate-700">
+            {r.baseline_diff.map((x) => (
+              <li key={x.symbol}>
+                <b>{sym(x.symbol)}</b>：{x.before_today || x.before} → <b>{x.after_today || x.after}</b>
+                {x.why ? `（${x.why}）` : ''}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-1 text-xs text-slate-500">今天兩者結論相同。</div>
+        )}
+      </section>
+
+      <section>
+        <button type="button" className="text-xs font-semibold text-slate-500 underline" onClick={() => setShowConf((v) => !v)}>
+          資料可信度 {showConf ? '▲' : '▼'}
+        </button>
+        {showConf ? (
+          <div className="mt-1 space-y-1 text-xs">
+            {Object.entries(r.data_confidence).map(([s, c]) =>
+              c ? (
+                <div key={s}>
+                  <b>{sym(s)}</b>：<span className="text-emerald-700">已確認：{c.confirmed.join('、') || '—'}</span>；
+                  <span className="text-amber-700">推估：{c.estimated.join('、') || '—'}</span>；
+                  <span className="text-rose-700">資料不足：{c.missing.join('、') || '—'}</span>
+                </div>
+              ) : null,
+            )}
+          </div>
+        ) : null}
+        <ul className="mt-1 list-disc pl-5 text-[11px] text-slate-400">
+          {r.notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
 }

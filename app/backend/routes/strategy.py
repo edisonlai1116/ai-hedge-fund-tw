@@ -40,6 +40,7 @@ class EvaluateRequest(BaseModel):
     holdings: list[HoldingIn] = Field(default_factory=list)
     cash_twd: float = Field(default=0, ge=0)
     cash_usd: float = Field(default=0, ge=0)
+    decisions: bool = True   # False＝原規則（回測基準），用來比較前後差異
 
 
 @router.get("/report")
@@ -123,7 +124,8 @@ def evaluate(request: EvaluateRequest) -> dict:
     try:
         rep, fx = _report(), _fx()
         cash = request.cash_twd + request.cash_usd * fx
-        ev = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True, cash_twd=cash)
+        ev = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True, cash_twd=cash,
+                               decisions=request.decisions)
         ev["cash_twd"] = round(cash)
         ev["total_with_cash_twd"] = round((ev.get("total_twd") or 0) + cash)
         try:
@@ -131,6 +133,13 @@ def evaluate(request: EvaluateRequest) -> dict:
             ev["allocation_plan"] = build_allocation(ev, rep, request.cash_twd, request.cash_usd, fx)
         except Exception as exc:  # 配置建議失敗不影響持股評估
             ev["allocation_plan"] = {"error": str(exc)}
+        if request.decisions:
+            try:
+                from src.strategy.holding_decision import build_decision_report
+                base = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True, cash_twd=cash)
+                ev["decision_report"] = build_decision_report(ev, ev.get("allocation_plan"), cash, fx, baseline=base)
+            except Exception as exc:  # 決策報告失敗不影響持股評估
+                ev["decision_report"] = {"error": str(exc)}
         return ev
     except HTTPException:
         raise

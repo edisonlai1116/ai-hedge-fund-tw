@@ -179,6 +179,11 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
         for h in holdings:
             if h["action"] in ("低檔加碼", "加碼") and asset_class(h["symbol"]) == "stock":
                 cap = low_cap[h["market"]] if h["action"] == "低檔加碼" else mom_cap[h["market"]]
+                dplan = (h.get("decision") or {}).get("plan") or {}
+                if dplan.get("tranches"):          # 決策層的分批方案：今天只買第 1 筆，且要已在進場區
+                    if not dplan.get("first_tranche_now"):
+                        continue
+                    cap = h["value_twd"] + dplan["tranches"][0]["amount_twd"]
                 cands.append({"symbol": h["symbol"], "market": h["market"], "cap": cap, "have": h["value_twd"], "price": h.get("price"),
                               "when": "今天" if h["action"] == "低檔加碼" else when_of(h["market"]),
                               "spike": h.get("spike"), "why": f"系統建議「{h['action']}」：部位低於目標。"})
@@ -295,9 +300,11 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     low_tgt = ev.get("low_entry_target_twd") or {}
     for h in holdings:
         t = h.get("today") or ""
-        if not (("加碼" in t) and not t.startswith(("月調日", "調整日", "下一步"))):
+        if not ((("加碼" in t) or t in ("左側分批第 1 筆", "等第 1 筆價位")) and not t.startswith(("月調日", "調整日", "下一步"))):
             continue
-        want = max(0.0, (low_tgt.get(h["market"]) or h.get("target_twd") or 0) - (h["value_twd"] or 0))
+        dplan = (h.get("decision") or {}).get("plan") or {}
+        want = (dplan["tranches"][0]["amount_twd"] if dplan.get("tranches") else
+                max(0.0, (low_tgt.get(h["market"]) or h.get("target_twd") or 0) - (h["value_twd"] or 0)))
         h["add_twd"] = round(want) if want else None
         if h["symbol"] in planned:
             st = planned[h["symbol"]]
@@ -312,8 +319,10 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             n = _shares(use, h.get("price"), h["market"], fx_usd_twd)
             h["funding_note"] = f"資金：觸發時用現金約 NT${use:,.0f}" + (f"（約 {n:,} 股）" if n else "") + "。"
         else:
-            h["funding_note"] = ("資金：現金不足 → 這次跳過，不要賣別檔來湊"
-                                 "（回測：賣最弱持股來加碼，報酬比不加碼差）；有新資金再加。")
+            exits_ = [x["symbol"] for x in holdings if (x.get("decision") or {}).get("group") == "EXIT"]
+            h["funding_note"] = ("資金：現金不足 → 等新資金，或從退出候選 " + "、".join(exits_[:3]) + " 釋出"
+                                 "（依基本面判斷的移轉，未經回測；純動能回測中「賣最弱來加碼」較差）。" if exits_ else
+                                 "資金：現金不足、也沒有退出候選 → 這次跳過，不賣其他持股來湊；有新資金再加。")
 
     order = {"sell": 0, "trim": 1, "fx": 2, "buy": 3, "bond": 4}
     steps.sort(key=lambda s: (order.get(s["kind"], 9), -s["amount_twd"]))

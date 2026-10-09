@@ -114,6 +114,8 @@ export type EvaluatedHolding = {
   trim_shares?: number | null;
   add_twd?: number | null;
   queued?: number;
+  lots?: number;
+  decision?: HoldingDecision;
   funding_note?: string | null;
   quote_as_of?: string | null;
   quote_source?: 'twse' | 'yfinance' | 'daily_close';
@@ -150,6 +152,7 @@ export type EvaluateResult = {
   cash_twd?: number;
   total_with_cash_twd?: number;
   allocation_plan?: AllocationPlan;
+  decision_report?: DecisionReport;
   sleeve_twd: Record<string, number>;
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];
@@ -157,6 +160,61 @@ export type EvaluateResult = {
   low_entry_buys?: Record<'us' | 'tw', { symbol: string; name: string; rank: number; close: number; dd_52w_pct: number; ret_3y_pct: number; high_52w: number; target_twd: number | null; low_label?: string; quality_tier?: string }[]>;
   low_entry_target_twd?: Record<string, number>;
   allocation?: { lowentry: number; momentum: number };
+};
+
+export type Tranche = { n: number; pct: number; amount_twd: number; shares: number | null; trigger: string };
+export type TranchePlan = { budget_twd: number; tranches: Tranche[]; invalidation?: string[]; basis?: string; note?: string; first_tranche_now?: boolean };
+export type Confidence = { confirmed: string[]; estimated: string[]; missing: string[] };
+export type HoldingDecision = {
+  group: 'CORE' | 'LEFT_SIDE' | 'WAIT' | 'EXIT';
+  label: string;
+  decision?: string;
+  decision_label?: string;
+  why?: string;
+  thesis?: string;
+  thesis_why?: string;
+  add_score?: { score: number | null; components: Record<string, number>; missing: string[] };
+  add_grade?: string | null;
+  plan?: TranchePlan | null;
+  wait?: { missing_evidence: string[]; watch: string[]; start_condition: string; exit_condition: string };
+  confidence?: Confidence;
+  weight_pct?: number;
+  queued?: number;
+};
+export type DecisionReport = {
+  error?: string;
+  overall: {
+    verdict: string;
+    cash: { cash_twd: number; cash_pct: number | null; reserve_twd: number | null; fully_invested: boolean };
+    concentration: { max_symbol: string | null; max_pct: number | null; over_cap: string[] };
+    left_side_count: number;
+    reallocation: string | null;
+  };
+  groups: Record<string, string[]>;
+  left_side: {
+    symbol: string;
+    value_twd: number;
+    pnl_pct: number | null;
+    decline_reason: string | null;
+    decline_detail: string | null;
+    thesis: string | null;
+    valuation: string | null;
+    add_score: { score: number | null; components: Record<string, number>; missing: string[] };
+    grade: string | null;
+    plan: TranchePlan | null;
+  }[];
+  sells: { symbol: string; type: string; amount_twd: number; shares: number | null; when: string; reason: string; use_of_funds: string; why_this_one: string }[];
+  no_action: { symbol: string; group: string; decision: string; why: string }[];
+  cash_scenarios: {
+    target_twd: number;
+    raised_twd: number;
+    enough: boolean;
+    sells: { symbol: string; amount_twd: number; shares: number | null; full_exit: boolean; reason: string }[];
+    after: { stock_pct: number | null; cash_pct: number | null; max_single_pct: number };
+  }[];
+  baseline_diff: { symbol: string; before: string; before_today: string | null; after: string; after_today: string | null; why?: string }[];
+  data_confidence: Record<string, Confidence | undefined>;
+  notes: string[];
 };
 
 export type AllocationStep = {

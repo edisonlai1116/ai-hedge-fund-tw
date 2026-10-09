@@ -579,10 +579,15 @@ def evaluate_holdings(
     extra_prices: Optional[Dict[str, pd.DataFrame]] = None,
     live: bool = False,
     cash_twd: float = 0.0,
+    decisions: bool = False,
+    fundamentals: Optional[Dict[str, Dict]] = None,
 ) -> Dict:
     """holdings: [{symbol|ticker, cost, shares}]。回傳每檔動作與「新買進」清單、各市場目標金額。
 
     cash_twd：現金（台幣計），算集中度時分母用「持股＋現金」的總資產。
+    decisions=True：套用持股決策層（src.strategy.holding_decision：四分組、加碼評分、基本面複查賣出）；
+    False＝原規則（回測基準），可用來比較前後差異。fundamentals：{代號: 機會評分列}，None 時決策層自行載入。
+    同一代號多筆（不同成本批次）會先合併：股數相加、成本以股數加權平均。
     live=True：現價/今日漲跌改用請求當下的即時報價（盤中看才是「今天」的漲跌）；動作判斷仍依每日收盤快照。
 
     動作：加碼（前 10 名且部位不足）、續抱、減碼（前 20 名但部位過重）、賣出換股（跌出前 20 名）、
@@ -590,12 +595,20 @@ def evaluate_holdings(
     """
     markets = report.get("markets", {})
     items = []
+    merged: Dict[str, Dict] = {}
     for h in holdings:
         sym = to_yf(str(h.get("symbol") or h.get("ticker") or ""))
         if not sym:
             continue
-        items.append({"symbol": sym, "cost": float(h.get("cost") or h.get("cost_basis") or 0),
-                      "shares": float(h.get("shares") or 0), "market": market_of(sym)})
+        sh, cost = float(h.get("shares") or 0), float(h.get("cost") or h.get("cost_basis") or 0)
+        if sym in merged:                       # 同一股票的不同成本批次 → 合併成一檔
+            m_ = merged[sym]
+            tot = m_["shares"] + sh
+            m_["cost"] = (m_["cost"] * m_["shares"] + cost * sh) / tot if tot else m_["cost"]
+            m_["shares"], m_["lots"] = tot, m_["lots"] + 1
+            continue
+        merged[sym] = {"symbol": sym, "cost": cost, "shares": sh, "market": market_of(sym), "lots": 1}
+        items.append(merged[sym])
 
     # 價格與排名
     need_price = []
@@ -696,6 +709,7 @@ def evaluate_holdings(
             "day_pnl_local": round((it.get("day_pnl_twd") or 0) / (1.0 if it["market"] == "tw" else fx_usd_twd), 2),
             "spike": (row or {}).get("spike"),
             "virattt": (row or {}).get("virattt"), "dd_52w_pct": (row or {}).get("dd_52w_pct"),
+            "lots": it.get("lots", 1),
         }
         if is_etf(sym):
             act, why = "核心 ETF", "ETF 屬核心部位，不套用個股動能輪動；長期持有即可。"
@@ -789,6 +803,10 @@ def evaluate_holdings(
             and (low_view(by[s_], report) or {}).get("recommendation") in ("BUY", "BUY_STAGED")
         ][:LOWENTRY_SLOTS]
 
+    # 持股決策層（四分組、加碼評分、基本面複查賣出）：在換股上限之前套用，原規則存 baseline_action
+    if decisions:
+        from src.strategy.holding_decision import apply_decisions
+        apply_decisions(out_rows, report, fundamentals, total_twd=conc_base, fx=fx_usd_twd, live=live)
     # 每次調整最多換 MAX_SWAPS 檔（最弱的先換），其餘排隊到之後的調整日
     rbi = rebalance_info()
     for m in ("us", "tw"):
@@ -799,6 +817,9 @@ def evaluate_holdings(
                    f"（回測：分批換報酬不輸一次全換）。")
             r["action"], r["today"], r["today_reason"], r["queued"] = "續抱", "不用動", msg, k
             r["reason"] = msg
+            if r.get("decision"):
+                r["decision"]["queued"] = k
+                r["decision"]["why"] = r["decision"].get("why", "") + f" 排第 {k} 順位，之後陸續換（現在不用動）。"
     order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "排隊換股": 4, "續抱": 5, "核心 ETF": 6, "資料不足": 7}
     out_rows.sort(key=lambda r: (order.get(r["action"], 9), -(r["value_twd"] or 0)))
     return {
