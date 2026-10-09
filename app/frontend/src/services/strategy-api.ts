@@ -107,6 +107,8 @@ export type EvaluatedHolding = {
   day_change_pct?: number | null;
   day_pnl_twd?: number;
   day_pnl_local?: number;
+  trim_twd?: number;
+  trim_shares?: number | null;
   quote_as_of?: string | null;
   quote_source?: 'twse' | 'yfinance' | 'daily_close';
   market_closed?: boolean;
@@ -156,6 +158,8 @@ export type AllocationStep = {
   name?: string | null;
   market: 'us' | 'tw';
   amount_twd: number;
+  shares?: number | null;
+  shares_note?: string | null;
   when: string;
   why: string;
 };

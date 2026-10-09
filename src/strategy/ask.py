@@ -66,7 +66,9 @@ def raise_cash_plan(ev: Dict, report: Dict) -> List[Dict]:
         else:
             group, why = 4, f"一般持股（排名 {rank or '—'}）"
         trim = None
-        if act == "減碼" and total:
+        if act == "減碼" and h.get("trim_twd") is not None:
+            trim = h["trim_twd"]
+        elif act == "減碼" and total:
             trim = max(0.0, h["value_twd"] - total * CONCENTRATION_PCT / 100)
         out.append({"symbol": sym, "group": group, "why": why, "value_twd": h["value_twd"], "rank": rank,
                     "pnl_pct": h.get("pnl_pct"), "suggest_trim_twd": round(trim) if trim else None})

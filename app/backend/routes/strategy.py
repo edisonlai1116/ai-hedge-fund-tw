@@ -122,8 +122,8 @@ def evaluate(request: EvaluateRequest) -> dict:
         raise HTTPException(status_code=400, detail="持股最多 80 檔。")
     try:
         rep, fx = _report(), _fx()
-        ev = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True)
         cash = request.cash_twd + request.cash_usd * fx
+        ev = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True, cash_twd=cash)
         ev["cash_twd"] = round(cash)
         ev["total_with_cash_twd"] = round((ev.get("total_twd") or 0) + cash)
         try:

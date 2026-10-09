@@ -23,6 +23,16 @@ MAX_NAME_PCT = 10.0   # 配置建議裡單檔新買上限（佔總資產 %）
 MAX_NEW_MOMENTUM = 5  # 每市場最多列 5 檔動能新買（依排名），避免資金切太碎
 
 
+def _shares(amount_twd: float, price: Optional[float], market: str, fx: float, up: bool = False) -> Optional[int]:
+    """金額換算股數（賣出無條件進位、買進無條件捨去）。"""
+    import math
+    px = (price or 0) * (1.0 if market == "tw" else fx)
+    if px <= 0:
+        return None
+    n = amount_twd / px
+    return int(math.ceil(n) if up else math.floor(n))
+
+
 def asset_class(symbol: str) -> str:
     s = symbol.upper()
     if s in CASH_LIKE_ETFS:
@@ -102,13 +112,16 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 continue
             when = "今天" if in_window else f"月調日 {next_reb}"
             steps.append({"kind": "sell", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(h["value_twd"]),
+                          "shares": int(h["shares"]), "shares_note": f"全部 {h['shares']:,.0f} 股",
                           "when": when, "why": "跌出動能保留名單且長線破壞：賣出，資金轉入下方買進清單。"})
             if in_window:
                 proceeds += h["value_twd"]
         elif h["action"] == "減碼":
             trim = (plan.get(h["symbol"]) or {}).get("suggest_trim_twd") or 0
             if trim >= MIN_TRADE_TWD:
+                n = h.get("trim_shares") or _shares(trim, h.get("price"), h["market"], fx_usd_twd, up=True)
                 steps.append({"kind": "trim", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(trim),
+                              "shares": n, "shares_note": f"賣 {n:,} 股，留 {h['shares'] - n:,.0f} 股" if n else None,
                               "when": "今天", "why": h.get("reason") or "單檔過度集中：減碼到上限以下。"})
                 proceeds += trim
 
@@ -133,7 +146,9 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 cut = min(excess, h["value_twd"] * 0.5)  # 單檔一次最多減一半
                 if cut < MIN_TRADE_TWD:
                     continue
+                n = _shares(cut, h.get("price"), h["market"], fx_usd_twd, up=True)
                 steps.append({"kind": "trim", "symbol": x["symbol"], "market": h["market"], "amount_twd": round(cut),
+                              "shares": n, "shares_note": f"賣 {n:,} 股，留 {h['shares'] - n:,.0f} 股" if n else None,
                               "when": "今天", "why": f"股票比例 {pct['stock']}% 高於目標 {tgt_pct['stock']}%：{x['why']}（先賣順序第 {x['order']}）。"})
                 excess -= cut
                 cash_after += cut
@@ -153,18 +168,18 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
         cands: List[Dict] = []
         for m in ("us", "tw"):
             for b in (ev.get("low_entry_buys") or {}).get(m, []):
-                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": low_cap[m], "have": 0.0,
+                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": low_cap[m], "have": 0.0, "price": b.get("close"),
                               "when": "今天（分 2~3 批）", "spike": b.get("spike"),
                               "why": f"低檔可買：{b.get('low_label') or '長線贏家回撤'}（距高點 {b.get('dd_52w_pct')}%、Tier {b.get('quality_tier') or '—'}）。"})
         for h in holdings:
             if h["action"] in ("低檔加碼", "加碼") and asset_class(h["symbol"]) == "stock":
                 cap = low_cap[h["market"]] if h["action"] == "低檔加碼" else mom_cap[h["market"]]
-                cands.append({"symbol": h["symbol"], "market": h["market"], "cap": cap, "have": h["value_twd"],
+                cands.append({"symbol": h["symbol"], "market": h["market"], "cap": cap, "have": h["value_twd"], "price": h.get("price"),
                               "when": "今天" if h["action"] == "低檔加碼" or in_window else f"月調日 {next_reb}",
                               "spike": h.get("spike"), "why": f"系統建議「{h['action']}」：部位低於目標。"})
         for m in ("us", "tw"):
             for b in (ev.get("new_buys") or {}).get(m, [])[:MAX_NEW_MOMENTUM]:
-                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": mom_cap[m], "have": 0.0,
+                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": mom_cap[m], "have": 0.0, "price": b.get("close"),
                               "when": "今天" if in_window else f"月調日 {next_reb}", "spike": b.get("spike"),
                               "why": f"動能排名第 {b.get('rank')} 名、6 個月 {b.get('ret_6m_pct')}%：動能新買。"})
         left = budget
@@ -180,7 +195,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             if c.get("spike"):
                 why += " 近 3 日大長紅：不追，掛大漲前收盤價或等 3 日後。"
             steps.append({"kind": "buy", "symbol": c["symbol"], "name": c.get("name"), "market": c["market"],
-                          "amount_twd": round(buy), "when": c["when"], "why": why})
+                          "amount_twd": round(buy), "price": c.get("price"), "when": c["when"], "why": why})
             left -= buy
         # 空槽放動能：剩下的錢平均加到已列出的動能新買，單檔不超過總資產 MAX_NAME_PCT
         mom_steps = [st for st in steps if st["kind"] == "buy" and "動能新買" in st["why"]]
@@ -197,6 +212,10 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 if "空槽放動能" not in st["why"]:
                     st["why"] += "（含低檔空槽資金：空槽放動能）"
         steps[:] = [st for st in steps if st["kind"] != "buy" or st["amount_twd"] >= MIN_TRADE_TWD]
+        for st in steps:
+            if st["kind"] == "buy":
+                n = _shares(st["amount_twd"], st.pop("price", None), st["market"], fx_usd_twd)
+                st["shares"], st["shares_note"] = n, (f"約 {n:,} 股" if n else "金額不足 1 股")
         if left >= MIN_TRADE_TWD:
             notes.append(f"還有約 NT${left:,.0f} 未分配：依策略「空槽放動能」，月調日 {next_reb} 平均投入動能前段名單（策略精選分頁），或等新的低檔買點。")
         # 幣別：台股買單要台幣、美股買單要美元

@@ -517,14 +517,15 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
         return "今天可加碼", "在低檔區、部位不足：低檔訊號每天有效，可今天分批加碼。"
     if act == "加碼":
         if not window:
-            return "不用動", f"動能加碼在月調日（{nxt}）執行，月中不動。"
+            return "月調日加碼", f"動能加碼排在月調日（{nxt}），月中不動：{FREQ_EVIDENCE}"
         if sp:
             return "等 3 天再加碼", f"{sp['date']} 大漲 +{sp['gain_pct']}%，等大長紅超過 {SPIKE_DAYS} 個交易日、仍在前段再加碼。"
         return "今天加碼", "月調窗口內、排名前段且部位不足。"
     if act == "賣出換股":
         if window:
             return "今天賣出換股", "月調窗口內：動能轉弱且長線破壞，賣出後換到低檔/動能名單。"
-        return "續抱到月調日", f"轉弱，但賣出在月調日（{nxt}）執行；屆時仍跌出名單且長線破壞就賣。"
+        return "月調日賣出", (f"轉弱：預計月調日（{nxt}）全部賣出換股（屆時仍跌出名單且長線破壞才賣）。"
+                              f"不提前賣：{FREQ_EVIDENCE}")
     # 續抱
     if row:
         lep, close = row.get("low_entry_price"), row.get("close")
@@ -536,6 +537,9 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
 
 
 NEAR_TRIGGER_PCT_HOLD = 3.0
+# 2026-10-09 換股頻率回測（低檔 70% + 動能 30%，2017 起，T-1 訊號 → T 開盤、成本 0.2%）：
+# 月調 21 日 美股 CAGR 49.2% / 台股 47.1%；雙週 48.6% / 45.8%；每週 48.0% / 46.7%；月調＋每日出場 48.8% / 46.3%。
+FREQ_EVIDENCE = "回測顯示動能換股改成每週或每日檢查，報酬反而較低（交易成本與來回洗），月調最佳。"
 
 
 def evaluate_holdings(
@@ -544,9 +548,11 @@ def evaluate_holdings(
     fx_usd_twd: float = 32.0,
     extra_prices: Optional[Dict[str, pd.DataFrame]] = None,
     live: bool = False,
+    cash_twd: float = 0.0,
 ) -> Dict:
     """holdings: [{symbol|ticker, cost, shares}]。回傳每檔動作與「新買進」清單、各市場目標金額。
 
+    cash_twd：現金（台幣計），算集中度時分母用「持股＋現金」的總資產。
     live=True：現價/今日漲跌改用請求當下的即時報價（盤中看才是「今天」的漲跌）；動作判斷仍依每日收盤快照。
 
     動作：加碼（前 10 名且部位不足）、續抱、減碼（前 20 名但部位過重）、賣出換股（跌出前 20 名）、
@@ -618,6 +624,7 @@ def evaluate_holdings(
         it["day_pnl_twd"] = (it["value_twd"] - it["value_twd"] / (1 + chg / 100)) if chg is not None else 0.0
 
     total_twd = sum(it["value_twd"] for it in items) or 0.0
+    conc_base = total_twd + max(0.0, float(cash_twd or 0))
     sleeve = {m: sum(it["value_twd"] for it in items if it["market"] == m and not is_etf(it["symbol"])) for m in ("us", "tw")}
     mshare = {m: markets.get(m, {}).get("momentum_share", ALLOCATION["momentum"]) for m in sleeve}
     target = {m: (sleeve[m] * mshare[m] / TOP_N[m] if sleeve[m] else 0.0) for m in sleeve}
@@ -649,10 +656,17 @@ def evaluate_holdings(
             base["rank"] = base["score"] = None
         elif row is None:
             act, why = "資料不足", "上市未滿半年或抓不到報價，暫不評分。"
-        elif total_twd and it["value_twd"] / total_twd * 100 > CONCENTRATION_PCT:
+        elif conc_base and it["value_twd"] / conc_base * 100 > CONCENTRATION_PCT:
             act = "減碼"
-            why = (f"單檔佔總資產 {it['value_twd'] / total_twd:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限；"
-                   f"減碼到 {CONCENTRATION_PCT:.0f}% 以下，資金分散到低檔布局/動能名單。")
+            trim_twd = it["value_twd"] - conc_base * CONCENTRATION_PCT / 100
+            px_twd = (price or 0) * (1.0 if it["market"] == "tw" else fx_usd_twd)
+            trim_sh = min(it["shares"], math.ceil(trim_twd / px_twd)) if px_twd else None
+            base["trim_twd"], base["trim_shares"] = round(trim_twd), trim_sh
+            keep = it["shares"] - (trim_sh or 0)
+            lots = f"（約 {trim_sh / 1000:.1f} 張）" if it["market"] == "tw" and trim_sh and trim_sh >= 1000 else ""
+            why = (f"單檔佔總資產 {it['value_twd'] / conc_base:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限："
+                   f"賣 {trim_sh:,.0f} 股{lots}、約 NT${trim_twd:,.0f}（持股的 {trim_sh / it['shares']:.0%}），"
+                   f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金轉到低檔布局/動能名單。")
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
               and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
             lv = low_view(row, report) or {}
@@ -698,6 +712,9 @@ def evaluate_holdings(
         if base["ignition"] and act in ("續抱", "加碼"):
             why += f" 🔥 近 {base['ignition']['ignition_days_ago']} 日爆量長紅點火。"
         today, today_why = daily_holding_advice(act, row, it["market"], report)
+        if act == "減碼" and base.get("trim_shares"):
+            today = f"今天減碼 {base['trim_shares']:,.0f} 股"
+            today_why = f"只賣 {base['trim_shares'] / it['shares']:.0%}（約 NT${base['trim_twd']:,.0f}），降到總資產 {CONCENTRATION_PCT:.0f}%；集中度每天檢查。"
         out_rows.append({**base, "action": act, "reason": why, "today": today, "today_reason": today_why})
 
     held = {it["symbol"] for it in items}

@@ -1028,7 +1028,9 @@ export function ViratttBadge({ v }: { v?: Virattt | null }) {
 const todayStyle = (t?: string) =>
   !t || t === '不用動'
     ? 'bg-slate-100 text-slate-600'
-    : /賣|減碼/.test(t)
+    : t.startsWith('月調日')
+      ? 'bg-amber-100 text-amber-900'
+      : /賣|減碼/.test(t)
       ? 'bg-rose-600 text-white'
       : /加碼|買/.test(t) && !/等|準備|掛/.test(t)
         ? 'bg-emerald-600 text-white'
@@ -1088,6 +1090,7 @@ export function HoldingsTodayCard() {
           </div>
         ) : null}
       </div>
+      {result ? <TodayTodo result={result} /> : null}
       {!holdings.length ? <p className="text-sm text-slate-500">還沒輸入持股：到「我的持股」分頁輸入後，這裡每天會列出每檔今天該做什麼。</p> : null}
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {holdings.length && !result && !error ? <p className="text-sm text-slate-500">評估中…</p> : null}
@@ -1268,7 +1271,10 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
                     {st.symbol.replace(/\.TWO?$/, '')}
                     {st.name ? <span className="ml-1 text-xs font-normal text-slate-500">{st.name}</span> : null}
                   </td>
-                  <td className="whitespace-nowrap py-1.5 pr-2 text-right tabular-nums">{ntd(st.amount_twd)}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-2 text-right tabular-nums">
+                    {ntd(st.amount_twd)}
+                    {st.shares_note ? <div className="text-xs font-medium text-slate-700">{st.shares_note}</div> : null}
+                  </td>
                   <td className="whitespace-nowrap py-1.5 pr-2 text-xs text-slate-500">{st.when}</td>
                   <td className="py-1.5 text-xs text-slate-600">{st.why}</td>
                 </tr>
@@ -1285,6 +1291,50 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
         </ul>
       ) : null}
       <div className="mt-2 text-[11px] text-slate-400">{plan.disclaimer}</div>
+    </div>
+  );
+}
+
+/** 今天要做的事：持股的今日動作 ＋ 配置建議裡「今天」執行的步驟（與「我的持股」同一份評估結果）。 */
+function TodayTodo({ result }: { result: EvaluateResult }) {
+  const isToday = (t?: string) => !!t && t !== '不用動' && !t.startsWith('月調日');
+  const acts = result.holdings.filter((h) => isToday(h.today));
+  const monthly = result.holdings.filter((h) => h.today?.startsWith('月調日'));
+  const held = new Set(acts.map((h) => h.symbol));
+  const steps = (result.allocation_plan?.steps ?? []).filter((st) => st.when.startsWith('今天') && !held.has(st.symbol));
+  const later = (result.allocation_plan?.steps ?? []).filter((st) => !st.when.startsWith('今天') && st.kind !== 'fx');
+  const laterNote = monthly.length || later.length
+    ? `月調日（${result.next_rebalance}）要做：${[...monthly.map((h) => `${h.today?.replace('月調日', '')} ${h.symbol.replace(/\.TWO?$/, '')}`), ...(later.length ? [`配置建議 ${later.length} 筆`] : [])].join('、')}。`
+    : '';
+  if (!acts.length && !steps.length) {
+    return (
+      <div className="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+        ✅ 今天你的持股不用動。{laterNote}
+      </div>
+    );
+  }
+  return (
+    <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-3">
+      <div className="text-sm font-semibold text-slate-900">你今天要做 {acts.length + steps.length} 件事</div>
+      {laterNote ? <div className="text-xs text-slate-600">{laterNote}</div> : null}
+      <ul className="mt-1.5 space-y-1 text-sm">
+        {acts.map((h) => (
+          <li key={h.symbol} className="flex flex-wrap items-baseline gap-2">
+            <TodayBadge h={h} />
+            <b>{h.symbol.replace(/\.TWO?$/, '')}</b>
+            <span className="text-xs text-slate-600">{h.today_reason || h.reason}</span>
+          </li>
+        ))}
+        {steps.map((st, i) => (
+          <li key={`st-${st.symbol}-${i}`} className="flex flex-wrap items-baseline gap-2">
+            <span className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-xs ${STEP_LABEL[st.kind]?.c ?? ''}`}>{STEP_LABEL[st.kind]?.t ?? st.kind}</span>
+            <b>{st.symbol.replace(/\.TWO?$/, '')}</b>
+            <span className="tabular-nums">{ntd(st.amount_twd)}</span>
+            {st.shares_note ? <span className="text-xs font-medium text-slate-700">{st.shares_note}</span> : null}
+            <span className="text-xs text-slate-600">{st.why}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
