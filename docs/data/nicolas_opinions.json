@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:s9AGh0RhjrE",
+  "last_episode_id": "yt:nF4JfIkPjIM",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "11月石油暴跌倒計時！看估值買股票，成功抄底Space X！目標價300美金！美股台股年底大反攻全面啟動！【新高注意回撤】",
-    "published": "2026-10-07T11:00:39+00:00",
-    "url": "https://www.youtube.com/watch?v=s9AGh0RhjrE",
-    "id": "yt:s9AGh0RhjrE",
-    "checked_at": "2026-10-09T10:21:02+08:00"
+    "title": "沙烏地參戰，伊朗最大對手要覺醒了！只剩下最後兩個風險了！做好倉位準備吧！",
+    "published": "2026-10-09T11:00:03+00:00",
+    "url": "https://www.youtube.com/watch?v=nF4JfIkPjIM",
+    "id": "yt:nF4JfIkPjIM",
+    "checked_at": "2026-10-09T23:47:03+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
