@@ -19,6 +19,10 @@ OTHER_ETFS = {"GLD", "IAU", "SLV", "00635U.TW", "00708L.TW"}
 
 TOLERANCE = 3.0      # 偏離目標 < 3 個百分點不動（避免來回交易成本）
 MIN_TRADE_TWD = 10_000
+# 生活用現金保留水位：總資產 2%、至少 NT$10 萬；只投入超過水位的現金（不會叫你把活存買光）。
+# 回測（留 10% 現金年化約少 4 個百分點）線性推估，留 2% 約少 0.8 個百分點（推估，非獨立回測）。
+CASH_RESERVE_PCT = 2.0
+CASH_RESERVE_MIN_TWD = 100_000
 MAX_NAME_PCT = 10.0   # 配置建議裡單檔新買上限（佔總資產 %）
 MAX_NEW_MOMENTUM = 5  # 每市場最多列 5 檔動能新買（依排名），避免資金切太碎
 
@@ -96,7 +100,12 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
 
     tm = target_mix(report)
     tgt = {k: total * v / 100 for k, v in tm["mix"].items()}
-    tgt_pct = dict(tm["mix"])
+    reserve = max(total * CASH_RESERVE_PCT / 100, CASH_RESERVE_MIN_TWD)
+    reserve = min(reserve, total)
+    if reserve > tgt["cash"]:
+        tgt["stock"] -= reserve - tgt["cash"]
+        tgt["cash"] = reserve
+    tgt_pct = {k: round(v / total * 100, 1) for k, v in tgt.items()}
     pct = {k: round(v / total * 100, 1) for k, v in amt.items()}
     panic = bool(ev.get("panic_no_sell"))
     in_window = bool(ev.get("in_rebalance_window"))
@@ -226,8 +235,9 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             notes.append(f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%，但沒有多出的現金：之後的新資金可先補債券（約 NT${bond_gap:,.0f}）。")
     elif -bond_gap > total * 5 / 100:
         notes.append(f"債券 {pct['bond']}%：目標是全部股票，可在月調日把債券轉進動能／低檔買進名單。")
-    if amt["cash"] < tgt["cash"] - total * TOLERANCE / 100:
-        notes.append(f"現金 {pct['cash']}% 低於目標 {tgt_pct['cash']}%：不用賣股補現金；新資金先留一部分當現金（約 NT${tgt['cash'] - amt['cash']:,.0f}）。")
+    if amt["cash"] <= tgt["cash"]:
+        notes.insert(0, f"現金 NT${amt['cash']:,.0f} 在生活用保留水位 NT${tgt['cash']:,.0f}（總資產 {CASH_RESERVE_PCT:.0f}%、至少 NT${CASH_RESERVE_MIN_TWD:,.0f}）以內："
+                        "今天不動用現金買股；買點有新資金再買，或等月調日用賣股的錢換股。")
 
     # 5) 每檔加碼建議附資金來源：只用多出的現金；不夠就跳過。
     #    回測（2017 起）：為了加碼去賣最弱的持股，報酬與回撤都比不賣差（美 48.9% vs 49.2%、台 46.0% vs 47.0%）。
