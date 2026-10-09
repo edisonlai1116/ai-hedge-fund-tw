@@ -209,6 +209,32 @@ def download_closes(symbols: List[str], period: str = "1y") -> Dict[str, pd.Data
     return out
 
 
+_PX_CACHE: Dict[tuple, tuple] = {}   # (symbol, period) -> (ts, DataFrame)
+_PX_TTL = 900.0
+
+
+def download_closes_cached(symbols: List[str], period: str = "4y") -> Dict[str, pd.DataFrame]:
+    """持股評估用：股票池外的持股價格快取 15 分鐘（同一次請求的新舊規則對照、重新整理都不重抓）。"""
+    import time as _t
+    now = _t.time()
+    out, need = {}, []
+    for s in symbols:
+        c = _PX_CACHE.get((s, period))
+        if c and now - c[0] < _PX_TTL:
+            out[s] = c[1]
+        else:
+            need.append(s)
+    if need:
+        got = download_closes(need, period=period)
+        for s, f in got.items():
+            _PX_CACHE[(s, period)] = (now, f)
+        out.update(got)
+    if len(_PX_CACHE) > 300:                    # 防止無限長大（免費主機記憶體小）
+        for k in sorted(_PX_CACHE, key=lambda k: _PX_CACHE[k][0])[:100]:
+            _PX_CACHE.pop(k, None)
+    return out
+
+
 def _ignition(f: pd.DataFrame) -> Optional[Dict]:
     """近 3 日爆量長紅點火（與 simple_signal.detect_ignition 同定義），供事件提醒用。"""
     try:
@@ -621,9 +647,9 @@ def evaluate_holdings(
     prices = dict(extra_prices or {})
     missing = [s for s in need_price if s not in prices]
     if missing:
-        prices.update(download_closes(missing, period="4y"))
+        prices.update(download_closes_cached(missing, period="4y"))
         for s in [s for s in missing if s not in prices and s.endswith(".TW")]:
-            alt = download_closes([s[:-3] + ".TWO"], period="4y")
+            alt = download_closes_cached([s[:-3] + ".TWO"], period="4y")
             if alt:
                 prices[s] = next(iter(alt.values()))
     quotes: Dict[str, Dict] = {}

@@ -283,12 +283,25 @@ export async function evaluateHoldings(
   holdings: { ticker: string; cost: number; shares: number }[],
   cash: { twd: number; usd: number } = { twd: 0, usd: 0 },
 ): Promise<EvaluateResult> {
-  const response = await fetch(`${API_BASE_URL}/strategy/evaluate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ holdings, cash_twd: cash.twd || 0, cash_usd: cash.usd || 0 }),
-  });
-  return parse<EvaluateResult>(response, '持股評估失敗。');
+  const body = JSON.stringify({ holdings, cash_twd: cash.twd || 0, cash_usd: cash.usd || 0 });
+  const busy = '伺服器忙碌或重新啟動中（免費主機），請稍後重新整理。';
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    let response: Response | null = null;
+    try {
+      response = await fetch(`${API_BASE_URL}/strategy/evaluate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+    } catch {
+      response = null;   // 連線中斷（主機重啟）
+    }
+    // 主機重啟／閘道錯誤（502~504）或連線失敗：等 5 秒自動重試一次
+    if ((!response || response.status >= 502) && attempt === 0) {
+      await new Promise((r) => setTimeout(r, 5000));
+      continue;
+    }
+    if (!response) throw new Error(busy);
+    if (response.status >= 502) throw new Error(busy);
+    return parse<EvaluateResult>(response, '持股評估失敗。');
+  }
+  throw new Error(busy);
 }
 
 export async function fetchStrategyBacktest(): Promise<{ generated_at: string; allocation?: { lowentry: number; momentum: number }; markets: Record<'us' | 'tw', StrategyBacktest> }> {

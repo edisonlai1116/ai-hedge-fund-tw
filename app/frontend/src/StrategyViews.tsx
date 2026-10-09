@@ -1097,7 +1097,14 @@ export function HoldingsTodayCard() {
       </div>
       {result ? <TodayTodo result={result} /> : null}
       {!holdings.length ? <p className="text-sm text-slate-500">還沒輸入持股：到「我的持股」分頁輸入後，這裡每天會列出每檔今天該做什麼。</p> : null}
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-rose-600">
+          {error}
+          <button type="button" className="ml-2 rounded border border-rose-300 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50" onClick={() => window.location.reload()}>
+            重試
+          </button>
+        </p>
+      ) : null}
       {holdings.length && !result && !error ? <p className="text-sm text-slate-500">評估中…</p> : null}
       {result ? (
         <div className="overflow-x-auto">
