@@ -76,10 +76,10 @@ def raise_cash_plan(ev: Dict, report: Dict) -> List[Dict]:
     return out
 
 
-def build_context(holdings: List[Dict], report: Dict, advice: Optional[Dict], fx: float) -> Dict:
+def build_context(holdings: List[Dict], report: Dict, advice: Optional[Dict], fx: float, live: bool = False) -> Dict:
     from src.strategy.momentum import evaluate_holdings
     from src.strategy.momentum import low_view
-    ev = evaluate_holdings(holdings, report, fx) if holdings else None
+    ev = evaluate_holdings(holdings, report, fx, live=live) if holdings else None
     rows_by = {r["symbol"]: r for m in report.get("markets", {}).values() for r in m.get("rows", [])}
     tiers = {}
     for h in (ev or {}).get("holdings", []):

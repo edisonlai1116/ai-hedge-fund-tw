@@ -540,7 +540,7 @@ export function MyHoldingsPanel() {
                     </td>
                     <td className="py-1.5 pr-2 text-right text-slate-700">{h.rank ?? '—'}</td>
                     <td className="py-1.5 pr-2 text-right">{h.price ?? '—'}</td>
-                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`}>{pct(h.day_change_pct, 2)}</td>
+                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`} title={h.quote_as_of ? `報價時間 ${h.quote_as_of}` : h.quote_source === 'daily_close' ? '每日收盤快照' : '即時報價'}>{pct(h.day_change_pct, 2)}</td>
                     <td className={`whitespace-nowrap py-1.5 pr-2 text-right tabular-nums ${tone(h.day_pnl_twd)}`}>{signedNtd(h.day_pnl_twd)}</td>
                     <td className={`py-1.5 pr-2 text-right ${tone(h.pnl_pct)}`}>{pct(h.pnl_pct)}</td>
                     <td className="py-1.5 pr-2">
@@ -995,6 +995,9 @@ export function DayPnl({ result }: { result: EvaluateResult }) {
           美股 {signedNtd(result.day_pnl_by_market_twd.us)} ・ 台股 {signedNtd(result.day_pnl_by_market_twd.tw)}
         </span>
       ) : null}
+      <span className="ml-2 text-xs text-slate-400">
+        {result.live_quotes ? `即時報價${result.quote_as_of ? `（台股 ${result.quote_as_of}）` : ''}` : '每日收盤快照'}
+      </span>
     </span>
   );
 }
@@ -1052,7 +1055,7 @@ export function HoldingsTodayCard() {
                       <TodayBadge h={h} />
                     </td>
                     <td className="py-1.5 pr-2 font-medium text-slate-900">{h.symbol.replace(/\.TWO?$/, '')}</td>
-                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`}>{pct(h.day_change_pct, 2)}</td>
+                    <td className={`py-1.5 pr-2 text-right tabular-nums ${tone(h.day_change_pct)}`} title={h.quote_as_of ? `報價時間 ${h.quote_as_of}` : h.quote_source === 'daily_close' ? '每日收盤快照' : '即時報價'}>{pct(h.day_change_pct, 2)}</td>
                     <td className={`whitespace-nowrap py-1.5 pr-2 text-right tabular-nums ${tone(h.day_pnl_twd)}`}>{signedNtd(h.day_pnl_twd)}</td>
                     <td className={`py-1.5 pr-2 text-right ${tone(h.pnl_pct)}`}>{pct(h.pnl_pct)}</td>
                     <td className="py-1.5 pr-2">

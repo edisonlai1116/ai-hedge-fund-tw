@@ -101,7 +101,7 @@ def ask(request: AskRequest) -> dict:
     except Exception:
         pass
     try:
-        ctx = build_context([h.model_dump() for h in request.holdings], _report(), advice, _fx())
+        ctx = build_context([h.model_dump() for h in request.holdings], _report(), advice, _fx(), live=True)
         prompt = build_prompt(q, ctx)
     except HTTPException:
         raise
@@ -119,7 +119,7 @@ def evaluate(request: EvaluateRequest) -> dict:
     if len(request.holdings) > 80:
         raise HTTPException(status_code=400, detail="持股最多 80 檔。")
     try:
-        return evaluate_holdings([h.model_dump() for h in request.holdings], _report(), _fx())
+        return evaluate_holdings([h.model_dump() for h in request.holdings], _report(), _fx(), live=True)
     except HTTPException:
         raise
     except Exception as exc:

@@ -107,6 +107,8 @@ export type EvaluatedHolding = {
   day_change_pct?: number | null;
   day_pnl_twd?: number;
   day_pnl_local?: number;
+  quote_as_of?: string | null;
+  quote_source?: 'twse' | 'yfinance' | 'daily_close';
   spike?: Spike | null;
   virattt?: Virattt | null;
   dd_52w_pct?: number | null;
@@ -132,6 +134,8 @@ export type EvaluateResult = {
   day_pnl_twd?: number;
   day_change_pct?: number | null;
   day_pnl_by_market_twd?: Record<'us' | 'tw', number>;
+  live_quotes?: boolean;
+  quote_as_of?: string | null;
   sleeve_twd: Record<string, number>;
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];

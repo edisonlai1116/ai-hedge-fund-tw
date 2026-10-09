@@ -543,8 +543,11 @@ def evaluate_holdings(
     report: Dict,
     fx_usd_twd: float = 32.0,
     extra_prices: Optional[Dict[str, pd.DataFrame]] = None,
+    live: bool = False,
 ) -> Dict:
     """holdings: [{symbol|ticker, cost, shares}]。回傳每檔動作與「新買進」清單、各市場目標金額。
+
+    live=True：現價/今日漲跌改用請求當下的即時報價（盤中看才是「今天」的漲跌）；動作判斷仍依每日收盤快照。
 
     動作：加碼（前 10 名且部位不足）、續抱、減碼（前 20 名但部位過重）、賣出換股（跌出前 20 名）、
          核心 ETF（不適用）、資料不足。
@@ -574,6 +577,13 @@ def evaluate_holdings(
             alt = download_closes([s[:-3] + ".TWO"], period="4y")
             if alt:
                 prices[s] = next(iter(alt.values()))
+    quotes: Dict[str, Dict] = {}
+    if live:
+        try:
+            from src.strategy.live_quote import live_quotes
+            quotes = live_quotes(it["symbol"] for it in items)
+        except Exception:
+            quotes = {}
     for it in items:
         if it["row"] is None and it["symbol"] in prices:
             r = score_row(it["symbol"], prices[it["symbol"]])
@@ -589,12 +599,17 @@ def evaluate_holdings(
         if it.get("row"):
             it["price"] = it["row"]["close"]
         fx = 1.0 if it["market"] == "tw" else fx_usd_twd
+        # 今日漲跌：有即時報價就用（現價 vs 昨收）；否則用快照最後一根收盤 vs 前一根
+        lq = quotes.get(it["symbol"])
+        if lq:
+            it["price"], chg = lq["price"], lq["change_pct"]
+            it["quote_as_of"], it["quote_source"] = lq.get("as_of"), lq.get("source")
+        else:
+            chg = (it.get("row") or {}).get("day_change_pct")
+            if chg is None and it["symbol"] in prices:
+                c_ = prices[it["symbol"]]["Close"].dropna()
+                chg = round((float(c_.iloc[-1]) / float(c_.iloc[-2]) - 1) * 100, 2) if len(c_) > 1 else None
         it["value_twd"] = (it.get("price") or 0) * it["shares"] * fx
-        # 今日漲跌（最後一根收盤 vs 前一根）
-        chg = (it.get("row") or {}).get("day_change_pct")
-        if chg is None and it["symbol"] in prices:
-            c_ = prices[it["symbol"]]["Close"].dropna()
-            chg = round((float(c_.iloc[-1]) / float(c_.iloc[-2]) - 1) * 100, 2) if len(c_) > 1 else None
         it["day_change_pct"] = chg
         it["day_pnl_twd"] = (it["value_twd"] - it["value_twd"] / (1 + chg / 100)) if chg is not None else 0.0
 
@@ -619,6 +634,7 @@ def evaluate_holdings(
             "ret_6m_pct": row.get("ret_6m_pct") if row else None,
             "target_twd": round(tgt) if tgt else None, "ignition": (row or {}).get("ignition"),
             "day_change_pct": it.get("day_change_pct"), "day_pnl_twd": round(it.get("day_pnl_twd") or 0),
+            "quote_as_of": it.get("quote_as_of"), "quote_source": it.get("quote_source") or "daily_close",
             "day_pnl_local": round((it.get("day_pnl_twd") or 0) / (1.0 if it["market"] == "tw" else fx_usd_twd), 2),
             "spike": (row or {}).get("spike"),
             "virattt": (row or {}).get("virattt"), "dd_52w_pct": (row or {}).get("dd_52w_pct"),
@@ -709,6 +725,8 @@ def evaluate_holdings(
         "next_rebalance": report.get("strategy", {}).get("next_rebalance"),
         "in_rebalance_window": report.get("strategy", {}).get("in_rebalance_window"),
         "fx_usd_twd": round(fx_usd_twd, 3),
+        "live_quotes": bool(quotes),
+        "quote_as_of": max((it.get("quote_as_of") for it in items if it.get("quote_as_of")), default=None),
         "total_twd": round(total_twd),
         "day_pnl_twd": round(sum(it.get("day_pnl_twd") or 0 for it in items)),
         "day_change_pct": round(sum(it.get("day_pnl_twd") or 0 for it in items) / (total_twd - sum(it.get("day_pnl_twd") or 0 for it in items)) * 100, 2)
