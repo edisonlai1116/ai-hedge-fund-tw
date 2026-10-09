@@ -130,33 +130,15 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     stock_gap = tgt["stock"] - stock_after          # > 0 要多買股票
     bond_gap = tgt["bond"] - amt["bond"]
 
-    # 2) 股票過重 → 依「先賣誰」順序減碼（恐慌期不減）
+    # 2) 股票過重：不為了配置比例賣股（與個股建議衝突、也違反「情緒不用來賣」的回測結論）；
+    #    賣出只來自個股本身的訊號（賣出換股／集中度減碼），比例靠新資金與現金慢慢拉回。
     if stock_gap < -total * TOLERANCE / 100:
-        excess = -stock_gap
-        if panic:
-            notes.append(f"股票比例高於目標，但恐慌期不賣；之後恢復正常再調。")
-        else:
-            already = {s["symbol"] for s in steps}
-            for x in sorted(plan.values(), key=lambda x: x["order"]):
-                if excess < MIN_TRADE_TWD or x["group"] >= 7:
-                    break
-                h = next(h for h in holdings if h["symbol"] == x["symbol"])
-                if x["symbol"] in already or asset_class(x["symbol"]) != "stock":
-                    continue
-                cut = min(excess, h["value_twd"] * 0.5)  # 單檔一次最多減一半
-                if cut < MIN_TRADE_TWD:
-                    continue
-                n = _shares(cut, h.get("price"), h["market"], fx_usd_twd, up=True)
-                steps.append({"kind": "trim", "symbol": x["symbol"], "market": h["market"], "amount_twd": round(cut),
-                              "shares": n, "shares_note": f"賣 {n:,} 股，留 {h['shares'] - n:,.0f} 股" if n else None,
-                              "when": "今天", "why": f"股票比例 {pct['stock']}% 高於目標 {tgt_pct['stock']}%：{x['why']}（先賣順序第 {x['order']}）。"})
-                excess -= cut
-                cash_after += cut
-                stock_after -= cut
-            stock_gap = tgt["stock"] - stock_after
+        notes.append(f"股票 {pct['stock']}% 高於目標 {tgt_pct['stock']}%：不為了比例賣股（會跟個股建議衝突，回測也顯示情緒偏高時賣股報酬較差）；"
+                     f"之後的新資金與賣股所得先補現金／債券，直到比例回到目標附近。")
 
     # 3) 可投入資金：現金超過目標的部分（含賣股所得）
     budget = max(0.0, min(stock_gap, cash_after - tgt["cash"]))
+    spent = 0.0
     if stock_gap > total * TOLERANCE / 100 and budget < MIN_TRADE_TWD:
         notes.append(f"股票比例低於目標 {tgt_pct['stock']}%，但現金沒有超過目標水位，可用新資金補。")
     if budget >= MIN_TRADE_TWD:
@@ -212,6 +194,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 if "空槽放動能" not in st["why"]:
                     st["why"] += "（含低檔空槽資金：空槽放動能）"
         steps[:] = [st for st in steps if st["kind"] != "buy" or st["amount_twd"] >= MIN_TRADE_TWD]
+        spent = sum(st["amount_twd"] for st in steps if st["kind"] == "buy")
         for st in steps:
             if st["kind"] == "buy":
                 n = _shares(st["amount_twd"], st.pop("price", None), st["market"], fx_usd_twd)
@@ -230,12 +213,19 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             steps.append({"kind": "fx", "symbol": "USD→TWD", "market": "tw", "amount_twd": round(need_twd - have_twd),
                           "when": "買台股前", "why": "台股買單的台幣不足，部分美元換回台幣（或減少台股買單）。"})
 
-    # 4) 債券
+    # 4) 債券：只用「超過目標水位、且沒用在買股」的現金
+    spare = max(0.0, cash_after - tgt["cash"] - spent)
     if bond_gap > total * TOLERANCE / 100:
-        steps.append({"kind": "bond", "symbol": "債券 ETF", "market": "tw", "amount_twd": round(bond_gap), "when": "分批",
-                      "why": f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%：用現金補投資等級債／公債 ETF（台幣如 00679B、00937B；美元如 BND、IEF），股災時當備用子彈。"})
+        amt_b = min(bond_gap, spare)
+        if amt_b >= MIN_TRADE_TWD:
+            steps.append({"kind": "bond", "symbol": "債券 ETF", "market": "tw", "amount_twd": round(amt_b), "when": "分批",
+                          "why": f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%：用多出的現金補投資等級債／公債 ETF（台幣如 00679B、00937B；美元如 BND、IEF），股災時當備用子彈。"})
+        else:
+            notes.append(f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%，但沒有多出的現金：之後的新資金可先補債券（約 NT${bond_gap:,.0f}）。")
     elif -bond_gap > total * 5 / 100:
         notes.append(f"債券 {pct['bond']}% 高於目標 {tgt_pct['bond']}%：股市恐慌（恐懼貪婪 < 25）時可把多出的債券轉進股票。")
+    if amt["cash"] < tgt["cash"] - total * TOLERANCE / 100:
+        notes.append(f"現金 {pct['cash']}% 低於目標 {tgt_pct['cash']}%：不用賣股補現金；新資金先留一部分當現金（約 NT${tgt['cash'] - amt['cash']:,.0f}）。")
 
     order = {"sell": 0, "trim": 1, "fx": 2, "buy": 3, "bond": 4}
     steps.sort(key=lambda s: (order.get(s["kind"], 9), -s["amount_twd"]))

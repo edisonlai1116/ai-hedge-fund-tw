@@ -666,7 +666,7 @@ def evaluate_holdings(
             lots = f"（約 {trim_sh / 1000:.1f} 張）" if it["market"] == "tw" and trim_sh and trim_sh >= 1000 else ""
             why = (f"單檔佔總資產 {it['value_twd'] / conc_base:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限："
                    f"賣 {trim_sh:,.0f} 股{lots}、約 NT${trim_twd:,.0f}（持股的 {trim_sh / it['shares']:.0%}），"
-                   f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金轉到低檔布局/動能名單。")
+                   f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金怎麼用見「資產配置與調整建議」。")
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
               and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
             lv = low_view(row, report) or {}
