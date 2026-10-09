@@ -38,6 +38,8 @@ class HoldingIn(BaseModel):
 
 class EvaluateRequest(BaseModel):
     holdings: list[HoldingIn] = Field(default_factory=list)
+    cash_twd: float = Field(default=0, ge=0)
+    cash_usd: float = Field(default=0, ge=0)
 
 
 @router.get("/report")
@@ -119,7 +121,17 @@ def evaluate(request: EvaluateRequest) -> dict:
     if len(request.holdings) > 80:
         raise HTTPException(status_code=400, detail="持股最多 80 檔。")
     try:
-        return evaluate_holdings([h.model_dump() for h in request.holdings], _report(), _fx(), live=True)
+        rep, fx = _report(), _fx()
+        ev = evaluate_holdings([h.model_dump() for h in request.holdings], rep, fx, live=True)
+        cash = request.cash_twd + request.cash_usd * fx
+        ev["cash_twd"] = round(cash)
+        ev["total_with_cash_twd"] = round((ev.get("total_twd") or 0) + cash)
+        try:
+            from src.strategy.allocation import build_allocation
+            ev["allocation_plan"] = build_allocation(ev, rep, request.cash_twd, request.cash_usd, fx)
+        except Exception as exc:  # 配置建議失敗不影響持股評估
+            ev["allocation_plan"] = {"error": str(exc)}
+        return ev
     except HTTPException:
         raise
     except Exception as exc:

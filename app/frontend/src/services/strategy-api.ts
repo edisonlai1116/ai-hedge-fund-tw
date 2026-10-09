@@ -109,6 +109,7 @@ export type EvaluatedHolding = {
   day_pnl_local?: number;
   quote_as_of?: string | null;
   quote_source?: 'twse' | 'yfinance' | 'daily_close';
+  market_closed?: boolean;
   spike?: Spike | null;
   virattt?: Virattt | null;
   dd_52w_pct?: number | null;
@@ -135,7 +136,11 @@ export type EvaluateResult = {
   day_change_pct?: number | null;
   day_pnl_by_market_twd?: Record<'us' | 'tw', number>;
   live_quotes?: boolean;
-  quote_as_of?: string | null;
+  quote_as_of?: Record<'us' | 'tw', string | null>;
+  market_closed?: Record<'us' | 'tw', boolean>;
+  cash_twd?: number;
+  total_with_cash_twd?: number;
+  allocation_plan?: AllocationPlan;
   sleeve_twd: Record<string, number>;
   target_per_name_twd: Record<string, number>;
   holdings: EvaluatedHolding[];
@@ -143,6 +148,27 @@ export type EvaluateResult = {
   low_entry_buys?: Record<'us' | 'tw', { symbol: string; name: string; rank: number; close: number; dd_52w_pct: number; ret_3y_pct: number; high_52w: number; target_twd: number | null; low_label?: string; quality_tier?: string }[]>;
   low_entry_target_twd?: Record<string, number>;
   allocation?: { lowentry: number; momentum: number };
+};
+
+export type AllocationStep = {
+  kind: 'sell' | 'trim' | 'fx' | 'buy' | 'bond';
+  symbol: string;
+  name?: string | null;
+  market: 'us' | 'tw';
+  amount_twd: number;
+  when: string;
+  why: string;
+};
+
+export type AllocationPlan = {
+  error?: string;
+  total_twd: number;
+  current: Record<'stock' | 'bond' | 'cash' | 'other', { twd: number; pct: number }>;
+  target: Record<'stock' | 'bond' | 'cash', { twd: number; pct: number }>;
+  regime: { label: string; reasons: string[]; fear_greed: number | null; vix: number | null };
+  steps: AllocationStep[];
+  notes: string[];
+  disclaimer: string;
 };
 
 export type PeriodStats = { total_return_pct: number; cagr_pct: number; max_drawdown_pct: number; sharpe: number };
@@ -184,11 +210,14 @@ export async function fetchStrategyReport(): Promise<StrategyReport> {
   return parse<StrategyReport>(response, '策略排名讀取失敗。');
 }
 
-export async function evaluateHoldings(holdings: { ticker: string; cost: number; shares: number }[]): Promise<EvaluateResult> {
+export async function evaluateHoldings(
+  holdings: { ticker: string; cost: number; shares: number }[],
+  cash: { twd: number; usd: number } = { twd: 0, usd: 0 },
+): Promise<EvaluateResult> {
   const response = await fetch(`${API_BASE_URL}/strategy/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ holdings }),
+    body: JSON.stringify({ holdings, cash_twd: cash.twd || 0, cash_usd: cash.usd || 0 }),
   });
   return parse<EvaluateResult>(response, '持股評估失敗。');
 }

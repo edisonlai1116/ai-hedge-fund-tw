@@ -1,0 +1,234 @@
+"""資產配置（股 / 債 / 現金）＋ 依市場狀態給調整步驟。
+
+確定性規則，不是預測：
+- 目標比例依恐懼貪婪 / VIX 調整。依據本站回測（2009 起）：恐懼時股票池未來報酬較高、貪婪時沒有明顯較差，
+  所以「恐懼多放股票、貪婪不減股」——情緒只用來決定現金要不要多投入，不用來追高或殺低。
+- 買賣標的完全沿用策略本身的訊號：賣出換股 / 減碼 → 低檔可買 → 持股加碼 → 動能新買（月調日）。
+- 金額以台幣計；美元現金依匯率換算。
+"""
+from __future__ import annotations
+
+from typing import Dict, List, Optional
+
+# 債券 ETF（美股）；台股代號 00 開頭且結尾 B 也視為債券 ETF
+US_BOND_ETFS = {"TLT", "IEF", "IEI", "SHY", "BND", "AGG", "BNDX", "GOVT", "TLH", "VGIT", "VGLT", "VGSH", "LQD",
+                "VCIT", "VCSH", "HYG", "JNK", "TIP", "SCHO", "SCHR", "SCHZ", "MUB", "EMB"}
+# 貨幣市場 / 超短債：視同現金
+CASH_LIKE_ETFS = {"SGOV", "BIL", "SHV", "USFR", "TFLO", "00865B.TW", "00719B.TW"}
+OTHER_ETFS = {"GLD", "IAU", "SLV", "00635U.TW", "00708L.TW"}
+
+TOLERANCE = 3.0      # 偏離目標 < 3 個百分點不動（避免來回交易成本）
+MIN_TRADE_TWD = 10_000
+MAX_NAME_PCT = 10.0   # 配置建議裡單檔新買上限（佔總資產 %）
+MAX_NEW_MOMENTUM = 5  # 每市場最多列 5 檔動能新買（依排名），避免資金切太碎
+
+
+def asset_class(symbol: str) -> str:
+    s = symbol.upper()
+    if s in CASH_LIKE_ETFS:
+        return "cash"
+    if s in OTHER_ETFS:
+        return "other"
+    if s in US_BOND_ETFS:
+        return "bond"
+    if s.endswith((".TW", ".TWO")):
+        code = s.split(".")[0]
+        if code.startswith("00") and code.endswith("B"):
+            return "bond"
+    return "stock"
+
+
+def target_mix(report: Dict) -> Dict:
+    """依市場狀態決定目標股 / 債 / 現金（%）。"""
+    sent = report.get("sentiment") or {}
+    fg = ((sent.get("fear_greed") or {}).get("score"))
+    vix = (sent.get("vix") or {}).get("value")
+    taiex = sent.get("taiex") or {}
+    reasons: List[str] = []
+    if (fg is not None and fg < 25) or (vix is not None and vix >= 30):
+        mix, label = {"stock": 90, "bond": 5, "cash": 5}, "極度恐懼／恐慌"
+        reasons.append("恐慌期歷史上之後 3~6 個月報酬最高：現金壓到最低、只買不賣。")
+    elif fg is not None and fg < 45:
+        mix, label = {"stock": 85, "bond": 7, "cash": 8}, "恐懼"
+        reasons.append("恐懼區歷史上偏有利買方：股票比例略高於中性。")
+    elif fg is not None and fg > 75:
+        mix, label = {"stock": 80, "bond": 10, "cash": 10}, "極度貪婪"
+        reasons.append("貪婪時不減股（回測顯示貪婪時賣出/等待反而變差），但新資金分批進場、不追大長紅。")
+    else:
+        mix, label = {"stock": 80, "bond": 10, "cash": 10}, "中性／貪婪"
+        reasons.append("中性：維持基準 80/10/10。")
+    if fg is not None:
+        reasons.append(f"恐懼貪婪 {fg:.0f}" + (f"、VIX {vix:.1f}" if vix is not None else "") + "。")
+    if (taiex.get("vs_ma200_pct") or 0) >= 20:
+        reasons.append(f"台股加權距 200 日線 {taiex['vs_ma200_pct']:+.0f}%（乖離大）：台股新資金建議分 3 批、遇回檔再加。")
+    return {"mix": mix, "label": label, "reasons": reasons, "fear_greed": fg, "vix": vix}
+
+
+def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: float = 0.0,
+                     fx_usd_twd: float = 32.0) -> Dict:
+    from src.strategy.ask import raise_cash_plan
+    from src.strategy.momentum import ALLOCATION, LOWENTRY_SLOTS, TOP_N
+
+    holdings = ev.get("holdings", [])
+    cash_cash = float(cash_twd or 0) + float(cash_usd or 0) * fx_usd_twd
+    amt = {"stock": 0.0, "bond": 0.0, "cash": cash_cash, "other": 0.0}
+    by_mkt = {"us": 0.0, "tw": 0.0}
+    for h in holdings:
+        c = asset_class(h["symbol"])
+        amt[c] += h["value_twd"] or 0
+        if c == "stock":
+            by_mkt[h["market"]] += h["value_twd"] or 0
+    total = sum(amt.values())
+    if total <= 0:
+        return {"total_twd": 0, "current": {}, "target": {}, "steps": [], "notes": ["請先輸入持股或現金。"]}
+
+    tm = target_mix(report)
+    tgt = {k: total * v / 100 for k, v in tm["mix"].items()}
+    tgt_pct = dict(tm["mix"])
+    pct = {k: round(v / total * 100, 1) for k, v in amt.items()}
+    panic = bool(ev.get("panic_no_sell"))
+    in_window = bool(ev.get("in_rebalance_window"))
+    next_reb = ev.get("next_rebalance")
+    steps: List[Dict] = []
+    notes: List[str] = []
+
+    # 1) 策略本身的賣出 / 減碼
+    proceeds = 0.0
+    plan = {x["symbol"]: x for x in raise_cash_plan(ev, report)}
+    for h in holdings:
+        if h["action"] == "賣出換股":
+            if panic:
+                notes.append(f"{h['symbol']} 系統建議賣出換股，但目前恐慌期「只買不賣」，先不賣。")
+                continue
+            when = "今天" if in_window else f"月調日 {next_reb}"
+            steps.append({"kind": "sell", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(h["value_twd"]),
+                          "when": when, "why": "跌出動能保留名單且長線破壞：賣出，資金轉入下方買進清單。"})
+            if in_window:
+                proceeds += h["value_twd"]
+        elif h["action"] == "減碼":
+            trim = (plan.get(h["symbol"]) or {}).get("suggest_trim_twd") or 0
+            if trim >= MIN_TRADE_TWD:
+                steps.append({"kind": "trim", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(trim),
+                              "when": "今天", "why": h.get("reason") or "單檔過度集中：減碼到上限以下。"})
+                proceeds += trim
+
+    stock_after = amt["stock"] - proceeds
+    cash_after = amt["cash"] + proceeds
+    stock_gap = tgt["stock"] - stock_after          # > 0 要多買股票
+    bond_gap = tgt["bond"] - amt["bond"]
+
+    # 2) 股票過重 → 依「先賣誰」順序減碼（恐慌期不減）
+    if stock_gap < -total * TOLERANCE / 100:
+        excess = -stock_gap
+        if panic:
+            notes.append(f"股票比例高於目標，但恐慌期不賣；之後恢復正常再調。")
+        else:
+            already = {s["symbol"] for s in steps}
+            for x in sorted(plan.values(), key=lambda x: x["order"]):
+                if excess < MIN_TRADE_TWD or x["group"] >= 7:
+                    break
+                h = next(h for h in holdings if h["symbol"] == x["symbol"])
+                if x["symbol"] in already or asset_class(x["symbol"]) != "stock":
+                    continue
+                cut = min(excess, h["value_twd"] * 0.5)  # 單檔一次最多減一半
+                if cut < MIN_TRADE_TWD:
+                    continue
+                steps.append({"kind": "trim", "symbol": x["symbol"], "market": h["market"], "amount_twd": round(cut),
+                              "when": "今天", "why": f"股票比例 {pct['stock']}% 高於目標 {tgt_pct['stock']}%：{x['why']}（先賣順序第 {x['order']}）。"})
+                excess -= cut
+                cash_after += cut
+                stock_after -= cut
+            stock_gap = tgt["stock"] - stock_after
+
+    # 3) 可投入資金：現金超過目標的部分（含賣股所得）
+    budget = max(0.0, min(stock_gap, cash_after - tgt["cash"]))
+    if stock_gap > total * TOLERANCE / 100 and budget < MIN_TRADE_TWD:
+        notes.append(f"股票比例低於目標 {tgt_pct['stock']}%，但現金沒有超過目標水位，可用新資金補。")
+    if budget >= MIN_TRADE_TWD:
+        mk_total = sum(by_mkt.values())
+        mshare = {m: (by_mkt[m] / mk_total if mk_total else 0.5) for m in by_mkt}
+        tgt_mkt = {m: (stock_after + budget) * mshare[m] for m in by_mkt}
+        low_cap = {m: tgt_mkt[m] * ALLOCATION["lowentry"] / LOWENTRY_SLOTS for m in by_mkt}
+        mom_cap = {m: tgt_mkt[m] * ALLOCATION["momentum"] / TOP_N[m] for m in by_mkt}
+        cands: List[Dict] = []
+        for m in ("us", "tw"):
+            for b in (ev.get("low_entry_buys") or {}).get(m, []):
+                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": low_cap[m], "have": 0.0,
+                              "when": "今天（分 2~3 批）", "spike": b.get("spike"),
+                              "why": f"低檔可買：{b.get('low_label') or '長線贏家回撤'}（距高點 {b.get('dd_52w_pct')}%、Tier {b.get('quality_tier') or '—'}）。"})
+        for h in holdings:
+            if h["action"] in ("低檔加碼", "加碼") and asset_class(h["symbol"]) == "stock":
+                cap = low_cap[h["market"]] if h["action"] == "低檔加碼" else mom_cap[h["market"]]
+                cands.append({"symbol": h["symbol"], "market": h["market"], "cap": cap, "have": h["value_twd"],
+                              "when": "今天" if h["action"] == "低檔加碼" or in_window else f"月調日 {next_reb}",
+                              "spike": h.get("spike"), "why": f"系統建議「{h['action']}」：部位低於目標。"})
+        for m in ("us", "tw"):
+            for b in (ev.get("new_buys") or {}).get(m, [])[:MAX_NEW_MOMENTUM]:
+                cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": mom_cap[m], "have": 0.0,
+                              "when": "今天" if in_window else f"月調日 {next_reb}", "spike": b.get("spike"),
+                              "why": f"動能排名第 {b.get('rank')} 名、6 個月 {b.get('ret_6m_pct')}%：動能新買。"})
+        left = budget
+        for c in cands:
+            if left < MIN_TRADE_TWD:
+                break
+            need = max(0.0, c["cap"] - c["have"])
+            buy = min(need, left)
+            momentum = "動能新買" in c["why"]
+            if buy < MIN_TRADE_TWD and not momentum:  # 動能新買先保留，下面「空槽放動能」再補足金額
+                continue
+            why = c["why"]
+            if c.get("spike"):
+                why += " 近 3 日大長紅：不追，掛大漲前收盤價或等 3 日後。"
+            steps.append({"kind": "buy", "symbol": c["symbol"], "name": c.get("name"), "market": c["market"],
+                          "amount_twd": round(buy), "when": c["when"], "why": why})
+            left -= buy
+        # 空槽放動能：剩下的錢平均加到已列出的動能新買，單檔不超過總資產 MAX_NAME_PCT
+        mom_steps = [st for st in steps if st["kind"] == "buy" and "動能新買" in st["why"]]
+        while left >= MIN_TRADE_TWD and mom_steps:
+            room = [st for st in mom_steps if st["amount_twd"] < total * MAX_NAME_PCT / 100 - MIN_TRADE_TWD]
+            if not room:
+                break
+            each = left / len(room)
+            for st in room:
+                add = min(each, total * MAX_NAME_PCT / 100 - st["amount_twd"])
+                st["amount_twd"] = round(st["amount_twd"] + add)
+                left -= add
+            for st in room:
+                if "空槽放動能" not in st["why"]:
+                    st["why"] += "（含低檔空槽資金：空槽放動能）"
+        steps[:] = [st for st in steps if st["kind"] != "buy" or st["amount_twd"] >= MIN_TRADE_TWD]
+        if left >= MIN_TRADE_TWD:
+            notes.append(f"還有約 NT${left:,.0f} 未分配：依策略「空槽放動能」，月調日 {next_reb} 平均投入動能前段名單（策略精選分頁），或等新的低檔買點。")
+        # 幣別：台股買單要台幣、美股買單要美元
+        need_twd = sum(s["amount_twd"] for s in steps if s["kind"] == "buy" and s["market"] == "tw")
+        need_usd_twd = sum(s["amount_twd"] for s in steps if s["kind"] == "buy" and s["market"] == "us")
+        have_usd_twd = float(cash_usd or 0) * fx_usd_twd + sum(s["amount_twd"] for s in steps if s["kind"] in ("sell", "trim") and s["market"] == "us")
+        if need_usd_twd > have_usd_twd + MIN_TRADE_TWD:
+            steps.append({"kind": "fx", "symbol": "TWD→USD", "market": "us", "amount_twd": round(need_usd_twd - have_usd_twd),
+                          "when": "買美股前", "why": f"美股買單需要約 US${need_usd_twd / fx_usd_twd:,.0f}，美元現金不足的部分換匯（匯率 {fx_usd_twd:.2f}）。"})
+        have_twd = float(cash_twd or 0) + sum(s["amount_twd"] for s in steps if s["kind"] in ("sell", "trim") and s["market"] == "tw")
+        if need_twd > have_twd + MIN_TRADE_TWD:
+            steps.append({"kind": "fx", "symbol": "USD→TWD", "market": "tw", "amount_twd": round(need_twd - have_twd),
+                          "when": "買台股前", "why": "台股買單的台幣不足，部分美元換回台幣（或減少台股買單）。"})
+
+    # 4) 債券
+    if bond_gap > total * TOLERANCE / 100:
+        steps.append({"kind": "bond", "symbol": "債券 ETF", "market": "tw", "amount_twd": round(bond_gap), "when": "分批",
+                      "why": f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%：用現金補投資等級債／公債 ETF（台幣如 00679B、00937B；美元如 BND、IEF），股災時當備用子彈。"})
+    elif -bond_gap > total * 5 / 100:
+        notes.append(f"債券 {pct['bond']}% 高於目標 {tgt_pct['bond']}%：股市恐慌（恐懼貪婪 < 25）時可把多出的債券轉進股票。")
+
+    order = {"sell": 0, "trim": 1, "fx": 2, "buy": 3, "bond": 4}
+    steps.sort(key=lambda s: (order.get(s["kind"], 9), -s["amount_twd"]))
+    if not steps:
+        notes.insert(0, "比例都在目標 ±3% 以內、系統也沒有買賣訊號：今天不用調整。")
+    return {
+        "total_twd": round(total),
+        "current": {k: {"twd": round(v), "pct": pct[k]} for k, v in amt.items()},
+        "target": {k: {"twd": round(tgt[k]), "pct": tgt_pct[k]} for k in tgt},
+        "regime": {"label": tm["label"], "reasons": tm["reasons"], "fear_greed": tm["fear_greed"], "vix": tm["vix"]},
+        "cash_input": {"twd": round(float(cash_twd or 0)), "usd": round(float(cash_usd or 0), 2)},
+        "steps": steps,
+        "notes": notes,
+        "disclaimer": "規則化建議（依本站策略訊號與回測），不保證報酬、非投資建議；實際下單前請自行確認。",
+    }

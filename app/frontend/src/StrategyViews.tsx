@@ -8,6 +8,7 @@ import {
   fetchStrategyBacktest,
   fetchStrategyReport,
   lookupSymbols,
+  type AllocationPlan,
   type EvaluateResult,
   type LookupResult,
   type HoldingAction,
@@ -38,6 +39,27 @@ export function loadHoldings(): Holding[] {
     /* ignore */
   }
   return [];
+}
+
+// 現金部位（台幣 / 美元），與持股分開存，一樣只存在這台瀏覽器。
+const CASH_KEY = 'real_cash_v1';
+export type Cash = { twd: number; usd: number };
+
+export function loadCash(): Cash {
+  try {
+    const d = JSON.parse(localStorage.getItem(CASH_KEY) || '{}');
+    return { twd: Number(d.twd) || 0, usd: Number(d.usd) || 0 };
+  } catch {
+    return { twd: 0, usd: 0 };
+  }
+}
+
+function saveCash(cash: Cash): void {
+  try {
+    localStorage.setItem(CASH_KEY, JSON.stringify(cash));
+  } catch {
+    /* ignore */
+  }
 }
 
 function saveHoldings(holdings: Holding[]): void {
@@ -321,6 +343,7 @@ function RankTable({ rows }: { rows: StrategyReport['markets']['us']['rows'] }) 
 
 export function MyHoldingsPanel() {
   const [holdings, setHoldings] = useState<Holding[]>(() => loadHoldings());
+  const [cash, setCash] = useState<Cash>(() => loadCash());
   const [result, setResult] = useState<EvaluateResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -333,13 +356,18 @@ export function MyHoldingsPanel() {
     saveHoldings(next);
   };
 
-  const evaluate = useCallback(async (list: Holding[]) => {
+  const updateCash = (next: Cash) => {
+    setCash(next);
+    saveCash(next);
+  };
+
+  const evaluate = useCallback(async (list: Holding[], c: Cash = loadCash()) => {
     const valid = list.filter((h) => h.ticker && h.shares > 0);
-    if (!valid.length) return;
+    if (!valid.length && !c.twd && !c.usd) return;
     setLoading(true);
     setError('');
     try {
-      const r = await evaluateHoldings(valid);
+      const r = await evaluateHoldings(valid, c);
       setResult(r);
       notifyIfNeeded(r);
     } catch (e) {
@@ -406,7 +434,7 @@ export function MyHoldingsPanel() {
               <Plus className="mr-1 h-4 w-4" />
               新增一列
             </Button>
-            <Button className="h-9 bg-slate-950 text-white hover:bg-slate-800" type="button" disabled={loading} onClick={() => evaluate(holdings)}>
+            <Button className="h-9 bg-slate-950 text-white hover:bg-slate-800" type="button" disabled={loading} onClick={() => evaluate(holdings, cash)}>
               <RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? '評估中' : '依策略評估'}
             </Button>
@@ -489,15 +517,41 @@ export function MyHoldingsPanel() {
           </table>
           {!holdings.length ? <p className="py-3 text-sm text-slate-500">尚未輸入持股。按「新增一列」或「貼上匯入」。</p> : null}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3 text-sm">
+          <span className="font-medium text-slate-900">現金部位</span>
+          <label className="flex items-center gap-1.5 text-slate-600">
+            台幣 NT$
+            <Input
+              type="number"
+              value={cash.twd || ''}
+              onChange={(e) => updateCash({ ...cash, twd: Math.max(0, Number(e.target.value) || 0) })}
+              className="h-8 w-36"
+            />
+          </label>
+          <label className="flex items-center gap-1.5 text-slate-600">
+            美元 US$
+            <Input
+              type="number"
+              value={cash.usd || ''}
+              onChange={(e) => updateCash({ ...cash, usd: Math.max(0, Number(e.target.value) || 0) })}
+              className="h-8 w-32"
+            />
+          </label>
+          <span className="text-xs text-slate-500">含活存、定存；貨幣型 ETF（SGOV、BIL）放在持股也會算現金。改完按「依策略評估」。</span>
+        </div>
         {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
       </div>
+
+      {/* 資產配置 */}
+      {result?.allocation_plan ? <AllocationCard plan={result.allocation_plan} /> : null}
 
       {/* 評估結果 */}
       {result ? (
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
             <span>
-              總市值 <b>{ntd(result.total_twd)}</b>
+              總資產 <b>{ntd(result.total_with_cash_twd ?? result.total_twd)}</b>
+              <span className="ml-1 text-xs text-slate-500">（持股 {ntd(result.total_twd)} ＋ 現金 {ntd(result.cash_twd ?? 0)}）</span>
             </span>
             <DayPnl result={result} />
             <span className="text-slate-600">
@@ -984,6 +1038,15 @@ export function TodayBadge({ h }: { h: EvaluatedHolding }) {
   return <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium ${todayStyle(h.today)}`}>{h.today ?? '—'}</span>;
 }
 
+function quoteLabel(result: EvaluateResult): string {
+  if (!result.live_quotes) return '每日收盤快照';
+  const q = result.quote_as_of;
+  const parts: string[] = [];
+  if (q?.us) parts.push(`美股 ${q.us}`);
+  if (q?.tw) parts.push(result.market_closed?.tw ? `台股今日休市/未開盤（最後成交 ${q.tw.slice(0, 10)}，今日記 0）` : `台股 ${q.tw}`);
+  return `即時報價${parts.length ? `：${parts.join(' ・ ')}` : ''}`;
+}
+
 export function DayPnl({ result }: { result: EvaluateResult }) {
   if (result.day_pnl_twd == null) return null;
   return (
@@ -995,9 +1058,7 @@ export function DayPnl({ result }: { result: EvaluateResult }) {
           美股 {signedNtd(result.day_pnl_by_market_twd.us)} ・ 台股 {signedNtd(result.day_pnl_by_market_twd.tw)}
         </span>
       ) : null}
-      <span className="ml-2 text-xs text-slate-400">
-        {result.live_quotes ? `即時報價${result.quote_as_of ? `（台股 ${result.quote_as_of}）` : ''}` : '每日收盤快照'}
-      </span>
+      <span className="ml-2 text-xs text-slate-400">{quoteLabel(result)}</span>
     </span>
   );
 }
@@ -1007,19 +1068,20 @@ export function HoldingsTodayCard() {
   const [result, setResult] = useState<EvaluateResult | null>(null);
   const [error, setError] = useState('');
   const holdings = useMemo(() => loadHoldings(), []);
+  const cash = useMemo(() => loadCash(), []);
   useEffect(() => {
     if (!holdings.length) return;
-    evaluateHoldings(holdings)
+    evaluateHoldings(holdings, cash)
       .then(setResult)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [holdings]);
+  }, [holdings, cash]);
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm font-semibold text-slate-900">我的持股 · 今天</div>
         {result ? (
           <div className="text-sm">
-            總資產 <b>{ntd(result.total_twd)}</b>
+            總資產 <b>{ntd(result.total_with_cash_twd ?? result.total_twd)}</b>
             <span className="ml-3">
               <DayPnl result={result} />
             </span>
@@ -1068,6 +1130,11 @@ export function HoldingsTodayCard() {
           </table>
         </div>
       ) : null}
+      {result?.allocation_plan ? (
+        <div className="mt-4">
+          <AllocationCard plan={result.allocation_plan} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1102,6 +1169,122 @@ export function ViratttDetail({ v, market }: { v: Virattt; market: 'us' | 'tw' }
         ))}
       </div>
       <div className="mt-1 text-[11px] text-slate-400">總分 = 趨勢 40% + 動能 40% + 均值回歸 20%；波動/統計套利僅供參考。大師人設（巴菲特等）需付費 LLM 與財報 API，無法回測，未納入。</div>
+    </div>
+  );
+}
+
+/* ============================== 資產配置（股 / 債 / 現金） ============================== */
+
+const CLASS_LABEL: Record<string, string> = { stock: '股票', bond: '債券', cash: '現金', other: '其他' };
+const CLASS_COLOR: Record<string, string> = { stock: 'bg-sky-600', bond: 'bg-amber-500', cash: 'bg-slate-400', other: 'bg-violet-500' };
+const STEP_LABEL: Record<string, { t: string; c: string }> = {
+  sell: { t: '賣出', c: 'border-rose-300 bg-rose-50 text-rose-800' },
+  trim: { t: '減碼', c: 'border-orange-300 bg-orange-50 text-orange-800' },
+  fx: { t: '換匯', c: 'border-slate-300 bg-slate-50 text-slate-700' },
+  buy: { t: '買進', c: 'border-emerald-300 bg-emerald-50 text-emerald-800' },
+  bond: { t: '債券', c: 'border-amber-300 bg-amber-50 text-amber-800' },
+};
+
+function MixBar({ mix }: { mix: Record<string, { pct: number }> }) {
+  return (
+    <div className="flex h-3 w-full overflow-hidden rounded bg-slate-100">
+      {Object.entries(mix).map(([k, v]) =>
+        v.pct > 0 ? <div key={k} className={CLASS_COLOR[k]} style={{ width: `${v.pct}%` }} title={`${CLASS_LABEL[k]} ${v.pct}%`} /> : null,
+      )}
+    </div>
+  );
+}
+
+export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
+  if (!plan) return null;
+  if (plan.error) return <p className="text-sm text-rose-600">配置建議失敗：{plan.error}</p>;
+  if (!plan.total_twd) return null;
+  const keys = ['stock', 'bond', 'cash', 'other'] as const;
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-semibold text-slate-900">資產配置與調整建議</div>
+        <div className="text-xs text-slate-500">
+          市場狀態：<b className="text-slate-800">{plan.regime.label}</b>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <div className="mb-1 text-xs text-slate-500">目前</div>
+          <MixBar mix={plan.current} />
+        </div>
+        <div>
+          <div className="mb-1 text-xs text-slate-500">目標</div>
+          <MixBar mix={plan.target} />
+        </div>
+      </div>
+      <table className="mt-3 w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+            <th className="py-1 pr-2">類別</th>
+            <th className="py-1 pr-2 text-right">目前</th>
+            <th className="py-1 pr-2 text-right">目標</th>
+            <th className="py-1 text-right">差額</th>
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((k) => {
+            const cur = plan.current[k];
+            const tgt = (plan.target as Record<string, { twd: number; pct: number }>)[k];
+            if (!cur.twd && !tgt) return null;
+            const diff = tgt ? tgt.twd - cur.twd : -cur.twd;
+            return (
+              <tr key={k} className="border-b border-slate-100">
+                <td className="py-1 pr-2">
+                  <span className={`mr-1.5 inline-block h-2.5 w-2.5 rounded-sm ${CLASS_COLOR[k]}`} />
+                  {CLASS_LABEL[k]}
+                </td>
+                <td className="py-1 pr-2 text-right tabular-nums">
+                  {cur.pct}% <span className="text-xs text-slate-500">{ntd(cur.twd)}</span>
+                </td>
+                <td className="py-1 pr-2 text-right tabular-nums">{tgt ? `${tgt.pct}%` : '—'}</td>
+                <td className={`py-1 text-right tabular-nums ${tone(diff)}`}>{signedNtd(diff)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-slate-600">
+        {plan.regime.reasons.map((r) => (
+          <li key={r}>{r}</li>
+        ))}
+      </ul>
+      <div className="mt-3 text-sm font-medium text-slate-900">調整步驟</div>
+      {plan.steps.length ? (
+        <div className="mt-1 overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <tbody>
+              {plan.steps.map((st, i) => (
+                <tr key={`${st.kind}-${st.symbol}-${i}`} className="border-b border-slate-100 align-top">
+                  <td className="py-1.5 pr-2">
+                    <span className={`whitespace-nowrap rounded border px-1.5 py-0.5 text-xs ${STEP_LABEL[st.kind]?.c ?? ''}`}>{STEP_LABEL[st.kind]?.t ?? st.kind}</span>
+                  </td>
+                  <td className="whitespace-nowrap py-1.5 pr-2 font-medium text-slate-900">
+                    {st.symbol.replace(/\.TWO?$/, '')}
+                    {st.name ? <span className="ml-1 text-xs font-normal text-slate-500">{st.name}</span> : null}
+                  </td>
+                  <td className="whitespace-nowrap py-1.5 pr-2 text-right tabular-nums">{ntd(st.amount_twd)}</td>
+                  <td className="whitespace-nowrap py-1.5 pr-2 text-xs text-slate-500">{st.when}</td>
+                  <td className="py-1.5 text-xs text-slate-600">{st.why}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+      {plan.notes.length ? (
+        <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-slate-600">
+          {plan.notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-2 text-[11px] text-slate-400">{plan.disclaimer}</div>
     </div>
   );
 }

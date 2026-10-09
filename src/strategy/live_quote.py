@@ -60,12 +60,20 @@ def _tw_quotes(symbols: Iterable[str]) -> Dict[str, Dict]:
 def _us_quote(sym: str) -> Optional[Dict]:
     import yfinance as yf
 
-    fi = yf.Ticker(sym).fast_info
+    tk = yf.Ticker(sym)
+    fi = tk.fast_info
     price, prev = _num(fi.get("lastPrice")), _num(fi.get("previousClose"))
     if not price or not prev:
         return None
+    as_of = None
+    try:  # 最後一根 1 分 K 的時間（美東），用來標示報價時間
+        h = tk.history(period="1d", interval="1m")
+        if h is not None and not h.empty:
+            as_of = h.index[-1].strftime("%Y-%m-%d %H:%M") + " ET"
+    except Exception:
+        pass
     return {"price": round(price, 4), "prev_close": prev, "change_pct": round((price / prev - 1) * 100, 2),
-            "as_of": None, "source": "yfinance"}
+            "as_of": as_of, "source": "yfinance"}
 
 
 def live_quotes(symbols: Iterable[str]) -> Dict[str, Dict]:

@@ -578,6 +578,7 @@ def evaluate_holdings(
             if alt:
                 prices[s] = next(iter(alt.values()))
     quotes: Dict[str, Dict] = {}
+    today_tpe = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
     if live:
         try:
             from src.strategy.live_quote import live_quotes
@@ -604,6 +605,9 @@ def evaluate_holdings(
         if lq:
             it["price"], chg = lq["price"], lq["change_pct"]
             it["quote_as_of"], it["quote_source"] = lq.get("as_of"), lq.get("source")
+            # 台股報價日期不是今天（台北）＝今天休市或還沒開盤：今日漲跌/損益記 0，不拿前一日的來算
+            if it["market"] == "tw" and lq.get("as_of") and not lq["as_of"].startswith(today_tpe):
+                chg, it["market_closed"] = 0.0, True
         else:
             chg = (it.get("row") or {}).get("day_change_pct")
             if chg is None and it["symbol"] in prices:
@@ -635,6 +639,7 @@ def evaluate_holdings(
             "target_twd": round(tgt) if tgt else None, "ignition": (row or {}).get("ignition"),
             "day_change_pct": it.get("day_change_pct"), "day_pnl_twd": round(it.get("day_pnl_twd") or 0),
             "quote_as_of": it.get("quote_as_of"), "quote_source": it.get("quote_source") or "daily_close",
+            "market_closed": bool(it.get("market_closed")),
             "day_pnl_local": round((it.get("day_pnl_twd") or 0) / (1.0 if it["market"] == "tw" else fx_usd_twd), 2),
             "spike": (row or {}).get("spike"),
             "virattt": (row or {}).get("virattt"), "dd_52w_pct": (row or {}).get("dd_52w_pct"),
@@ -726,7 +731,9 @@ def evaluate_holdings(
         "in_rebalance_window": report.get("strategy", {}).get("in_rebalance_window"),
         "fx_usd_twd": round(fx_usd_twd, 3),
         "live_quotes": bool(quotes),
-        "quote_as_of": max((it.get("quote_as_of") for it in items if it.get("quote_as_of")), default=None),
+        "quote_as_of": {m: max((it.get("quote_as_of") for it in items if it["market"] == m and it.get("quote_as_of")), default=None)
+                        for m in ("us", "tw")},
+        "market_closed": {m: any(it.get("market_closed") for it in items if it["market"] == m) for m in ("us", "tw")},
         "total_twd": round(total_twd),
         "day_pnl_twd": round(sum(it.get("day_pnl_twd") or 0 for it in items)),
         "day_change_pct": round(sum(it.get("day_pnl_twd") or 0 for it in items) / (total_twd - sum(it.get("day_pnl_twd") or 0 for it in items)) * 100, 2)
