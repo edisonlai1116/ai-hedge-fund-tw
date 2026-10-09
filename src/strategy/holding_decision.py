@@ -19,9 +19,11 @@
 """
 from __future__ import annotations
 
+import gc
 import json
 import math
 import os
+import threading
 import time
 from typing import Dict, Iterable, List, Optional
 
@@ -56,8 +58,41 @@ def _load_opportunity() -> Dict[str, Dict]:
         return {}
 
 
-def load_fundamentals(symbols: Iterable[str], live: bool = True) -> Dict[str, Dict]:
-    """先用每日機會評分；沒有的持股即時算（rank_stocks，快取 1 天）。抓不到就不放（＝資料不足）。"""
+_LOCK = threading.Lock()
+PENDING: set = set()                   # 背景抓取中的代號（頁面顯示「載入中」）
+
+
+def _fetch_live(need: List[str]) -> None:
+    """背景執行：一次只跑一個（免費主機記憶體只有 512MB），不抓新聞以省資源。"""
+    if not _LOCK.acquire(blocking=False):
+        return
+    try:
+        from src.ranking.engine import rank_stocks
+        for i in range(0, len(need), 10):
+            chunk = need[i:i + 10]
+            try:
+                res = rank_stocks(chunk, live_news=False)
+                got = {r.get("ticker"): r for r in res.get("ranking", []) if r.get("scores")}
+            except Exception:
+                got = {}
+            now = time.time()
+            for s in chunk:
+                r = got.get(s)
+                if r:
+                    r.pop("fundamentals", None)
+                _CACHE[s] = (now, r)
+                PENDING.discard(s)
+            del res
+            gc.collect()
+    finally:
+        for s in need:
+            PENDING.discard(s)
+        _LOCK.release()
+
+
+def load_fundamentals(symbols: Iterable[str], live: bool = True, wait: bool = False) -> Dict[str, Dict]:
+    """先用每日機會評分；沒有的持股在背景即時算（rank_stocks，快取 1 天），這次先回傳已有的。
+    wait=True 時同步等待（測試／離線批次用）。抓不到就不放（＝資料不足）。"""
     syms = list(dict.fromkeys(symbols))
     base = _load_opportunity()
     out = {s: base[s] for s in syms if s in base}
@@ -70,24 +105,15 @@ def load_fundamentals(symbols: Iterable[str], live: bool = True) -> Dict[str, Di
         if c and now - c[0] < _TTL:
             if c[1]:
                 out[s] = c[1]
-        else:
+        elif s not in PENDING:
             need.append(s)
     if need and live and os.environ.get("HOLDING_DECISION_LIVE", "1") != "0":
-        try:
-            from src.ranking.engine import rank_stocks
-            for i in range(0, len(need), 25):
-                chunk = need[i:i + 25]
-                res = rank_stocks(chunk)
-                got = {r.get("ticker"): r for r in res.get("ranking", []) if r.get("scores")}
-                for s in chunk:
-                    r = got.get(s)
-                    if r:
-                        r.pop("fundamentals", None)
-                    _CACHE[s] = (now, r)
-                    if r:
-                        out[s] = r
-        except Exception:
-            pass
+        if wait:
+            _fetch_live(need)
+            out.update({s: _CACHE[s][1] for s in need if s in _CACHE and _CACHE[s][1]})
+        elif not _LOCK.locked():
+            PENDING.update(need)
+            threading.Thread(target=_fetch_live, args=(need,), daemon=True).start()
     return out
 
 
@@ -324,7 +350,8 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
         conf = {"confirmed": ["股價與動能排名（每日收盤／即時報價）", "股數與成本（你輸入）"],
                 "estimated": (["基本面／估值分數（yfinance 即時、非歷史時點、未回測）", "回撤分類（規則判定）"] if x["has_f"] else [])
                 + (["分批價位（ATR／波動推算）"] if grade in ("左側布局可買", "低檔分批") else []),
-                "missing": (["基本面資料（抓不到）"] if not x["has_f"] else []) + ALWAYS_MISSING}
+                "missing": ((["基本面資料載入中（約 1 分鐘後重新整理）"] if sym in PENDING else ["基本面資料（抓不到）"])
+                            if not x["has_f"] else []) + ALWAYS_MISSING}
         d = {"thesis": status, "thesis_why": swhy, "add_score": a, "add_grade": grade, "add_grade_why": gwhy,
              "decline_reason": CAUSE_LABEL.get(x["dd_type"], "資料不足") if dropped else None,
              "decline_detail": x["dd_why"], "valuation_view": _valuation_text(x),
