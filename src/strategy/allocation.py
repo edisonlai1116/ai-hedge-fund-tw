@@ -115,6 +115,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
 
     # 1) 策略本身的賣出 / 減碼
     proceeds = 0.0
+    swap_cash, swap_names = 0.0, []   # 月調日才賣的錢：預先排好月調日要買什麼（換股預覽）
     plan = {x["symbol"]: x for x in raise_cash_plan(ev, report)}
     for h in holdings:
         if h["action"] == "賣出換股":
@@ -124,9 +125,12 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             when = "今天" if in_window else f"月調日 {next_reb}"
             steps.append({"kind": "sell", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(h["value_twd"]),
                           "shares": int(h["shares"]), "shares_note": f"全部 {h['shares']:,.0f} 股",
-                          "when": when, "why": "跌出動能保留名單且長線破壞：賣出，資金轉入下方買進清單。"})
+                          "when": when, "why": "跌出動能保留名單：賣出，錢轉入下方同一天的買進（換股）。"})
             if in_window:
                 proceeds += h["value_twd"]
+            else:
+                swap_cash += h["value_twd"]
+                swap_names.append(h["symbol"].replace(".TWO", "").replace(".TW", ""))
         elif h["action"] == "減碼":
             trim = (plan.get(h["symbol"]) or {}).get("suggest_trim_twd") or 0
             if trim >= MIN_TRADE_TWD:
@@ -152,7 +156,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     spent = 0.0
     if stock_gap > total * TOLERANCE / 100 and budget < MIN_TRADE_TWD:
         notes.append(f"股票比例低於目標 {tgt_pct['stock']}%，但現金沒有超過目標水位，可用新資金補。")
-    if budget >= MIN_TRADE_TWD:
+    if budget >= MIN_TRADE_TWD or swap_cash >= MIN_TRADE_TWD:
         mk_total = sum(by_mkt.values())
         mshare = {m: (by_mkt[m] / mk_total if mk_total else 0.5) for m in by_mkt}
         tgt_mkt = {m: (stock_after + budget) * mshare[m] for m in by_mkt}
@@ -204,8 +208,44 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             for st in room:
                 if "空槽放動能" not in st["why"]:
                     st["why"] += "（含低檔空槽資金：空槽放動能）"
+        spent = max(0.0, budget - left)
+        # 換股預覽：月調日賣出的錢 → 同一天買進（依排名：持股加碼 → 動能新買；不夠的名額再平均加碼）
+        left2 = swap_cash
+        if left2 >= MIN_TRADE_TWD:
+            tag = f"（用月調日賣出 {'、'.join(swap_names)} 的錢）"
+            by_sym = {st["symbol"]: st for st in steps if st["kind"] == "buy"}
+            mon = [c for c in cands if c["when"].startswith("月調日")]
+            for c in mon:
+                if left2 < MIN_TRADE_TWD:
+                    break
+                st = by_sym.get(c["symbol"])
+                have = c["have"] + (st["amount_twd"] if st else 0)
+                buy = min(max(0.0, c["cap"] - have), left2)
+                if buy < 1:
+                    continue
+                if st:
+                    st["amount_twd"] = round(st["amount_twd"] + buy)
+                else:
+                    st = {"kind": "buy", "symbol": c["symbol"], "name": c.get("name"), "market": c["market"],
+                          "amount_twd": round(buy), "price": c.get("price"), "when": c["when"], "why": c["why"]}
+                    steps.append(st)
+                    by_sym[c["symbol"]] = st
+                if tag not in st["why"]:
+                    st["why"] += tag
+                left2 -= buy
+            mom2 = [st for st in steps if st["kind"] == "buy" and st["when"].startswith("月調日") and "動能新買" in st["why"]]
+            while left2 >= MIN_TRADE_TWD and mom2:
+                room = [st for st in mom2 if st["amount_twd"] < total * MAX_NAME_PCT / 100 - MIN_TRADE_TWD]
+                if not room:
+                    break
+                each = left2 / len(room)
+                for st in room:
+                    add = min(each, total * MAX_NAME_PCT / 100 - st["amount_twd"])
+                    st["amount_twd"] = round(st["amount_twd"] + add)
+                    left2 -= add
+                    if tag not in st["why"]:
+                        st["why"] += tag
         steps[:] = [st for st in steps if st["kind"] != "buy" or st["amount_twd"] >= MIN_TRADE_TWD]
-        spent = sum(st["amount_twd"] for st in steps if st["kind"] == "buy")
         for st in steps:
             if st["kind"] == "buy":
                 n = _shares(st["amount_twd"], st.pop("price", None), st["market"], fx_usd_twd)

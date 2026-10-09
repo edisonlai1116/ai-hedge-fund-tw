@@ -24,7 +24,7 @@ def test_raise_cash_order_sells_flagged_and_weak_first_keeps_leaders_last():
     assert order[:2] == ["OUT", "BIG"]                          # 系統建議賣出 → 集中度減碼
     assert order.index("WEAK") < order.index("MID") < order.index("CORE") < order.index("TOP")
     big = next(x for x in plan if x["symbol"] == "BIG")
-    assert big["suggest_trim_twd"] == 300_000                   # 減到總資產 20%
+    assert big["suggest_trim_twd"] == 400_000                   # 減到總資產 10%（CONCENTRATION_PCT）
 
 
 def test_prompt_contains_question_holdings_plan_and_guardrails():

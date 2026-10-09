@@ -53,7 +53,9 @@ LOWENTRY_SLOTS = 10
 # 50/50 → 51.0% / 48.5%；30/70 → 美 52.3%（-36.8%、Sharpe 1.42）台 49.5%（-34.5%、1.49）；0/100 → 53.6% / 50.8% 但 2017-21 最差。
 # 使用者選擇 30/70：兩市場回撤最小、Sharpe 最佳附近，報酬高於 70/30，且不完全押 2022 後的 AI 行情。
 ALLOCATION = {"lowentry": 0.30, "momentum": 0.70}
-CONCENTRATION_PCT = 20.0  # 單檔 > 總資產 20% → 減碼（集中度風險）
+# 單檔 > 總資產 10% → 減碼回 10%。2026-10-10 回測（部位漂移、低檔 30%/動能 70%）：
+# 原 20% 從未觸發（=不設上限）美 49.5% / 台 46.8%；收緊到約 10.5%（動能部位 15%）美 51.4%（回撤 -36.8%）/ 台 47.3%，兩段期間都較好。
+CONCENTRATION_PCT = 10.0
 
 # 2026-10-07 市場情緒研究（point-in-time，T-1 收盤訊號 → T 開盤成交，成本 0.2%；自建恐懼貪婪見 src.strategy.sentiment）：
 #   採用 1）低檔區「沒用到的槽位」資金放動能名單，而不是現金：美股 46.1% → 50.7%、台股 42.1% → 45.1%（樣本內外皆改善）。
@@ -505,6 +507,11 @@ def low_view(row: Optional[Dict], report: Dict, universe_size: Optional[int] = N
                                     long_term_winner=not row.get("long_term_broken"))
 
 
+def _low_hold(row: Optional[Dict]) -> bool:
+    """低檔布局部位（長線贏家回落 ≥30%）屬低檔策略、持有 12 個月，不套用動能的「跌出名單就賣」。"""
+    return bool(row and row.get("low_entry"))
+
+
 def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dict) -> tuple:
     """持股「今天」該做什麼（每天都有結論）。規則與回測一致：低檔加碼/集中度/不追大長紅每天檢查；動能買賣在月調窗口執行。"""
     window = report.get("strategy", {}).get("in_rebalance_window")
@@ -526,8 +533,8 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
         return "今天加碼", "月調窗口內、排名前段且部位不足。"
     if act == "賣出換股":
         if window:
-            return "今天賣出換股", "月調窗口內：動能轉弱且長線破壞，賣出後換到低檔/動能名單。"
-        return "月調日賣出", (f"轉弱：預計月調日（{nxt}）全部賣出換股（屆時仍跌出名單且長線破壞才賣）。"
+            return "今天賣出換股", "月調窗口內：已跌出保留名單，今天全部賣出，換成排名前段的股票。"
+        return "月調日賣出", (f"轉弱：預計月調日（{nxt}）全部賣出換股（屆時仍在保留名單外才賣）。"
                               f"不提前賣：{FREQ_EVIDENCE}")
     # 續抱
     if row:
@@ -686,6 +693,8 @@ def evaluate_holdings(
             why = (f"單檔佔總資產 {it['value_twd'] / conc_base:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限："
                    f"賣 {trim_sh:,.0f} 股{lots}、約 NT${trim_twd:,.0f}（持股的 {trim_sh / it['shares']:.0%}），"
                    f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金怎麼用見「資產配置與調整建議」。")
+            if row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
+                why += f" 另外排名第 {row['rank']} 名已在保留名單外：月調日（{report.get('strategy', {}).get('next_rebalance')}）若仍在名單外，剩下的也全部賣出換股。"
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
               and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
             lv = low_view(row, report) or {}
@@ -700,14 +709,15 @@ def evaluate_holdings(
         elif row["rank"] <= TOP_N[it["market"]] and tgt and it["value_twd"] < tgt * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             act = "加碼"
             why = f"動能排名第 {row['rank']} 名（前 {TOP_N[it['market']]} 名買進區），部位僅目標的 {it['value_twd'] / tgt:.0%}，加碼至約 NT${tgt:,.0f}。"
-        elif row["rank"] > KEEP_N[it["market"]] and row.get("long_term_broken") and panic:
+        elif row["rank"] > KEEP_N[it["market"]] and panic and not _low_hold(row):
             act = "續抱"
-            why = (f"動能排名第 {row['rank']} 名、長線趨勢也破壞，原本該換股；但市場處於極度恐懼"
+            why = (f"動能排名第 {row['rank']} 名（跌出前 {KEEP_N[it['market']]} 名），原本該換股；但市場處於極度恐懼"
                    f"（恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}）——回測顯示恐慌時不賣、等情緒回穩再換，報酬較高、回撤較小。")
-        elif row["rank"] > KEEP_N[it["market"]] and row.get("long_term_broken"):
+        elif row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
+            # 2026-10-10 回測：跌出保留名單就賣 美 52.3% / 台 49.5%；舊規則「還要長線破壞才賣」只有 35.0% / 43.0%（弱股抱太久）
             act = "賣出換股"
-            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名），且 {LOWENTRY_LT_YEARS} 年報酬 "
-                   f"{_pct(row.get('ret_3y_pct'))}（長線趨勢已破壞）——兩條策略都不支持續抱，建議月初換到低檔布局或動能名單。")
+            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名保留名單）：月調日賣出、換成排名前段的股票。"
+                   f"回測：跌出名單就換 美 52.3% / 台 49.5%，比等到長線趨勢破壞才賣（35.0% / 43.0%）好很多。")
         else:
             act = "續抱"
             if row.get("low_entry"):

@@ -45,7 +45,7 @@ def test_evaluate_holdings_actions():
         {"ticker": "S000", "cost": 50, "shares": 0.5},   # 第 1 名、部位很小 → 加碼
         {"ticker": "S030", "cost": 50, "shares": 10},    # 第 31 名 → 續抱
         {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名且 3 年趨勢破壞 → 賣出換股
-        {"ticker": "S090", "cost": 50, "shares": 10},    # 第 91 名但長線趨勢仍向上 → 長線續抱（不賣）
+        {"ticker": "S090", "cost": 50, "shares": 10},    # 第 91 名（跌出保留名單）→ 賣出換股（2026-10-10 回測：不再等長線破壞）
         {"ticker": "S080", "cost": 50, "shares": 0.2},   # 低檔布局區、部位小 → 低檔加碼（低檔占 30%，每檔目標較小）
         {"ticker": "VOO", "cost": 400, "shares": 20},    # ETF → 核心（也讓單檔佔比 < 20%）
     ]
@@ -56,7 +56,7 @@ def test_evaluate_holdings_actions():
     rep["drawdown_types"] = {"S080": {"type": "FUNDAMENTAL_DISCOUNT", "confirmations": []}}
     ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0, extra_prices=dict(voo))
     acts = {h["symbol"]: h["action"] for h in ev["holdings"]}
-    assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "S090": "續抱", "S080": "低檔加碼", "VOO": "核心 ETF"}
+    assert acts == {"S000": "加碼", "S030": "續抱", "S120": "賣出換股", "S090": "賣出換股", "S080": "低檔加碼", "VOO": "核心 ETF"}
     assert [b["symbol"] for b in ev["low_entry_buys"]["us"]] == []          # 唯一低檔股已持有
     assert [b["symbol"] for b in ev["new_buys"]["us"]][:2] == ["S001", "S002"]
 
