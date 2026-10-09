@@ -374,24 +374,42 @@ def _names(market: str) -> Dict[str, str]:
         return {}
 
 
-def next_rebalance(today: Optional[date] = None) -> str:
-    """下次檢查日：下個月第一個平日。"""
+# 調整頻率與每次換股上限（2026-10-10 回測，2017 起，低檔 30%/動能 70%）：
+#   美股：每 4 週檢查、每次最多換 2 檔（最弱先換）52.5%，略優於一次全換 52.3%；每週最多換 2 檔 50.2%。
+#   台股：每週檢查、每次最多換 2 檔 49.2%，接近一次全換 49.5%；每 4 週最多換 2 檔只有 46.6%（20 檔換太慢）。
+#   完全依市場觸發（恐懼 < 45 或大盤跌 5% 才調整）：美 51.4% / 台 43.7%，都較差。
+REBALANCE_EVERY = {"us": "monthly", "tw": "weekly"}
+REBALANCE_LABEL = {"monthly": "每 4 週", "weekly": "每週"}
+MAX_SWAPS = {"us": 2, "tw": 2}
+
+
+def next_rebalance(today: Optional[date] = None, market: str = "us") -> str:
+    """下次調整日：美股＝下個月第一個平日；台股＝下週一。"""
     today = today or datetime.now(TPE).date()
+    if REBALANCE_EVERY.get(market) == "weekly":
+        return (today + timedelta(days=7 - today.weekday())).isoformat()
     first = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
     while first.weekday() >= 5:
         first += timedelta(days=1)
     return first.isoformat()
 
 
-def is_rebalance_window(today: Optional[date] = None) -> bool:
-    """每月前 3 個平日內視為調整窗口（避開假日／排程漏跑）。"""
+def is_rebalance_window(today: Optional[date] = None, market: str = "us") -> bool:
+    """調整窗口：美股＝每月前 3 個平日；台股＝每週一、二（避開假日／排程漏跑）。"""
     today = today or datetime.now(TPE).date()
+    if REBALANCE_EVERY.get(market) == "weekly":
+        return today.weekday() in (0, 1)
     d, n = today.replace(day=1), 0
     while d <= today:
         if d.weekday() < 5:
             n += 1
         d += timedelta(days=1)
     return today.weekday() < 5 and n <= 3
+
+
+def rebalance_info(today: Optional[date] = None) -> Dict[str, Dict]:
+    return {m: {"every": REBALANCE_LABEL[REBALANCE_EVERY[m]], "next": next_rebalance(today, m),
+                "in_window": is_rebalance_window(today, m), "max_swaps": MAX_SWAPS[m]} for m in ("us", "tw")}
 
 
 def us_groups(symbols: Iterable[str]) -> Dict[str, List[str]]:
@@ -461,13 +479,14 @@ def build_strategy_report() -> Dict:
                                f"持有 {LOWENTRY_HOLD_MONTHS} 個月；回落 {abs(LOWENTRY_WATCH_DD):.0%}~{abs(LOWENTRY_DD):.0%} 列入觀察。"),
             "rule": (f"資金 {ALLOCATION['lowentry']:.0%} 給長線低檔布局、{ALLOCATION['momentum']:.0%} 給動能輪動"
                      f"（美股前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；台股前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣）。"
-                     f"持股只有在動能也轉弱且 {LOWENTRY_LT_YEARS} 年長線趨勢破壞時才建議換股。"
-                     f"低檔區沒用到的槽位資金放動能名單（不留現金）；恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}（極度恐懼）時月調只買不賣。"),
+                     f"持股跌出保留名單就換；美股{REBALANCE_LABEL[REBALANCE_EVERY['us']]}、台股{REBALANCE_LABEL[REBALANCE_EVERY['tw']]}檢查，每次最多換 {MAX_SWAPS['us']} 檔（最弱先換）。"
+                     f"低檔區沒用到的槽位資金放動能名單（不留現金）；恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}（極度恐懼）時調整只買不賣。"),
             "idle_to_momentum": IDLE_TO_MOMENTUM, "panic_no_sell_fg": PANIC_NO_SELL_FG, "tech_blend": TECH_BLEND,
             "ranking_rule": (f"美股排名＝Sharpe 動能；台股排名＝動能 {1 - TECH_BLEND['tw']:.0%} ＋ virattt 技術分析師分數 "
                              f"{TECH_BLEND['tw']:.0%}（皆為股票池內百分位）。"),
             "next_rebalance": next_rebalance(now.date()),
             "in_rebalance_window": is_rebalance_window(now.date()),
+            "rebalance": rebalance_info(now.date()),
         },
         "markets": markets,
         "disclaimer": "規則化訊號，回測有倖存者偏差，非投資建議。",
@@ -513,28 +532,28 @@ def _low_hold(row: Optional[Dict]) -> bool:
 
 
 def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dict) -> tuple:
-    """持股「今天」該做什麼（每天都有結論）。規則與回測一致：低檔加碼/集中度/不追大長紅每天檢查；動能買賣在月調窗口執行。"""
-    window = report.get("strategy", {}).get("in_rebalance_window")
-    nxt = report.get("strategy", {}).get("next_rebalance")
+    """持股「今天」該做什麼（每天都有結論）。規則與回測一致：低檔加碼/集中度/不追大長紅每天檢查；動能買賣在調整日執行（美股每 4 週、台股每週，每次最多換 2 檔）。"""
+    rb = rebalance_info()[market]           # 依「今天」即時判斷（不用排名產生時的舊值）
+    window, nxt = rb["in_window"], rb["next"]
     sp = (row or {}).get("spike")
     if act in ("核心 ETF", "資料不足"):
         return "不用動", ""
     if act == "減碼":
-        return "今天減碼", "集中度風險每天檢查，不必等月調。"
+        return "今天減碼", "集中度風險每天檢查，不必等調整日。"
     if act == "低檔加碼":
         if sp:
             return "掛單等拉回", f"{sp['date']} 大漲 +{sp['gain_pct']}%，不追；掛 {sp.get('limit_price')}，{LIMIT_VALID_DAYS} 個交易日內有效。"
         return "今天可加碼", "在低檔區、部位不足：低檔訊號每天有效，可今天分批加碼。"
     if act == "加碼":
         if not window:
-            return "月調日加碼", f"動能加碼排在月調日（{nxt}），月中不動：{FREQ_EVIDENCE}"
+            return "調整日加碼", f"動能加碼排在下次調整日（{nxt}），其他日子不動：{FREQ_EVIDENCE}"
         if sp:
             return "等 3 天再加碼", f"{sp['date']} 大漲 +{sp['gain_pct']}%，等大長紅超過 {SPIKE_DAYS} 個交易日、仍在前段再加碼。"
-        return "今天加碼", "月調窗口內、排名前段且部位不足。"
+        return "今天加碼", "調整日：排名前段且部位不足。"
     if act == "賣出換股":
         if window:
-            return "今天賣出換股", "月調窗口內：已跌出保留名單，今天全部賣出，換成排名前段的股票。"
-        return "月調日賣出", (f"轉弱：預計月調日（{nxt}）全部賣出換股（屆時仍在保留名單外才賣）。"
+            return "今天賣出換股", "調整日：已跌出保留名單，今天全部賣出，換成排名前段的股票。"
+        return "調整日賣出", (f"轉弱：預計下次調整日（{nxt}）全部賣出換股（屆時仍在保留名單外才賣）。"
                               f"不提前賣：{FREQ_EVIDENCE}")
     # 續抱
     if row:
@@ -549,7 +568,8 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
 NEAR_TRIGGER_PCT_HOLD = 3.0
 # 2026-10-09 換股頻率回測（當時低檔 70% + 動能 30%，2017 起，T-1 訊號 → T 開盤、成本 0.2%）：
 # 月調 21 日 美股 CAGR 49.2% / 台股 47.1%；雙週 48.6% / 45.8%；每週 48.0% / 46.7%；月調＋每日出場 48.8% / 46.3%。
-FREQ_EVIDENCE = "回測顯示動能換股改成每週或每日檢查，報酬反而較低（交易成本與來回洗），月調最佳。"
+FREQ_EVIDENCE = ("回測：美股每 4 週、台股每週檢查，每次最多換 2 檔最好；每天檢查或看市場才調整，報酬都較低"
+                 "（交易成本與來回洗）。")
 
 
 def evaluate_holdings(
@@ -694,7 +714,7 @@ def evaluate_holdings(
                    f"賣 {trim_sh:,.0f} 股{lots}、約 NT${trim_twd:,.0f}（持股的 {trim_sh / it['shares']:.0%}），"
                    f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金怎麼用見「資產配置與調整建議」。")
             if row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
-                why += f" 另外排名第 {row['rank']} 名已在保留名單外：月調日（{report.get('strategy', {}).get('next_rebalance')}）若仍在名單外，剩下的也全部賣出換股。"
+                why += f" 另外排名第 {row['rank']} 名已在保留名單外：下次調整日（{rebalance_info()[it['market']]['next']}）若仍在名單外，剩下的也賣出換股。"
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
               and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
             lv = low_view(row, report) or {}
@@ -716,7 +736,7 @@ def evaluate_holdings(
         elif row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
             # 2026-10-10 回測：跌出保留名單就賣 美 52.3% / 台 49.5%；舊規則「還要長線破壞才賣」只有 35.0% / 43.0%（弱股抱太久）
             act = "賣出換股"
-            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名保留名單）：月調日賣出、換成排名前段的股票。"
+            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名保留名單）：調整日賣出、換成排名前段的股票。"
                    f"回測：跌出名單就換 美 52.3% / 台 49.5%，比等到長線趨勢破壞才賣（35.0% / 43.0%）好很多。")
         else:
             act = "續抱"
@@ -769,12 +789,23 @@ def evaluate_holdings(
             and (low_view(by[s_], report) or {}).get("recommendation") in ("BUY", "BUY_STAGED")
         ][:LOWENTRY_SLOTS]
 
-    order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "續抱": 4, "核心 ETF": 5, "資料不足": 6}
+    # 每次調整最多換 MAX_SWAPS 檔（最弱的先換），其餘排隊到之後的調整日
+    rbi = rebalance_info()
+    for m in ("us", "tw"):
+        sells = sorted([r for r in out_rows if r["market"] == m and r["action"] == "賣出換股"],
+                       key=lambda r: -(r.get("rank") or 0))
+        for k, r in enumerate(sells[MAX_SWAPS[m]:], start=MAX_SWAPS[m] + 1):
+            msg = (f"已在保留名單外，但每次調整最多換 {MAX_SWAPS[m]} 檔、最弱的先換：排第 {k} 順位，之後的調整日再換"
+                   f"（回測：分批換報酬不輸一次全換）。")
+            r["action"], r["today"], r["today_reason"] = "排隊換股", "排隊換股", msg
+            r["reason"] = r["reason"] + " " + msg
+    order = {"賣出換股": 0, "減碼": 1, "低檔加碼": 2, "加碼": 3, "排隊換股": 4, "續抱": 5, "核心 ETF": 6, "資料不足": 7}
     out_rows.sort(key=lambda r: (order.get(r["action"], 9), -(r["value_twd"] or 0)))
     return {
         "generated_at": report.get("generated_at"),
-        "next_rebalance": report.get("strategy", {}).get("next_rebalance"),
-        "in_rebalance_window": report.get("strategy", {}).get("in_rebalance_window"),
+        "next_rebalance": min(v["next"] for v in rbi.values()),
+        "in_rebalance_window": any(v["in_window"] for v in rbi.values()),
+        "rebalance": rbi,
         "fx_usd_twd": round(fx_usd_twd, 3),
         "live_quotes": bool(quotes),
         "quote_as_of": {m: max((it.get("quote_as_of") for it in items if it["market"] == m and it.get("quote_as_of")), default=None)

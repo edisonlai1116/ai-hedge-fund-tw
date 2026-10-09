@@ -3,7 +3,7 @@ import { Activity, CalendarCheck, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { fetchDailyAdvice, type AdviceItem, type DailyAdvice, type MarketAdvice, type SectorMood } from './services/strategy-api';
-import { HoldingsTodayCard, ViratttBadge } from './StrategyViews';
+import { HoldingsTodayCard, rebalanceText, ViratttBadge } from './StrategyViews';
 
 const LEVEL_STYLE: Record<MarketAdvice['level'], string> = {
   action: 'bg-emerald-600 text-white',
@@ -172,7 +172,7 @@ function MarketCard({ market, data }: { market: 'us' | 'tw'; data: MarketAdvice 
         </div>
       ) : null}
       {!data.actions.length && !data.watch.length ? (
-        <p className="mt-2 text-sm text-slate-500">沒有新低檔訊號、沒有接近觸發價的股票、今天不是月調日——持股照抱即可。</p>
+        <p className="mt-2 text-sm text-slate-500">沒有新低檔訊號、沒有接近觸發價的股票、今天不是調整日——持股照抱即可。</p>
       ) : null}
       {data.virattt ? <ViratttSection data={data.virattt} /> : null}
       {data.hot_groups.length || data.oversold_groups.length ? (
@@ -376,7 +376,7 @@ export function DailyAdvicePanel() {
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <CalendarCheck className="h-4 w-4" />
-              {advice ? `${advice.date} 每日建議 ・ 更新 ${advice.generated_at.replace('T', ' ').slice(0, 16)} ・ 下次月調 ${advice.next_rebalance}` : '讀取中…'}
+              {advice ? `${advice.date} 每日建議 ・ 更新 ${advice.generated_at.replace('T', ' ').slice(0, 16)} ・ 下次調整 ${rebalanceText(advice.rebalance, advice.next_rebalance)}` : '讀取中…'}
             </div>
             <div className="mt-1 text-lg font-semibold text-slate-900">{advice?.headline ?? '—'}</div>
           </div>

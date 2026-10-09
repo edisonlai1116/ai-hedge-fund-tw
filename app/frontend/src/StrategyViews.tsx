@@ -9,6 +9,7 @@ import {
   fetchStrategyReport,
   lookupSymbols,
   type AllocationPlan,
+  type RebalanceInfo,
   type EvaluateResult,
   type LookupResult,
   type HoldingAction,
@@ -91,6 +92,7 @@ const ACTION_STYLE: Record<HoldingAction, string> = {
   減碼: 'bg-orange-100 text-orange-800 border-orange-200',
   低檔加碼: 'bg-emerald-200 text-emerald-900 border-emerald-300',
   加碼: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  排隊換股: 'bg-amber-50 text-amber-800 border-amber-200',
   續抱: 'bg-sky-50 text-sky-800 border-sky-200',
   '核心 ETF': 'bg-slate-100 text-slate-700 border-slate-200',
   資料不足: 'bg-slate-50 text-slate-500 border-slate-200',
@@ -163,8 +165,8 @@ export function StrategyPicksPanel() {
           <div>
             <div className="text-sm font-semibold text-slate-900">策略精選 · 本月買進名單</div>
             <div className="text-xs text-slate-500">
-              {report ? `排名更新：${report.generated_at.replace('T', ' ').slice(0, 16)} ・ 下次月調：${report.strategy.next_rebalance}` : '讀取中…'}
-              {report?.strategy.in_rebalance_window ? ' ・ 🔔 本週為月調窗口' : ''}
+              {report ? `排名更新：${report.generated_at.replace('T', ' ').slice(0, 16)} ・ 下次調整：${rebalanceText(report.strategy.rebalance, report.strategy.next_rebalance)}` : '讀取中…'}
+              {report?.strategy.in_rebalance_window ? ' ・ 🔔 今天是調整日' : ''}
             </div>
           </div>
           <MarketToggle value={market} onChange={setMarket} />
@@ -398,8 +400,8 @@ export function MyHoldingsPanel() {
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <BellRing className="h-4 w-4" />
             {result.in_rebalance_window
-              ? `本月調整時間到：${actionable.length} 檔持股需要動作`
-              : `下次月調（${result.next_rebalance}）預計：${actionable.length} 檔持股需要動作`}
+              ? `今天是調整日：${actionable.length} 檔持股需要動作`
+              : `下次調整（${rebalanceText(result.rebalance, result.next_rebalance)}）預計：${actionable.length} 檔持股需要動作`}
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
             {actionable.map((h) => (
@@ -414,7 +416,7 @@ export function MyHoldingsPanel() {
             ))}
           </div>
           {!result.in_rebalance_window ? (
-            <div className="mt-2 text-xs text-slate-600">策略每月初才執行換股（與回測一致）；月中只有「點火」事件值得提前加碼。</div>
+            <div className="mt-2 text-xs text-slate-600">換股在調整日執行：美股每 4 週、台股每週，每次最多換 2 檔（回測最佳）；其他日子只有低檔買點、集中度減碼、「點火」事件會提前動作。</div>
           ) : null}
         </div>
       ) : null}
@@ -657,7 +659,7 @@ export function MyHoldingsPanel() {
           <div>
             <div className="text-sm font-semibold text-slate-900">關掉網頁也收得到提醒（手機推播）</div>
             <div className="text-xs text-slate-500">
-              開著這頁時會跳瀏覽器通知；要在月調日／點火時推到手機，請把持股存進 GitHub Secret「HOLDINGS」一次（持股變動時再更新）。
+              開著這頁時會跳瀏覽器通知；要在調整日／點火時推到手機，請把持股存進 GitHub Secret「HOLDINGS」一次（持股變動時再更新）。
             </div>
           </div>
           <div className="flex gap-2">
@@ -705,7 +707,7 @@ export function MyHoldingsPanel() {
 function notifyIfNeeded(r: EvaluateResult): void {
   const items = r.holdings.filter((h) => ['賣出換股', '減碼', '低檔加碼', '加碼'].includes(h.action) || (h.ignition && h.action === '續抱'));
   if (!items.length || !('Notification' in window) || Notification.permission !== 'granted') return;
-  // 只在「月調窗口」或「有點火」時跳通知，且同一組內容一天只跳一次。
+  // 只在「調整日」或「有點火」時跳通知，且同一組內容一天只跳一次。
   const ignited = items.filter((h) => h.ignition || h.action === '低檔加碼');
   if (!r.in_rebalance_window && !ignited.length) return;
   const sig = `${new Date().toISOString().slice(0, 10)}|${items.map((h) => h.symbol + h.action).join(',')}`;
@@ -1028,7 +1030,7 @@ export function ViratttBadge({ v }: { v?: Virattt | null }) {
 const todayStyle = (t?: string) =>
   !t || t === '不用動'
     ? 'bg-slate-100 text-slate-600'
-    : t.startsWith('月調日')
+    : /^(月調日|調整日|排隊)/.test(t)
       ? 'bg-amber-100 text-amber-900'
       : /賣|減碼/.test(t)
       ? 'bg-rose-600 text-white'
@@ -1298,15 +1300,18 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
 /** 今天要做的事：持股的今日動作 ＋ 配置建議裡「今天」執行的步驟（與「我的持股」同一份評估結果）。 */
 function TodayTodo({ result }: { result: EvaluateResult }) {
   const isAlert = (t?: string) => !!t && /準備|掛單|等 3 天/.test(t);
-  const isToday = (t?: string) => !!t && t !== '不用動' && !t.startsWith('月調日') && !isAlert(t);
+  const isLater = (t?: string) => !!t && /^(月調日|調整日|排隊換股)/.test(t);
+  const isToday = (t?: string) => !!t && t !== '不用動' && !isLater(t) && !isAlert(t);
   const alerts = result.holdings.filter((h) => isAlert(h.today));
   const acts = result.holdings.filter((h) => isToday(h.today));
-  const monthly = result.holdings.filter((h) => h.today?.startsWith('月調日'));
+  const monthly = result.holdings.filter((h) => isLater(h.today) && h.today !== '排隊換股');
+  const queued = result.holdings.filter((h) => h.today === '排隊換股');
   const held = new Set(acts.map((h) => h.symbol));
   const steps = (result.allocation_plan?.steps ?? []).filter((st) => st.when.startsWith('今天') && !held.has(st.symbol));
   const later = (result.allocation_plan?.steps ?? []).filter((st) => !st.when.startsWith('今天') && st.kind !== 'fx');
   const laterNote = monthly.length || later.length
-    ? `月調日（${result.next_rebalance}）要做：${[...monthly.map((h) => `${h.today?.replace('月調日', '')} ${h.symbol.replace(/\.TWO?$/, '')}`), ...(later.length ? [`配置建議 ${later.length} 筆`] : [])].join('、')}。`
+    ? `下次調整日（${rebalanceText(result.rebalance, result.next_rebalance)}）要做：${[...monthly.map((h) => `${h.today?.replace(/^(月調日|調整日)/, '')} ${h.symbol.replace(/\.TWO?$/, '')}`), ...(later.length ? [`配置建議 ${later.length} 筆`] : [])].join('、')}。`
+      + (queued.length ? `排隊換股（之後的調整日再換）：${queued.map((h) => h.symbol.replace(/\.TWO?$/, '')).join('、')}。` : '')
     : '';
   const alertBox = alerts.length ? (
     <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -1361,4 +1366,10 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
     {alertBox}
     </>
   );
+}
+
+/** 下次調整日：分市場顯示（美股每 4 週、台股每週）。 */
+export function rebalanceText(rb?: RebalanceInfo, fallback?: string): string {
+  if (!rb) return fallback ?? '—';
+  return `美股 ${rb.us.next}（${rb.us.every}）・ 台股 ${rb.tw.next}（${rb.tw.every}）`;
 }

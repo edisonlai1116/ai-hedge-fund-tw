@@ -1,7 +1,7 @@
 """自動買賣提醒（GitHub Actions 排程呼叫；免 API Key）。規則來源：src.strategy.momentum（單一策略）。
 
 推播時機（條件成立才推，同一訊號不重複）：
-  1) 每月調整（每月前 3 個平日）：你的持股該 加碼 / 減碼 / 賣出換股 的清單，以及買進區中你還沒有的「新買進」。
+  1) 調整日（美股每月前 3 個平日、台股每週一二，每次最多換 2 檔）：你的持股該 加碼 / 減碼 / 賣出換股 的清單，以及買進區中你還沒有的「新買進」。
      與回測同規則、同頻率——月中不會因排名小幅變動叫你買賣。
   2) 點火事件（任何交易日、盤中也檢查）：名單內（持股中仍在續抱區、或買進區）的股票出現
      「爆量長紅點火」（單日 ≥+5%、量 ≥1.3 倍均量）→ 提醒可提前加碼／買進。
@@ -111,30 +111,34 @@ def live_ignitions(symbols: List[str], fractions: Dict[str, Optional[float]]) ->
 # ===== 產生提醒 ===============================================================
 def build_alerts(holdings: List[Dict], report: Dict, markets: set, fractions: Dict[str, Optional[float]],
                  rebalance: bool, fx: float) -> List[Dict]:
-    from src.strategy.momentum import TOP_N, evaluate_holdings
+    from src.strategy.momentum import TOP_N, evaluate_holdings, is_rebalance_window
     ev = evaluate_holdings(holdings, report, fx) if holdings else {"holdings": [], "new_buys": {"us": [], "tw": []}}
-    month = datetime.now(TPE).strftime("%Y-%m")
+    now_ = datetime.now(TPE)
+    # 調整期別：美股每月、台股每週（ISO 週）；只提醒今天在調整窗口的市場（--force-rebalance 測試時全部）
+    period = {"us": now_.strftime("%Y-%m"), "tw": now_.strftime("%G-W%V")}
+    force_all = rebalance and not any(is_rebalance_window(None, m) for m in ("us", "tw"))
+    in_win = {m: force_all or is_rebalance_window(None, m) for m in ("us", "tw")}
     alerts: List[Dict] = []
 
     if rebalance:
         for h in ev["holdings"]:
-            if h["market"] in markets and h["action"] in ("賣出換股", "減碼", "低檔加碼", "加碼"):
+            if h["market"] in markets and in_win[h["market"]] and h["action"] in ("賣出換股", "減碼", "低檔加碼", "加碼"):
                 alerts.append({"group": "rebalance", "symbol": h["symbol"], "action": h["action"],
                                "price": h["price"], "pnl": h["pnl_pct"], "weight": h["weight_pct"],
-                               "reason": h["reason"], "key": f"reb:{month}:{h['symbol']}:{h['action']}"})
-        for m in markets:
+                               "reason": h["reason"], "key": f"reb:{period[h['market']]}:{h['symbol']}:{h['action']}"})
+        for m in [m for m in markets if in_win[m]]:
             for b in (ev.get("low_entry_buys") or {}).get(m, []):
                 tgt = f"，目標約 NT${b['target_twd']:,.0f}" if b.get("target_twd") else ""
                 alerts.append({"group": "rebalance", "symbol": b["symbol"], "action": "低檔布局買進",
                                "price": b["close"], "pnl": None, "weight": None,
                                "reason": f"長線贏家（3 年 {b['ret_3y_pct']:+.0f}%）距 52 週高點 {b['dd_52w_pct']:.0f}%{tgt}，持有 12 個月。",
-                               "key": f"reb:{month}:{b['symbol']}:low"})
+                               "key": f"reb:{period[m]}:{b['symbol']}:low"})
             for b in ev["new_buys"].get(m, []):
                 tgt = f"，目標約 NT${b['target_twd']:,.0f}" if b.get("target_twd") else ""
                 alerts.append({"group": "rebalance", "symbol": b["symbol"], "action": "新買進",
                                "price": b["close"], "pnl": None, "weight": None,
                                "reason": f"動能排名第 {b['rank']} 名（近 6 個月 {b['ret_6m_pct']:+.0f}%）{tgt}。",
-                               "key": f"reb:{month}:{b['symbol']}:new"})
+                               "key": f"reb:{period[m]}:{b['symbol']}:new"})
 
     # 低檔事件（不等月初）：持股或股票池個股「剛進入」低檔布局區 → 立即提醒（同檔 30 天內不重複）
     held_syms = {h["symbol"] for h in ev["holdings"]}
@@ -188,7 +192,7 @@ def save_state(state: Dict[str, str]) -> None:
 
 
 def filter_new(alerts: List[Dict], state: Dict[str, str]) -> List[Dict]:
-    """月調提醒的 key 含月份（每月一次）；點火事件 5 天、低檔事件 30 天內不重複。"""
+    """調整提醒的 key 含期別（美股每月、台股每週一次）；點火事件 5 天、低檔事件 30 天內不重複。"""
     cutoff = (datetime.now(TPE) - timedelta(days=EVENT_DEDUP_DAYS)).isoformat()
     low_cutoff = (datetime.now(TPE) - timedelta(days=30)).isoformat()
     out = []
@@ -207,7 +211,7 @@ def format_message(alerts: List[Dict], report: Dict) -> str:
     reb = [a for a in alerts if a["group"] == "rebalance"]
     ev = [a for a in alerts if a["group"] == "event"]
     if reb:
-        lines.append("\n【每月調整】")
+        lines.append("\n【調整日】")
         for label in ("賣出換股", "減碼", "低檔加碼", "加碼", "低檔布局買進", "新買進"):
             for a in [x for x in reb if x["action"] == label]:
                 pnl = f"，損益 {a['pnl']:+.1f}%" if a.get("pnl") is not None else ""
@@ -221,7 +225,7 @@ def format_message(alerts: List[Dict], report: Dict) -> str:
             lines.append(f"  {a['reason']}")
     nxt = report.get("strategy", {}).get("next_rebalance")
     if nxt:
-        lines.append(f"\n下次月調：{nxt}。規則化訊號，非投資建議；下單前請自行確認。")
+        lines.append(f"\n下次調整：{nxt}。規則化訊號，非投資建議；下單前請自行確認。")
     return "\n".join(lines)
 
 
@@ -273,10 +277,10 @@ def format_digest(advice: Dict) -> str:
         for a in [x for x in d["actions"] if x["type"] != "rebalance_buy"][:6]:
             lines.append(f"• {a['action']} {a['symbol']} {a.get('name') or ''}｜{a.get('close') or ''}")
         if any(x["type"] == "rebalance_buy" for x in d["actions"]):
-            lines.append("• 月調買進／續抱：" + "、".join(x["symbol"] for x in d["actions"] if x["type"] == "rebalance_buy"))
+            lines.append("• 調整日買進／續抱：" + "、".join(x["symbol"] for x in d["actions"] if x["type"] == "rebalance_buy"))
         for a in [x for x in d["watch"] if x["type"] != "low_entry_holding"][:5]:
             lines.append(f"• 觀察 {a['symbol']} {a.get('name') or ''}：{a['action']}")
-    lines.append(f"\n下次月調：{advice.get('next_rebalance')}。規則化訊號，非投資建議。")
+    lines.append(f"\n下次調整：{advice.get('next_rebalance')}。規則化訊號，非投資建議。")
     return "\n".join(lines)
 
 
@@ -345,7 +349,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--market", default="all", choices=["auto", "us", "tw", "all"])
     ap.add_argument("--dry-run", action="store_true", help="只印出、不推播、不更新去重狀態")
-    ap.add_argument("--force-rebalance", action="store_true", help="不論日期都產生月調清單（測試用）")
+    ap.add_argument("--force-rebalance", action="store_true", help="不論日期都產生調整清單（測試用）")
     ap.add_argument("--daily-digest", action="store_true", help="推播每日建議摘要（docs/data/daily_advice.json）")
     args = ap.parse_args(argv)
     if args.daily_digest:
@@ -363,7 +367,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
 
     from src.strategy.momentum import is_rebalance_window, usd_twd
-    rebalance = args.force_rebalance or (args.market == "all" and is_rebalance_window())
+    rebalance = args.force_rebalance or (args.market == "all" and any(is_rebalance_window(None, m) for m in ("us", "tw")))
     holdings = load_holdings()
     print(f"[alerts] markets={sorted(markets)} holdings={len(holdings)} rebalance={rebalance}")
 
@@ -376,7 +380,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     body = format_message(new, report)
     n_reb = sum(1 for a in new if a["group"] == "rebalance")
-    title = f"策略提醒：月調 {n_reb} 則、點火 {len(new) - n_reb} 則"
+    title = f"策略提醒：調整 {n_reb} 則、點火 {len(new) - n_reb} 則"
     if args.dry_run or not IN_CI:
         print(body)   # 本機才印內容；CI 日誌公開，絕不印出
     if args.dry_run:

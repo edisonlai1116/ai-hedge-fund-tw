@@ -79,12 +79,15 @@ export type StrategyReport = {
     rule: string;
     next_rebalance: string;
     in_rebalance_window: boolean;
+    rebalance?: RebalanceInfo;
   };
   markets: Record<'us' | 'tw', MarketRanking>;
   disclaimer: string;
 };
 
-export type HoldingAction = '賣出換股' | '減碼' | '低檔加碼' | '加碼' | '續抱' | '核心 ETF' | '資料不足';
+export type HoldingAction = '賣出換股' | '減碼' | '低檔加碼' | '加碼' | '排隊換股' | '續抱' | '核心 ETF' | '資料不足';
+
+export type RebalanceInfo = Record<'us' | 'tw', { every: string; next: string; in_window: boolean; max_swaps: number }>;
 
 export type EvaluatedHolding = {
   symbol: string;
@@ -134,6 +137,7 @@ export type EvaluateResult = {
   generated_at: string;
   next_rebalance: string;
   in_rebalance_window: boolean;
+  rebalance?: RebalanceInfo;
   fx_usd_twd: number;
   total_twd: number;
   day_pnl_twd?: number;
@@ -387,6 +391,7 @@ export type DailyAdvice = {
   panic_no_sell: boolean;
   in_rebalance_window: boolean;
   next_rebalance: string;
+  rebalance?: RebalanceInfo;
   sentiment_guidance: string[];
   markets: Partial<Record<'us' | 'tw', MarketAdvice>>;
   rules: { rule: string; check: string }[];

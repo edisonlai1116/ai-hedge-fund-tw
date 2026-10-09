@@ -1,6 +1,6 @@
 """Sharpe 動能輪動的投組回測（與 src.strategy.momentum 同規則），對標 VOO / 0050。
 
-月調（每 21 個交易日）、持有前 TOP_N[市場]、跌出前 KEEP_N[市場] 才賣、每換一檔扣成本 COST。
+調整日（美股每 21 個交易日、台股每 5 個交易日，每次最多換 2 檔）、持有前 TOP_N[市場]、跌出前 KEEP_N[市場] 才賣、每換一檔扣成本 COST。
 以「前一日」的分數決定隔日持股，避免偷看未來。結果分全期與前後兩段（樣本外檢查）。
 """
 from __future__ import annotations
@@ -11,11 +11,13 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from src.strategy.momentum import (ALLOCATION, KEEP_N, LOOKBACK, LOWENTRY_DD, LOWENTRY_LT_YEARS, LOWENTRY_SLOTS,
+from src.strategy.momentum import (ALLOCATION, KEEP_N, MAX_SWAPS, REBALANCE_EVERY, LOOKBACK, LOWENTRY_DD, LOWENTRY_LT_YEARS, LOWENTRY_SLOTS,
                                    LIMIT_VALID_DAYS, PANIC_NO_SELL_FG, SPIKE_DAYS, SPIKE_PCT, TECH_BLEND, TOP_N, blend_rank_scores, download_closes, tech_score,
                                    universe)
 
 REBALANCE_DAYS = 21
+# 各市場調整間隔（交易日）：美股每 4 週、台股每週（與線上規則一致，見 momentum.REBALANCE_EVERY）
+REBALANCE_DAYS_BY = {m: (5 if REBALANCE_EVERY[m] == "weekly" else 21) for m in ("us", "tw")}
 COST = 0.002
 BENCHMARK = {"us": "VOO", "tw": "0050.TW"}
 # 額外對照：科技 ETF（美股）＋「同一股票池全部等權持有」——看策略是否只是在吃族群本身的漲幅。
@@ -62,6 +64,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
     if fg is not None:
         fg = fg.reindex(idx)
 
+    R = REBALANCE_DAYS_BY.get(market, REBALANCE_DAYS)
     held: List[str] = []
     pending: List[str] = []
     t_last = None
@@ -70,7 +73,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
     log: List[Dict] = []
     for i in range(1, len(idx)):
         cost = 0.0
-        if (i - 1) % REBALANCE_DAYS == 0:
+        if (i - 1) % R == 0:
             w = TECH_BLEND.get(market, 0.0)
             t_prev = tech.get(idx[i - 1]) if (tech and w) else None
             t_last = t_prev
@@ -81,6 +84,8 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
                 stay = list(held)                                  # 極度恐懼：只買不賣
             else:
                 stay = [h for h in held if pos.get(h, 10 ** 9) < KEEP_N[market]]
+                out_ = sorted([h for h in held if h not in stay], key=lambda h: pos.get(h, 10 ** 9), reverse=True)
+                stay = stay + out_[MAX_SWAPS[market]:]                   # 每次最多換 MAX_SWAPS 檔（最弱先換）
             new = [k for k in s.index if k not in stay][: max(0, TOP_N[market] - len(stay))]
             pending = [k for k in new if no_chase and bool(spiky.iloc[i - 1].get(k, False))]
             nxt = stay + [k for k in new if k not in pending]
@@ -138,7 +143,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         "current_holdings": held,
         "recent_rebalances": log[-6:],
         "rules": {"lookback_days": LOOKBACK, "top_n": TOP_N[market], "keep_n": KEEP_N[market],
-                  "rebalance_days": REBALANCE_DAYS, "cost_per_trade": COST},
+                  "rebalance_days": R, "max_swaps": MAX_SWAPS[market], "cost_per_trade": COST},
         "caveat": "AI 科技股池是用現在眼光挑出的贏家族群，有明顯倖存者／後見之明偏差：實際報酬會比回測低很多，AI 族群轉弱時也可能大幅落後大盤。",
     }
 
@@ -251,12 +256,13 @@ def _fg_for(index: pd.Index, market: str, fg_all: Optional[pd.Series]) -> Option
     return s
 
 
-def tech_scores_at_rebalances(pm: Dict[str, pd.DataFrame], index: pd.Index, start: str = "2017-07-01") -> Dict:
+def tech_scores_at_rebalances(pm: Dict[str, pd.DataFrame], index: pd.Index, start: str = "2017-07-01",
+                              every: Optional[int] = None) -> Dict:
     """回測用：每個月調訊號日（T-1）各股 virattt 技術分數，只用當日以前的 K 線。"""
     idx = index[index >= start]
     out = {}
     for i in range(1, len(idx)):
-        if (i - 1) % REBALANCE_DAYS:
+        if (i - 1) % (every or REBALANCE_DAYS):
             continue
         p = idx[i - 1]
         sc = {}
@@ -353,7 +359,8 @@ def build_backtest_report(period: str = "max") -> Dict:
         tech = None
         if TECH_BLEND.get(m):
             print(f"[backtest] {m}：計算 virattt 技術分數（每個月調日）…", flush=True)
-            tech = tech_scores_at_rebalances({s: f[f.index >= "2013-01-01"] for s, f in pm.items()}, closes.index)
+            tech = tech_scores_at_rebalances({s: f[f.index >= "2013-01-01"] for s, f in pm.items()}, closes.index,
+                                             every=REBALANCE_DAYS_BY[m])
         res = run_backtest(m, closes, bench["Close"], extra=extra, opens=opens, fg=fg, tech=tech)
         res["execution_timing"] = "兩條策略皆為 T-1 收盤訊號 → T 開盤成交，開盤對開盤計報酬；組合時兩者對齊同一時間區段"
         eq_m = res.pop("_eq_daily")   # 必須用「每日」動能報酬組合，週取樣會讓波動/Sharpe 失真

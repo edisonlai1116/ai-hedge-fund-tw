@@ -3,7 +3,7 @@
 確定性規則，不是預測：
 - 目標比例依恐懼貪婪 / VIX 調整。依據本站回測（2009 起）：恐懼時股票池未來報酬較高、貪婪時沒有明顯較差，
   所以「恐懼多放股票、貪婪不減股」——情緒只用來決定現金要不要多投入，不用來追高或殺低。
-- 買賣標的完全沿用策略本身的訊號：賣出換股 / 減碼 → 低檔可買 → 持股加碼 → 動能新買（月調日）。
+- 買賣標的完全沿用策略本身的訊號：賣出換股 / 減碼 → 低檔可買 → 持股加碼 → 動能新買（調整日）。
 - 金額以台幣計；美元現金依匯率換算。
 """
 from __future__ import annotations
@@ -108,29 +108,36 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     tgt_pct = {k: round(v / total * 100, 1) for k, v in tgt.items()}
     pct = {k: round(v / total * 100, 1) for k, v in amt.items()}
     panic = bool(ev.get("panic_no_sell"))
+    rbi = ev.get("rebalance") or {}
     in_window = bool(ev.get("in_rebalance_window"))
     next_reb = ev.get("next_rebalance")
+
+    def win(m: str) -> bool:
+        return bool((rbi.get(m) or {}).get("in_window", in_window))
+
+    def when_of(m: str) -> str:
+        return "今天" if win(m) else f"調整日 {(rbi.get(m) or {}).get('next', next_reb)}"
     steps: List[Dict] = []
     notes: List[str] = []
 
     # 1) 策略本身的賣出 / 減碼
     proceeds = 0.0
-    swap_cash, swap_names = 0.0, []   # 月調日才賣的錢：預先排好月調日要買什麼（換股預覽）
+    swap_cash, swap_names = {"us": 0.0, "tw": 0.0}, {"us": [], "tw": []}   # 調整日才賣的錢：預先排好同一天要買什麼（換股預覽）
     plan = {x["symbol"]: x for x in raise_cash_plan(ev, report)}
     for h in holdings:
         if h["action"] == "賣出換股":
             if panic:
                 notes.append(f"{h['symbol']} 系統建議賣出換股，但目前恐慌期「只買不賣」，先不賣。")
                 continue
-            when = "今天" if in_window else f"月調日 {next_reb}"
+            when = when_of(h["market"])
             steps.append({"kind": "sell", "symbol": h["symbol"], "market": h["market"], "amount_twd": round(h["value_twd"]),
                           "shares": int(h["shares"]), "shares_note": f"全部 {h['shares']:,.0f} 股",
                           "when": when, "why": "跌出動能保留名單：賣出，錢轉入下方同一天的買進（換股）。"})
-            if in_window:
+            if win(h["market"]):
                 proceeds += h["value_twd"]
             else:
-                swap_cash += h["value_twd"]
-                swap_names.append(h["symbol"].replace(".TWO", "").replace(".TW", ""))
+                swap_cash[h["market"]] += h["value_twd"]
+                swap_names[h["market"]].append(h["symbol"].replace(".TWO", "").replace(".TW", ""))
         elif h["action"] == "減碼":
             trim = (plan.get(h["symbol"]) or {}).get("suggest_trim_twd") or 0
             if trim >= MIN_TRADE_TWD:
@@ -156,7 +163,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     spent = 0.0
     if stock_gap > total * TOLERANCE / 100 and budget < MIN_TRADE_TWD:
         notes.append(f"股票比例低於目標 {tgt_pct['stock']}%，但現金沒有超過目標水位，可用新資金補。")
-    if budget >= MIN_TRADE_TWD or swap_cash >= MIN_TRADE_TWD:
+    if budget >= MIN_TRADE_TWD or sum(swap_cash.values()) >= MIN_TRADE_TWD:
         mk_total = sum(by_mkt.values())
         mshare = {m: (by_mkt[m] / mk_total if mk_total else 0.5) for m in by_mkt}
         tgt_mkt = {m: (stock_after + budget) * mshare[m] for m in by_mkt}
@@ -172,12 +179,12 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
             if h["action"] in ("低檔加碼", "加碼") and asset_class(h["symbol"]) == "stock":
                 cap = low_cap[h["market"]] if h["action"] == "低檔加碼" else mom_cap[h["market"]]
                 cands.append({"symbol": h["symbol"], "market": h["market"], "cap": cap, "have": h["value_twd"], "price": h.get("price"),
-                              "when": "今天" if h["action"] == "低檔加碼" or in_window else f"月調日 {next_reb}",
+                              "when": "今天" if h["action"] == "低檔加碼" else when_of(h["market"]),
                               "spike": h.get("spike"), "why": f"系統建議「{h['action']}」：部位低於目標。"})
         for m in ("us", "tw"):
             for b in (ev.get("new_buys") or {}).get(m, [])[:MAX_NEW_MOMENTUM]:
                 cands.append({"symbol": b["symbol"], "name": b.get("name"), "market": m, "cap": mom_cap[m], "have": 0.0, "price": b.get("close"),
-                              "when": "今天" if in_window else f"月調日 {next_reb}", "spike": b.get("spike"),
+                              "when": when_of(m), "spike": b.get("spike"),
                               "why": f"動能排名第 {b.get('rank')} 名、6 個月 {b.get('ret_6m_pct')}%：動能新買。"})
         left = budget
         for c in cands:
@@ -209,13 +216,14 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 if "空槽放動能" not in st["why"]:
                     st["why"] += "（含低檔空槽資金：空槽放動能）"
         spent = max(0.0, budget - left)
-        # 換股預覽：月調日賣出的錢 → 同一天買進（依排名：持股加碼 → 動能新買；不夠的名額再平均加碼）
-        left2 = swap_cash
-        if left2 >= MIN_TRADE_TWD:
-            tag = f"（用月調日賣出 {'、'.join(swap_names)} 的錢）"
+        # 換股預覽：調整日賣出的錢 → 同一市場、同一天買進（持股加碼 → 動能新買；有餘再平均加碼）
+        for mk_ in ("us", "tw"):
+            left2 = swap_cash[mk_]
+            if left2 < MIN_TRADE_TWD:
+                continue
+            tag = f"（用調整日賣出 {'、'.join(swap_names[mk_])} 的錢）"
             by_sym = {st["symbol"]: st for st in steps if st["kind"] == "buy"}
-            mon = [c for c in cands if c["when"].startswith("月調日")]
-            for c in mon:
+            for c in [c for c in cands if c["market"] == mk_ and c["when"].startswith("調整日")]:
                 if left2 < MIN_TRADE_TWD:
                     break
                 st = by_sym.get(c["symbol"])
@@ -233,7 +241,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 if tag not in st["why"]:
                     st["why"] += tag
                 left2 -= buy
-            mom2 = [st for st in steps if st["kind"] == "buy" and st["when"].startswith("月調日") and "動能新買" in st["why"]]
+            mom2 = [st for st in steps if st["kind"] == "buy" and st["market"] == mk_ and st["when"].startswith("調整日") and "動能新買" in st["why"]]
             while left2 >= MIN_TRADE_TWD and mom2:
                 room = [st for st in mom2 if st["amount_twd"] < total * MAX_NAME_PCT / 100 - MIN_TRADE_TWD]
                 if not room:
@@ -251,7 +259,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
                 n = _shares(st["amount_twd"], st.pop("price", None), st["market"], fx_usd_twd)
                 st["shares"], st["shares_note"] = n, (f"約 {n:,} 股" if n else "金額不足 1 股")
         if left >= MIN_TRADE_TWD:
-            notes.append(f"還有約 NT${left:,.0f} 未分配：依策略「空槽放動能」，月調日 {next_reb} 平均投入動能前段名單（策略精選分頁），或等新的低檔買點。")
+            notes.append(f"還有約 NT${left:,.0f} 未分配：依策略「空槽放動能」，下次調整日平均投入動能前段名單（策略精選分頁），或等新的低檔買點。")
         # 幣別：台股買單要台幣、美股買單要美元
         need_twd = sum(s["amount_twd"] for s in steps if s["kind"] == "buy" and s["market"] == "tw")
         need_usd_twd = sum(s["amount_twd"] for s in steps if s["kind"] == "buy" and s["market"] == "us")
@@ -274,10 +282,10 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
         else:
             notes.append(f"債券 {pct['bond']}% 低於目標 {tgt_pct['bond']}%，但沒有多出的現金：之後的新資金可先補債券（約 NT${bond_gap:,.0f}）。")
     elif -bond_gap > total * 5 / 100:
-        notes.append(f"債券 {pct['bond']}%：目標是全部股票，可在月調日把債券轉進動能／低檔買進名單。")
+        notes.append(f"債券 {pct['bond']}%：目標是全部股票，可在調整日把債券轉進動能／低檔買進名單。")
     if amt["cash"] <= tgt["cash"]:
         notes.insert(0, f"現金 NT${amt['cash']:,.0f} 在生活用保留水位 NT${tgt['cash']:,.0f}（總資產 {CASH_RESERVE_PCT:.0f}%、至少 NT${CASH_RESERVE_MIN_TWD:,.0f}）以內："
-                        "今天不動用現金買股；買點有新資金再買，或等月調日用賣股的錢換股。")
+                        "今天不動用現金買股；買點有新資金再買，或等調整日用賣股的錢換股。")
 
     # 5) 每檔加碼建議附資金來源：只用多出的現金；不夠就跳過。
     #    回測（2017 起）：為了加碼去賣最弱的持股，報酬與回撤都比不賣差（美 48.9% vs 49.2%、台 46.0% vs 47.0%）。
@@ -286,7 +294,7 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     low_tgt = ev.get("low_entry_target_twd") or {}
     for h in holdings:
         t = h.get("today") or ""
-        if not (("加碼" in t) and not t.startswith("月調日")):
+        if not (("加碼" in t) and not t.startswith(("月調日", "調整日"))):
             continue
         want = max(0.0, (low_tgt.get(h["market"]) or h.get("target_twd") or 0) - (h["value_twd"] or 0))
         h["add_twd"] = round(want) if want else None

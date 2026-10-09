@@ -3,8 +3,8 @@
 每日檢查（任何交易日都可能觸發）：
   1. 低檔布局新訊號：長線贏家剛跌破 52 週高點 -30% → 買進（point-in-time 驗證，持有 12 個月）。
   2. 接近低檔價：距觸發價 3% 以內 → 先列觀察、設好價位。
-  3. 月調窗口（每月前 3 個平日）：動能前 N 名買進；跌出前 KEEP_N 名就賣（2026-10-10 回測：比等長線破壞才賣好很多）。
-  4. 市場情緒：恐懼貪婪 < 25 → 月調只買不賣（回測驗證）；其餘情緒狀態只提示，不改變買賣規則——
+  3. 調整日（美股每 4 週＝每月前 3 個平日、台股每週一二）：動能前 N 名買進；跌出前 KEEP_N 名就賣，每次最多換 2 檔（2026-10-10 回測）。
+  4. 市場情緒：恐懼貪婪 < 25 → 調整日只買不賣（回測驗證）；其餘情緒狀態只提示，不改變買賣規則——
      回測顯示「貪婪時賣出 / 等恐懼才投入 / 恐慌時放寬低檔門檻」都會降低報酬。
   5. 類股情緒：過熱 / 超賣的族群（資訊，用來理解低檔訊號是個股問題還是整個族群一起跌）。
 """
@@ -16,7 +16,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from src.strategy.momentum import (KEEP_N, LIMIT_VALID_DAYS, LOWENTRY_DD, LOWENTRY_HOLD_MONTHS, PANIC_NO_SELL_FG,
-                                   SPIKE_DAYS, SPIKE_PCT, TOP_N, TPE, is_rebalance_window, next_rebalance)
+                                   SPIKE_DAYS, SPIKE_PCT, TOP_N, TPE, is_rebalance_window, next_rebalance,
+                                   rebalance_info, MAX_SWAPS, REBALANCE_EVERY, REBALANCE_LABEL)
 from src.strategy.momentum import low_view
 from src.strategy.sentiment import EXTREME_FEAR, EXTREME_GREED, VIX_PANIC
 
@@ -45,7 +46,7 @@ def _sentiment_guidance(sent: Dict, backtest: Optional[Dict]) -> List[str]:
     if fg is None:
         out.append("恐懼貪婪資料暫缺，照一般規則執行。")
     elif fg < PANIC_NO_SELL_FG:
-        out.append(f"極度恐懼（{fg:.0f}）：本月調整「只買不賣」，不要在恐慌時砍股票；低檔訊號照常買進。" + hist)
+        out.append(f"極度恐懼（{fg:.0f}）：這次調整「只買不賣」，不要在恐慌時砍股票；低檔訊號照常買進。" + hist)
     elif fg < 45:
         out.append(f"恐懼（{fg:.0f}）：歷史上偏有利於買方；照規則執行，不需要額外動作。" + hist)
     elif fg > EXTREME_GREED:
@@ -126,21 +127,21 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
         for r in rows[:TOP_N[market]]:
             sp = r.get("spike")
             if sp:
-                actions.append({**base(r), "type": "rebalance_wait", "action": "月調：等大長紅過後再買",
+                actions.append({**base(r), "type": "rebalance_wait", "action": "調整日：等大長紅過後再買",
                                 "reason": f"排名第 {r['rank']} 名，但 {sp['date']} 單日大漲 +{sp['gain_pct']}%：沒持有的先不追，"
                                           f"等大漲超過 {SPIKE_DAYS} 個交易日、且仍在前 {TOP_N[market]} 名再買；已持有續抱。"})
             else:
-                actions.append({**base(r), "type": "rebalance_buy", "action": "月調：動能買進／續抱",
+                actions.append({**base(r), "type": "rebalance_buy", "action": "調整日：動能買進／續抱",
                                 "reason": f"排名第 {r['rank']} 名（前 {TOP_N[market]} 名）；沒持有就等權買進。"})
         if panic:
-            actions.append({"type": "panic_hold", "symbol": "—", "action": "本月只買不賣",
-                            "reason": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：跌出前 {KEEP_N[market]} 名的持股暫不賣，等情緒回穩的下次月調再換。"})
+            actions.append({"type": "panic_hold", "symbol": "—", "action": "這次調整只買不賣",
+                            "reason": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：跌出前 {KEEP_N[market]} 名的持股暫不賣，等情緒回穩的下次調整再換。"})
     for r in rows[:KEEP_N[market]]:
         ign = r.get("ignition")
         if ign and (ign.get("ignition_days_ago") or 9) <= 1:
             watch.append({**base(r), "type": "ignition", "action": "🔥 爆量長紅點火",
                           "reason": f"動能第 {r['rank']} 名、單日 +{ign.get('ignition_gain_pct')}%、量 {ign.get('ignition_volume_ratio')} 倍"
-                                    "（事件提醒；主規則仍是月調）。"})
+                                    "（事件提醒；主規則仍是調整日換股）。"})
 
     prefix = "美股·" if market == "us" else "台股·"
     groups = [g for g in (sent.get("sectors") or []) if g.get("kind") == "group" and str(g.get("key", "")).startswith(prefix)]
@@ -156,7 +157,7 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
         if nn:
             parts.append(f"{nn} 檔新低檔買點")
         if rebalance:
-            parts.append("月調日")
+            parts.append("調整日")
         if n_lim:
             parts.append(f"{n_lim} 檔掛限價等拉回")
         summary = "今天要操作：" + "、".join(parts)
@@ -168,7 +169,7 @@ def _market_actions(market: str, mk: Dict, sent: Dict, rebalance: bool, panic: b
         summary = f"今天不用買賣；{len(watch)} 檔列入觀察"
     else:
         level = "hold"
-        summary = "今天不用動：沒有新訊號、非月調日"
+        summary = "今天不用動：沒有新訊號、非調整日"
     vr = [r for r in rows if r.get("virattt")]
     vr.sort(key=lambda r: r["virattt"]["score"], reverse=True)
     pick = lambda xs: [{k: r.get(k) for k in ("symbol", "name", "close", "rank", "day_change_pct", "virattt")} for r in xs]
@@ -185,7 +186,7 @@ def build_daily_advice(report: Dict, backtest: Optional[Dict] = None) -> Dict:
     fg = (sent.get("fear_greed") or {}).get("score")
     panic = fg is not None and fg < PANIC_NO_SELL_FG
     rebalance = is_rebalance_window(now.date())
-    markets = {m: _market_actions(m, mk, sent, rebalance, panic, report.get("drawdown_types"))
+    markets = {m: _market_actions(m, mk, sent, is_rebalance_window(now.date(), m), panic, report.get("drawdown_types"))
                for m, mk in (report.get("markets") or {}).items()}
     levels = [d["level"] for d in markets.values()]
     if "action" in levels:
@@ -205,15 +206,17 @@ def build_daily_advice(report: Dict, backtest: Optional[Dict] = None) -> Dict:
         "panic_no_sell": panic,
         "in_rebalance_window": rebalance,
         "next_rebalance": next_rebalance(now.date()),
+        "rebalance": rebalance_info(now.date()),
         "sentiment_guidance": _sentiment_guidance(sent, backtest),
         "markets": markets,
         "rules": [
             {"rule": f"低檔：跌破 52 週高點 {LOWENTRY_DD:.0%} 只是「價格跌深」。排名 Tier A + 回撤屬折價/暫時衝擊 → 可買；"
                       f"Tier B → 分批（半個部位）；Tier C → 低檔觀察；Tier D → 不因跌深而買（需獨立證據才是反轉候選）；"
                       f"基本面受損 → 不買。持有 {LOWENTRY_HOLD_MONTHS} 個月", "check": "每天"},
-            {"rule": "動能輪動：月初買前 N 名、跌出 KEEP_N 名就賣（換成前段）", "check": "每月前 3 個平日"},
+            {"rule": f"動能輪動：買前 N 名、跌出 KEEP_N 名就換（每次最多 {MAX_SWAPS['us']} 檔，最弱先換）",
+             "check": f"美股{REBALANCE_LABEL[REBALANCE_EVERY['us']]}（每月前 3 個平日）、台股{REBALANCE_LABEL[REBALANCE_EVERY['tw']]}（週一、二）"},
             {"rule": "低檔區沒用到的資金放動能名單（不留現金）", "check": "每天（低檔訊號出現時從動能部位挪錢）"},
-            {"rule": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：月調只買不賣", "check": "月調日"},
+            {"rule": f"恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}：調整日只買不賣", "check": "調整日"},
             {"rule": f"不追大長紅：近 {SPIKE_DAYS} 日單日漲 ≥ {SPIKE_PCT:.0%} → 低檔股掛大漲前收盤價（{LIMIT_VALID_DAYS} 日有效）、動能股等 {SPIKE_DAYS} 日後再買",
              "check": "每天"},
         ],
