@@ -37,7 +37,11 @@ def drawdown_map(opp: dict) -> dict:
 def _backtest_stale() -> bool:
     try:
         with open(BACKTEST_JSON, encoding="utf-8") as f:
-            ts = datetime.fromisoformat(json.load(f)["generated_at"])
+            d = json.load(f)
+        from src.strategy.momentum import ALLOCATION
+        if d.get("allocation") != ALLOCATION:   # 策略比例改了 → 立刻重算回測
+            return True
+        ts = datetime.fromisoformat(d["generated_at"])
         return datetime.now(timezone.utc) - ts > timedelta(days=BACKTEST_MAX_AGE_DAYS)
     except Exception:
         return True

@@ -46,7 +46,7 @@ def test_evaluate_holdings_actions():
         {"ticker": "S030", "cost": 50, "shares": 10},    # 第 31 名 → 續抱
         {"ticker": "S120", "cost": 50, "shares": 10},    # 第 121 名且 3 年趨勢破壞 → 賣出換股
         {"ticker": "S090", "cost": 50, "shares": 10},    # 第 91 名但長線趨勢仍向上 → 長線續抱（不賣）
-        {"ticker": "S080", "cost": 50, "shares": 1},     # 低檔布局區、部位小 → 低檔加碼
+        {"ticker": "S080", "cost": 50, "shares": 0.2},   # 低檔布局區、部位小 → 低檔加碼（低檔占 30%，每檔目標較小）
         {"ticker": "VOO", "cost": 400, "shares": 20},    # ETF → 核心（也讓單檔佔比 < 20%）
     ]
     voo = {"VOO": pd.DataFrame({"Close": [500.0] * 10})}

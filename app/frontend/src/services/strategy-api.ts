@@ -109,6 +109,8 @@ export type EvaluatedHolding = {
   day_pnl_local?: number;
   trim_twd?: number;
   trim_shares?: number | null;
+  add_twd?: number | null;
+  funding_note?: string | null;
   quote_as_of?: string | null;
   quote_source?: 'twse' | 'yfinance' | 'daily_close';
   market_closed?: boolean;
@@ -226,7 +228,7 @@ export async function evaluateHoldings(
   return parse<EvaluateResult>(response, '持股評估失敗。');
 }
 
-export async function fetchStrategyBacktest(): Promise<{ generated_at: string; markets: Record<'us' | 'tw', StrategyBacktest> }> {
+export async function fetchStrategyBacktest(): Promise<{ generated_at: string; allocation?: { lowentry: number; momentum: number }; markets: Record<'us' | 'tw', StrategyBacktest> }> {
   const response = await fetch(`${API_BASE_URL}/daily/data/strategy_backtest.json?_=${Date.now()}`);
   return parse(response, '回測結果讀取失敗。');
 }

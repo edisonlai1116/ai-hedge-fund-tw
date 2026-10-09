@@ -57,7 +57,7 @@ def _tw_quotes(symbols: Iterable[str]) -> Dict[str, Dict]:
     return out
 
 
-def _us_quote(sym: str) -> Optional[Dict]:
+def _yf_quote(sym: str) -> Optional[Dict]:
     import yfinance as yf
 
     tk = yf.Ticker(sym)
@@ -69,11 +69,19 @@ def _us_quote(sym: str) -> Optional[Dict]:
     try:  # 最後一根 1 分 K 的時間（美東），用來標示報價時間
         h = tk.history(period="1d", interval="1m")
         if h is not None and not h.empty:
-            as_of = h.index[-1].strftime("%Y-%m-%d %H:%M") + " ET"
+            tw = sym.endswith((".TW", ".TWO"))
+            as_of = h.index[-1].strftime("%Y-%m-%d %H:%M") + ("" if tw else " ET")   # 台股為台北時間
     except Exception:
         pass
     return {"price": round(price, 4), "prev_close": prev, "change_pct": round((price / prev - 1) * 100, 2),
             "as_of": as_of, "source": "yfinance"}
+
+
+def _one_yf(s: str):
+    try:
+        return s, _yf_quote(s)
+    except Exception:
+        return s, None
 
 
 def live_quotes(symbols: Iterable[str]) -> Dict[str, Dict]:
@@ -98,14 +106,18 @@ def live_quotes(symbols: Iterable[str]) -> Dict[str, Dict]:
                 fresh[alt[k]] = q
         except Exception:
             pass
+    # TWSE 被擋或抓不到（雲端主機 IP 常被限流）→ 台股改用 yfinance（上市/上櫃後綴都試）
+    tw_miss = [s for s in tw if s not in fresh]
+    if tw_miss:
+        tries = tw_miss + [(s[:-4] + ".TW" if s.endswith(".TWO") else s[:-3] + ".TWO") for s in tw_miss]
+        back = {t: s for s, t in zip(tw_miss * 2, tries)}
+        with ThreadPoolExecutor(max_workers=min(8, len(tries))) as ex:
+            for t, q in ex.map(_one_yf, tries):
+                if q and back[t] not in fresh:
+                    fresh[back[t]] = q
     if us:
-        def one(s):
-            try:
-                return s, _us_quote(s)
-            except Exception:
-                return s, None
         with ThreadPoolExecutor(max_workers=min(8, len(us))) as ex:
-            for s, q in ex.map(one, us):
+            for s, q in ex.map(_one_yf, us):
                 if q:
                     fresh[s] = q
     for s, q in fresh.items():

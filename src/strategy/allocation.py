@@ -227,6 +227,33 @@ def build_allocation(ev: Dict, report: Dict, cash_twd: float = 0.0, cash_usd: fl
     if amt["cash"] < tgt["cash"] - total * TOLERANCE / 100:
         notes.append(f"現金 {pct['cash']}% 低於目標 {tgt_pct['cash']}%：不用賣股補現金；新資金先留一部分當現金（約 NT${tgt['cash'] - amt['cash']:,.0f}）。")
 
+    # 5) 每檔加碼建議附資金來源：只用多出的現金；不夠就跳過。
+    #    回測（2017 起）：為了加碼去賣最弱的持股，報酬與回撤都比不賣差（美 48.9% vs 49.2%、台 46.0% vs 47.0%）。
+    free = max(0.0, cash_after - tgt["cash"] - spent)
+    planned = {st["symbol"]: st for st in steps if st["kind"] == "buy"}
+    low_tgt = ev.get("low_entry_target_twd") or {}
+    for h in holdings:
+        t = h.get("today") or ""
+        if not (("加碼" in t) and not t.startswith("月調日")):
+            continue
+        want = max(0.0, (low_tgt.get(h["market"]) or h.get("target_twd") or 0) - (h["value_twd"] or 0))
+        h["add_twd"] = round(want) if want else None
+        if h["symbol"] in planned:
+            st = planned[h["symbol"]]
+            h["funding_note"] = f"資金：用現金 {st['amount_twd']:,.0f}（{st.get('shares_note') or ''}）。"
+        elif want < MIN_TRADE_TWD:
+            # 部位已達低檔目標：不是加碼點，改成不用動（兩張卡片一致）
+            h["today"], h["funding_note"] = "不用動", None
+            h["today_reason"] = f"接近低檔價，但部位已達目標（約 NT${(low_tgt.get(h['market']) or 0):,.0f}）：不加碼。"
+        elif free >= MIN_TRADE_TWD:
+            use = min(want, free)
+            free -= use
+            n = _shares(use, h.get("price"), h["market"], fx_usd_twd)
+            h["funding_note"] = f"資金：觸發時用現金約 NT${use:,.0f}" + (f"（約 {n:,} 股）" if n else "") + "。"
+        else:
+            h["funding_note"] = ("資金：現金不足 → 這次跳過，不要賣別檔來湊"
+                                 "（回測：賣最弱持股來加碼，報酬比不加碼差）；有新資金再加。")
+
     order = {"sell": 0, "trim": 1, "fx": 2, "buy": 3, "bond": 4}
     steps.sort(key=lambda s: (order.get(s["kind"], 9), -s["amount_twd"]))
     if not steps:

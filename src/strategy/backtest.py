@@ -383,4 +383,4 @@ def build_backtest_report(period: str = "max") -> Dict:
                                "benchmark": round(float(b.loc[d] / b.iloc[0]), 4)} for d, v in weekly.items()]
         out[m] = res
     from datetime import datetime, timedelta, timezone
-    return {"generated_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"), "markets": out}
+    return {"generated_at": datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds"), "allocation": ALLOCATION, "markets": out}

@@ -49,7 +49,10 @@ LOWENTRY_WATCH_DD = -0.20
 LOWENTRY_LT_YEARS = 3
 LOWENTRY_HOLD_MONTHS = 12
 LOWENTRY_SLOTS = 10
-ALLOCATION = {"lowentry": 0.70, "momentum": 0.30}   # 使用者選擇：低檔布局為主
+# 2026-10-09 比例回測（2017 起，T-1 訊號 → T 開盤、成本 0.2%）：低檔/動能 70/30 → 美 49.2%（回撤 -38.8%）台 47.2%（-38.5%）；
+# 50/50 → 51.0% / 48.5%；30/70 → 美 52.3%（-36.8%、Sharpe 1.42）台 49.5%（-34.5%、1.49）；0/100 → 53.6% / 50.8% 但 2017-21 最差。
+# 使用者選擇 30/70：兩市場回撤最小、Sharpe 最佳附近，報酬高於 70/30，且不完全押 2022 後的 AI 行情。
+ALLOCATION = {"lowentry": 0.30, "momentum": 0.70}
 CONCENTRATION_PCT = 20.0  # 單檔 > 總資產 20% → 減碼（集中度風險）
 
 # 2026-10-07 市場情緒研究（point-in-time，T-1 收盤訊號 → T 開盤成交，成本 0.2%；自建恐懼貪婪見 src.strategy.sentiment）：
@@ -449,7 +452,7 @@ def build_strategy_report() -> Dict:
         "sentiment": sentiment,
         "generated_at": now.isoformat(timespec="seconds"),
         "strategy": {
-            "name": "長線低檔布局 70% ＋ 動能輪動 30%",
+            "name": f"長線低檔布局 {ALLOCATION['lowentry']:.0%} ＋ 動能輪動 {ALLOCATION['momentum']:.0%}",
             "lookback_days": LOOKBACK, "top_n": TOP_N, "keep_n": KEEP_N, "allocation": ALLOCATION,
             "low_entry_rule": (f"長線贏家（{LOWENTRY_LT_YEARS} 年報酬 > 0）自 52 週高點回落 ≥ {abs(LOWENTRY_DD):.0%} 只代表「價格跌深」；"
                                "是否買進看排名 Tier（A 可買、B 分批、C 觀察、D 不因跌深而買）與回撤分類，"
@@ -537,7 +540,7 @@ def daily_holding_advice(act: str, row: Optional[Dict], market: str, report: Dic
 
 
 NEAR_TRIGGER_PCT_HOLD = 3.0
-# 2026-10-09 換股頻率回測（低檔 70% + 動能 30%，2017 起，T-1 訊號 → T 開盤、成本 0.2%）：
+# 2026-10-09 換股頻率回測（當時低檔 70% + 動能 30%，2017 起，T-1 訊號 → T 開盤、成本 0.2%）：
 # 月調 21 日 美股 CAGR 49.2% / 台股 47.1%；雙週 48.6% / 45.8%；每週 48.0% / 46.7%；月調＋每日出場 48.8% / 46.3%。
 FREQ_EVIDENCE = "回測顯示動能換股改成每週或每日檢查，報酬反而較低（交易成本與來回洗），月調最佳。"
 
@@ -591,6 +594,18 @@ def evaluate_holdings(
             quotes = live_quotes(it["symbol"] for it in items)
         except Exception:
             quotes = {}
+    # 台股今天有沒有開盤：看任一檔台股即時報價的日期；都抓不到就用 0050 探測
+    tw_open: Optional[bool] = None
+    if live and any(it["market"] == "tw" for it in items):
+        dates = [q.get("as_of") for s_, q in quotes.items() if s_.endswith((".TW", ".TWO")) and q.get("as_of")]
+        if not dates:
+            try:
+                from src.strategy.live_quote import live_quotes
+                dates = [q.get("as_of") for q in live_quotes(["0050.TW"]).values() if q.get("as_of")]
+            except Exception:
+                dates = []
+        if dates:
+            tw_open = any(d.startswith(today_tpe) for d in dates)
     for it in items:
         if it["row"] is None and it["symbol"] in prices:
             r = score_row(it["symbol"], prices[it["symbol"]])
@@ -614,6 +629,10 @@ def evaluate_holdings(
             # 台股報價日期不是今天（台北）＝今天休市或還沒開盤：今日漲跌/損益記 0，不拿前一日的來算
             if it["market"] == "tw" and lq.get("as_of") and not lq["as_of"].startswith(today_tpe):
                 chg, it["market_closed"] = 0.0, True
+        elif live and it["market"] == "tw" and tw_open is False:
+            chg, it["market_closed"] = 0.0, True        # 今天休市：不拿前一日漲跌
+        elif live and it["market"] == "tw" and tw_open:
+            chg, it["quote_source"] = None, "unavailable"  # 有開盤但這檔抓不到即時價：不顯示前一日漲跌
         else:
             chg = (it.get("row") or {}).get("day_change_pct")
             if chg is None and it["symbol"] in prices:

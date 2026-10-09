@@ -722,7 +722,7 @@ function notifyIfNeeded(r: EvaluateResult): void {
 /* ============================== 策略回測（對標 VOO / 0050） ============================== */
 
 export function StrategyBacktestPanel() {
-  const [data, setData] = useState<{ generated_at: string; markets: Record<Market, StrategyBacktest> } | null>(null);
+  const [data, setData] = useState<{ generated_at: string; allocation?: { lowentry: number; momentum: number }; markets: Record<Market, StrategyBacktest> } | null>(null);
   const [market, setMarket] = useState<Market>('us');
   const [error, setError] = useState('');
 
@@ -736,7 +736,7 @@ export function StrategyBacktestPanel() {
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-slate-900">策略回測 · 低檔布局 70% ＋ 動能 30% vs {market === 'us' ? 'VOO / QQQ' : '0050'}</div>
+            <div className="text-sm font-semibold text-slate-900">策略回測 · 低檔布局 {Math.round((data?.allocation?.lowentry ?? 0.3) * 100)}% ＋ 動能 {Math.round((data?.allocation?.momentum ?? 0.7) * 100)}% vs {market === 'us' ? 'VOO / QQQ' : '0050'}</div>
             <div className="text-xs text-slate-500">
               {bt ? `${bt.start_date} ~ ${bt.end_date} ・ 股票池 ${bt.universe_size} 檔 ・ 每年約換股 ${bt.trades_per_year} 次 ・ 每次成本 ${(bt.rules.cost_per_trade * 100).toFixed(1)}%` : '讀取中…'}
             </div>
@@ -1297,7 +1297,9 @@ export function AllocationCard({ plan }: { plan?: AllocationPlan }) {
 
 /** 今天要做的事：持股的今日動作 ＋ 配置建議裡「今天」執行的步驟（與「我的持股」同一份評估結果）。 */
 function TodayTodo({ result }: { result: EvaluateResult }) {
-  const isToday = (t?: string) => !!t && t !== '不用動' && !t.startsWith('月調日');
+  const isAlert = (t?: string) => !!t && /準備|掛單|等 3 天/.test(t);
+  const isToday = (t?: string) => !!t && t !== '不用動' && !t.startsWith('月調日') && !isAlert(t);
+  const alerts = result.holdings.filter((h) => isAlert(h.today));
   const acts = result.holdings.filter((h) => isToday(h.today));
   const monthly = result.holdings.filter((h) => h.today?.startsWith('月調日'));
   const held = new Set(acts.map((h) => h.symbol));
@@ -1306,14 +1308,33 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
   const laterNote = monthly.length || later.length
     ? `月調日（${result.next_rebalance}）要做：${[...monthly.map((h) => `${h.today?.replace('月調日', '')} ${h.symbol.replace(/\.TWO?$/, '')}`), ...(later.length ? [`配置建議 ${later.length} 筆`] : [])].join('、')}。`
     : '';
+  const alertBox = alerts.length ? (
+    <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+      <div className="text-sm font-semibold text-slate-900">價位提醒 {alerts.length} 檔（今天不用動，跌到才執行）</div>
+      <ul className="mt-1.5 space-y-1 text-sm">
+        {alerts.map((h) => (
+          <li key={h.symbol} className="flex flex-wrap items-baseline gap-2">
+            <TodayBadge h={h} />
+            <b>{h.symbol.replace(/\.TWO?$/, '')}</b>
+            <span className="text-xs text-slate-600">{h.today_reason || h.reason}</span>
+            {h.funding_note ? <span className="text-xs font-medium text-slate-800">{h.funding_note}</span> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
   if (!acts.length && !steps.length) {
     return (
-      <div className="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-        ✅ 今天你的持股不用動。{laterNote}
-      </div>
+      <>
+        <div className="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+          ✅ 今天你的持股不用動。{laterNote}
+        </div>
+        {alertBox}
+      </>
     );
   }
   return (
+    <>
     <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-3">
       <div className="text-sm font-semibold text-slate-900">你今天要做 {acts.length + steps.length} 件事</div>
       {laterNote ? <div className="text-xs text-slate-600">{laterNote}</div> : null}
@@ -1323,6 +1344,7 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
             <TodayBadge h={h} />
             <b>{h.symbol.replace(/\.TWO?$/, '')}</b>
             <span className="text-xs text-slate-600">{h.today_reason || h.reason}</span>
+            {h.funding_note ? <span className="text-xs font-medium text-slate-800">{h.funding_note}</span> : null}
           </li>
         ))}
         {steps.map((st, i) => (
@@ -1336,5 +1358,7 @@ function TodayTodo({ result }: { result: EvaluateResult }) {
         ))}
       </ul>
     </div>
+    {alertBox}
+    </>
   );
 }
