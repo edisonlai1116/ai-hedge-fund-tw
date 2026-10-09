@@ -152,3 +152,15 @@ def test_concentration_is_partial_trim_not_full_exit():
     d = _row(ev, "S001")["decision"]
     assert d["decision"] == "TRIM" and d["group"] == "CORE"
     assert _row(ev, "S001")["trim_shares"] < 3000
+
+
+def test_missing_scores_do_not_crash_and_report_still_builds():
+    # 線上真的發生過：有基本面列、但品質／估值等分數是 None → 不可讓整個持股評估 500
+    rep = _report(overrides={"S060": {"dd_52w_pct": -25.0, "close": 75.0}})
+    fund = {"S060": _fund(None, 70, None, None, "TEMPORARY_SHOCK"), "S002": _fund(None, None, None, None, "UNKNOWN")}
+    ev = _eval([{"ticker": "S060", "cost": 88, "shares": 50}, {"ticker": "S002", "cost": 50, "shares": 10},
+                {"ticker": "VOO", "cost": 400, "shares": 400}], rep, fund)
+    assert all(h.get("decision") for h in ev["holdings"])
+    assert _row(ev, "S002")["decision"]["thesis"] == "unknown"
+    r = hd.build_decision_report(ev, None, 0.0, 30.0)
+    assert r["overall"]["verdict"]

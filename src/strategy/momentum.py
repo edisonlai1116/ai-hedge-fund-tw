@@ -805,8 +805,15 @@ def evaluate_holdings(
 
     # 持股決策層（四分組、加碼評分、基本面複查賣出）：在換股上限之前套用，原規則存 baseline_action
     if decisions:
-        from src.strategy.holding_decision import apply_decisions
-        apply_decisions(out_rows, report, fundamentals, total_twd=conc_base, fx=fx_usd_twd, live=live)
+        import copy
+        snapshot = copy.deepcopy(out_rows)
+        try:
+            from src.strategy.holding_decision import apply_decisions
+            apply_decisions(out_rows, report, fundamentals, total_twd=conc_base, fx=fx_usd_twd, live=live)
+        except Exception as exc:   # 決策層出錯 → 退回原規則，不讓整個持股評估失敗
+            import logging
+            logging.getLogger(__name__).warning(f"持股決策層失敗，退回原規則：{type(exc).__name__}: {exc}")
+            out_rows[:] = snapshot
     # 每次調整最多換 MAX_SWAPS 檔（最弱的先換），其餘排隊到之後的調整日
     rbi = rebalance_info()
     for m in ("us", "tw"):

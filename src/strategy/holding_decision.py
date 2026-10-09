@@ -91,6 +91,11 @@ def load_fundamentals(symbols: Iterable[str], live: bool = True) -> Dict[str, Di
     return out
 
 
+def _n(v) -> str:
+    """數字顯示（None → —），避免格式化 None 造成整個評估失敗。"""
+    return "—" if v is None else f"{v:.0f}"
+
+
 def _f(x) -> Optional[float]:
     try:
         v = float(x)
@@ -107,7 +112,7 @@ def _facts(h: Dict, r: Optional[Dict], f: Optional[Dict], report: Dict) -> Dict:
     shock = (f or {}).get("shock") or {}
     fu = ((f or {}).get("risk_detail") or {}).get("fundamental_uncertainty") or {}
     return {
-        "has_f": bool(sc),
+        "has_f": bool(sc) and (_f(sc.get("quality")) is not None or _f(sc.get("growth")) is not None),
         "q": _f(sc.get("quality")), "g": _f(sc.get("growth")), "acc": _f(sc.get("earnings_acceleration")),
         "val": _f(sc.get("valuation")), "cat": _f(sc.get("catalyst")),
         "dd_type": dd_type, "dd_why": dd_why,
@@ -142,21 +147,21 @@ def thesis_status(x: Dict, keep_n: int) -> tuple:
     if x["dd_type"] == "FUNDAMENTAL_DAMAGE" or x["damage"] >= 75:
         return "broken", "回撤分類為基本面受損" if x["dd_type"] == "FUNDAMENTAL_DAMAGE" else f"公司特有衝擊損害分數 {x['damage']:.0f}"
     if q is not None and g is not None and q < 35 and g < 35:
-        return "broken", f"品質 {q:.0f}、成長 {g:.0f} 都偏低"
+        return "broken", f"品質 {_n(q)}、成長 {_n(g)} 都偏低"
     if x["lt_broken"] and (x["rank"] or 0) > keep_n:
         return "broken", "動能跌出保留名單且 3 年報酬 ≤ 0"
     weak = []
     if x["speculative"] or x["dd_type"] == "SPECULATIVE_DE_RATING":
         weak.append("投機性高（虧損或營收極小）")
     if q is not None and q < 50:
-        weak.append(f"品質 {q:.0f} 偏低")
+        weak.append(f"品質 {_n(q)} 偏低")
     if g is not None and g < 40:
-        weak.append(f"成長 {g:.0f} 偏低")
+        weak.append(f"成長 {_n(g)} 偏低")
     if x["damage"] >= 50:
         weak.append(f"衝擊損害 {x['damage']:.0f}")
     if weak:
         return "weak", "、".join(weak)
-    return "intact", f"品質 {q:.0f}、成長 {g:.0f}" + (f"、回撤屬{CAUSE_LABEL.get(x['dd_type'], x['dd_type'])}" if x["dd_type"] not in (None, "NONE") else "")
+    return "intact", f"品質 {_n(q)}、成長 {_n(g)}" + (f"、回撤屬{CAUSE_LABEL.get(x['dd_type'], x['dd_type'])}" if x["dd_type"] not in (None, "NONE") else "")
 
 
 def strong_core(x: Dict, status: str) -> bool:
@@ -253,7 +258,7 @@ def tranche_plan(x: Dict, grade: str, a: Dict, value_twd: float, total_twd: floa
     invalid.append("3 年報酬轉為 ≤ 0 且跌出保留名單")
     return {"budget_twd": round(budget), "tranches": [t1, t2, t3], "invalidation": invalid,
             "basis": f"總預算＝距單檔上限 {cap_pct:.0f}% 的空間" + ("" if grade == "左側布局可買" else " × 50%（不確定性較高）")
-            + f"；第 1 筆比例依加碼評分 {a['score']:.0f}、年化波動 {(x['vol'] or 0) * 100:.0f}% 計算。",
+            + f"；第 1 筆比例依加碼評分 {_n(a['score'])}、年化波動 {(x['vol'] or 0) * 100:.0f}% 計算。",
             "first_tranche_now": ok_now}
 
 
@@ -264,9 +269,9 @@ def wait_detail(x: Dict, a: Dict) -> Dict:
     if x["dd_type"] == "UNKNOWN":
         missing.append("下跌原因未判定")
     if x["dd_type"] == "VALUATION_RESET" or (x["val"] is not None and x["val"] < 40):
-        missing.append(f"估值分數 {x['val']:.0f} 偏低：還不便宜" if x["val"] is not None else "估值資料不足")
+        missing.append(f"估值分數 {_n(x['val'])} 偏低：還不便宜" if x["val"] is not None else "估值資料不足")
     if x["acc"] is not None and x["acc"] < 40:
-        missing.append(f"財報加速分數 {x['acc']:.0f} 偏弱")
+        missing.append(f"財報加速分數 {_n(x['acc'])} 偏弱")
     if x["speculative"]:
         missing.append("獲利或營收規模不足以支撐估值")
     return {
@@ -343,7 +348,7 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
         elif act == "賣出換股":
             if strong_core(x, status) and dropped and grade in ("左側布局可買", "低檔分批"):
                 h["action"] = "續抱"
-                review = f"{rank_txt}、跌出保留名單 → 觸發複查：基本面通過（{swhy}），且價格已回落、加碼評分 {a['score']:.0f}"
+                review = f"{rank_txt}、跌出保留名單 → 觸發複查：基本面通過（{swhy}），且價格已回落、加碼評分 {_n(a['score'])}"
                 h["today"], h["today_reason"] = "不用動", review + f" → 續抱並考慮左側分批（{grade}）。（複查與加碼規則未經回測）"
                 h["reason"] = h["today_reason"]
                 d.update(group="LEFT_SIDE", decision="HOLD_CONSIDER_ADD", why=h["today_reason"],
@@ -366,12 +371,12 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
         elif dropped and grade in ("左側布局可買", "低檔分批"):
             plan = tranche_plan(x, grade, a, h["value_twd"], total_twd, cap, h.get("price"), fx, m)
             d.update(group="LEFT_SIDE", decision="HOLD_CONSIDER_ADD", plan=plan,
-                     why=f"{grade}（加碼評分 {a['score']:.0f}）：{gwhy} 下跌原因：{d['decline_reason']}。")
+                     why=f"{grade}（加碼評分 {_n(a['score'])}）：{gwhy} 下跌原因：{d['decline_reason']}。")
             _apply_plan(h, d, grade)
         elif dropped and grade == "等待確認":
             if act in ("低檔加碼", "加碼"):
                 h["action"], h["today"] = "續抱", "不用動"
-            h["today_reason"] = f"等待確認（加碼評分 {a['score']:.0f}）：{gwhy}"
+            h["today_reason"] = f"等待確認（加碼評分 {_n(a['score'])}）：{gwhy}"
             d.update(group="WAIT", decision="HOLD_NO_ADD", why=h["today_reason"], wait=wait_detail(x, a))
         elif dropped and grade in ("不宜加碼", "資料不足，不能判定"):
             if act in ("低檔加碼", "加碼"):
@@ -414,7 +419,7 @@ def _valuation_text(x: Dict) -> str:
     if x["val"] is None:
         return "資料不足"
     lvl = "偏便宜" if x["val"] >= 65 else ("合理" if x["val"] >= 45 else "偏貴")
-    return f"估值分數 {x['val']:.0f}（{lvl}，估值類型 {x['val_class'] or '—'}）；無歷史百分位與同業比較"
+    return f"估值分數 {_n(x['val'])}（{lvl}，估值類型 {x['val_class'] or '—'}）；無歷史百分位與同業比較"
 
 
 # --------------------------------------------------------------------------- 報告
