@@ -1,10 +1,24 @@
 {
- "generated_at": "2026-10-09T23:50:11+08:00",
- "date": "2026-10-09",
- "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 43（恐懼）、VIX 14.9",
+ "generated_at": "2026-10-10T09:52:45+08:00",
+ "date": "2026-10-10",
+ "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 43（恐懼）、VIX 14.8",
  "panic_no_sell": false,
  "in_rebalance_window": false,
  "next_rebalance": "2026-11-02",
+ "rebalance": {
+  "us": {
+   "every": "每 4 週",
+   "next": "2026-11-02",
+   "in_window": false,
+   "max_swaps": 2
+  },
+  "tw": {
+   "every": "每週",
+   "next": "2026-10-12",
+   "in_window": false,
+   "max_swaps": 2
+  }
+ },
  "sentiment_guidance": [
   "恐懼（43）：歷史上偏有利於買方；照規則執行，不需要額外動作。歷史上（2009 起）恐懼貪婪在「恐懼 25-45」時，AI 股池未來 3 個月平均 +7.7%、大盤 +4.4%。"
  ],
@@ -17,20 +31,20 @@
     {
      "symbol": "OKLO",
      "name": "",
-     "close": 34.22,
+     "close": 34.7,
      "rank": 100,
-     "dd_52w_pct": -80.3,
-     "ret_3y_pct": 231.6,
+     "dd_52w_pct": -80.1,
+     "ret_3y_pct": 236.2,
      "high_52w": 174.14,
      "low_entry_price": 121.9,
      "spike": null,
-     "bounce_20d_pct": 0.0,
+     "bounce_20d_pct": 0.4,
      "virattt": {
-      "score": 23.9,
+      "score": 24.4,
       "signal": "bearish",
-      "confidence": 52,
+      "confidence": 51,
       "trend": 15.0,
-      "momentum": 20.0,
+      "momentum": 21.0,
       "mean_reversion": 50.0,
       "volatility": 76.0,
       "stat_arb": null
@@ -45,20 +59,20 @@
     {
      "symbol": "WDC",
      "name": "",
-     "close": 392.25,
+     "close": 397.28,
      "rank": 64,
-     "dd_52w_pct": -47.4,
-     "ret_3y_pct": 1051.4,
+     "dd_52w_pct": -46.7,
+     "ret_3y_pct": 1066.2,
      "high_52w": 745.99,
      "low_entry_price": 522.19,
      "spike": null,
-     "bounce_20d_pct": 0.0,
+     "bounce_20d_pct": 1.0,
      "virattt": {
-      "score": 28.9,
+      "score": 29.5,
       "signal": "bearish",
-      "confidence": 42,
+      "confidence": 41,
       "trend": 6.0,
-      "momentum": 41.0,
+      "momentum": 43.0,
       "mean_reversion": 50.0,
       "volatility": 84.0,
       "stat_arb": null
@@ -71,72 +85,16 @@
      "reason": "價格跌深（距高點 -47%）、排名第 64 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
     },
     {
-     "symbol": "QCOM",
-     "name": "",
-     "close": 173.46,
-     "rank": 46,
-     "dd_52w_pct": -30.3,
-     "ret_3y_pct": 68.3,
-     "high_52w": 248.74,
-     "low_entry_price": 174.12,
-     "spike": null,
-     "bounce_20d_pct": 0.0,
-     "virattt": {
-      "score": 48.3,
-      "signal": "neutral",
-      "confidence": 50,
-      "trend": 30.0,
-      "momentum": 66.0,
-      "mean_reversion": 50.0,
-      "volatility": 52.0,
-      "stat_arb": null
-     },
-     "type": "low_entry_not_buyable",
-     "drawdown_type": "FUNDAMENTAL_DAMAGE",
-     "low_state": "LOW_PRICE",
-     "quality_tier": "B",
-     "action": "跌深但基本面受損：不買",
-     "reason": "價格跌深（距高點 -30%）、排名第 46 名（Tier B）：價格跌深，但回撤分類為基本面受損：跌深不是便宜。"
-    },
-    {
-     "symbol": "IBM",
-     "name": "",
-     "close": 226.24,
-     "rank": 88,
-     "dd_52w_pct": -30.8,
-     "ret_3y_pct": 75.9,
-     "high_52w": 326.89,
-     "low_entry_price": 228.82,
-     "spike": null,
-     "bounce_20d_pct": 2.9,
-     "virattt": {
-      "score": 39.4,
-      "signal": "bearish",
-      "confidence": 21,
-      "trend": 32.0,
-      "momentum": 42.0,
-      "mean_reversion": 50.0,
-      "volatility": 93.0,
-      "stat_arb": null
-     },
-     "type": "low_entry_not_buyable",
-     "drawdown_type": "UNKNOWN",
-     "low_state": "LOW_PRICE_SPECULATIVE",
-     "quality_tier": "D",
-     "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -31%）、排名第 88 名（Tier D）：排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
-    },
-    {
      "symbol": "FSLR",
      "name": "",
-     "close": 177.48,
-     "rank": 97,
-     "dd_52w_pct": -44.2,
-     "ret_3y_pct": 16.9,
+     "close": 177.82,
+     "rank": 96,
+     "dd_52w_pct": -44.1,
+     "ret_3y_pct": 17.1,
      "high_52w": 318.25,
      "low_entry_price": 222.77,
      "spike": null,
-     "bounce_20d_pct": 3.1,
+     "bounce_20d_pct": 3.3,
      "virattt": {
       "score": 32.6,
       "signal": "bearish",
@@ -152,25 +110,81 @@
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -44%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+     "reason": "價格跌深（距高點 -44%）、排名第 96 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+    },
+    {
+     "symbol": "IBM",
+     "name": "",
+     "close": 227.13,
+     "rank": 87,
+     "dd_52w_pct": -30.5,
+     "ret_3y_pct": 76.6,
+     "high_52w": 326.89,
+     "low_entry_price": 228.82,
+     "spike": null,
+     "bounce_20d_pct": 3.3,
+     "virattt": {
+      "score": 39.5,
+      "signal": "bearish",
+      "confidence": 21,
+      "trend": 32.0,
+      "momentum": 42.0,
+      "mean_reversion": 50.0,
+      "volatility": 93.0,
+      "stat_arb": null
+     },
+     "type": "low_entry_not_buyable",
+     "drawdown_type": "UNKNOWN",
+     "low_state": "LOW_PRICE_SPECULATIVE",
+     "quality_tier": "D",
+     "action": "高風險反轉觀察（不買）",
+     "reason": "價格跌深（距高點 -30%）、排名第 87 名（Tier D）：深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
+    },
+    {
+     "symbol": "VRT",
+     "name": "",
+     "close": 242.78,
+     "rank": 97,
+     "dd_52w_pct": -35.4,
+     "ret_3y_pct": 538.2,
+     "high_52w": 376.06,
+     "low_entry_price": 263.24,
+     "spike": null,
+     "bounce_20d_pct": 3.5,
+     "virattt": {
+      "score": 36.3,
+      "signal": "bearish",
+      "confidence": 27,
+      "trend": 32.0,
+      "momentum": 34.0,
+      "mean_reversion": 50.0,
+      "volatility": 92.0,
+      "stat_arb": null
+     },
+     "type": "low_entry_not_buyable",
+     "drawdown_type": "FUNDAMENTAL_DISCOUNT",
+     "low_state": "LOW_PRICE_SPECULATIVE",
+     "quality_tier": "D",
+     "action": "反轉候選：等確認後小量",
+     "reason": "價格跌深（距高點 -35%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "NXPI",
      "name": "",
-     "close": 226.65,
+     "close": 227.52,
      "rank": 69,
-     "dd_52w_pct": -31.3,
-     "ret_3y_pct": 20.6,
+     "dd_52w_pct": -31.1,
+     "ret_3y_pct": 21.1,
      "high_52w": 330.06,
      "low_entry_price": 231.04,
      "spike": null,
-     "bounce_20d_pct": 3.5,
+     "bounce_20d_pct": 3.9,
      "virattt": {
-      "score": 42.0,
+      "score": 42.2,
       "signal": "neutral",
       "confidence": 50,
       "trend": 30.0,
-      "momentum": 50.0,
+      "momentum": 51.0,
       "mean_reversion": 50.0,
       "volatility": 69.0,
       "stat_arb": null
@@ -183,50 +197,22 @@
      "reason": "價格跌深（距高點 -31%）、排名第 69 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
     },
     {
-     "symbol": "VRT",
-     "name": "",
-     "close": 245.78,
-     "rank": 96,
-     "dd_52w_pct": -34.6,
-     "ret_3y_pct": 546.1,
-     "high_52w": 376.06,
-     "low_entry_price": 263.24,
-     "spike": null,
-     "bounce_20d_pct": 4.8,
-     "virattt": {
-      "score": 36.8,
-      "signal": "bearish",
-      "confidence": 26,
-      "trend": 32.0,
-      "momentum": 35.0,
-      "mean_reversion": 50.0,
-      "volatility": 92.0,
-      "stat_arb": null
-     },
-     "type": "low_entry_not_buyable",
-     "drawdown_type": "FUNDAMENTAL_DISCOUNT",
-     "low_state": "LOW_PRICE_SPECULATIVE",
-     "quality_tier": "D",
-     "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -35%）、排名第 96 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
-    },
-    {
      "symbol": "NFLX",
      "name": "",
-     "close": 70.95,
+     "close": 70.3,
      "rank": 103,
-     "dd_52w_pct": -42.8,
-     "ret_3y_pct": 88.2,
+     "dd_52w_pct": -43.4,
+     "ret_3y_pct": 86.5,
      "high_52w": 124.14,
      "low_entry_price": 86.89,
      "spike": null,
-     "bounce_20d_pct": 5.8,
+     "bounce_20d_pct": 4.8,
      "virattt": {
-      "score": 32.7,
+      "score": 32.3,
       "signal": "bearish",
       "confidence": 35,
       "trend": 26.0,
-      "momentum": 30.0,
+      "momentum": 29.0,
       "mean_reversion": 50.0,
       "volatility": 70.0,
       "stat_arb": null
@@ -239,24 +225,52 @@
      "reason": "價格跌深（距高點 -43%）、排名第 103 名（Tier D）：深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
     },
     {
+     "symbol": "AKAM",
+     "name": "",
+     "close": 106.95,
+     "rank": 61,
+     "dd_52w_pct": -33.6,
+     "ret_3y_pct": 0.4,
+     "high_52w": 161.14,
+     "low_entry_price": 112.8,
+     "spike": null,
+     "bounce_20d_pct": 6.0,
+     "virattt": {
+      "score": 37.3,
+      "signal": "bearish",
+      "confidence": 25,
+      "trend": 14.0,
+      "momentum": 54.0,
+      "mean_reversion": 50.0,
+      "volatility": 57.0,
+      "stat_arb": null
+     },
+     "type": "low_entry_not_buyable",
+     "drawdown_type": "UNKNOWN",
+     "low_state": "LOW_PRICE",
+     "quality_tier": "C",
+     "action": "低檔觀察（不直接買）",
+     "reason": "價格跌深（距高點 -34%）、排名第 61 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
+    },
+    {
      "symbol": "ORCL",
      "name": "",
-     "close": 141.75,
-     "rank": 81,
-     "dd_52w_pct": -54.3,
-     "ret_3y_pct": 37.1,
-     "high_52w": 310.01,
-     "low_entry_price": 217.01,
+     "close": 141.4,
+     "rank": 80,
+     "dd_52w_pct": -54.2,
+     "ret_3y_pct": 37.3,
+     "high_52w": 308.87,
+     "low_entry_price": 216.21,
      "spike": null,
-     "bounce_20d_pct": 6.9,
+     "bounce_20d_pct": 7.0,
      "virattt": {
-      "score": 36.2,
-      "signal": "bearish",
-      "confidence": 28,
-      "trend": 15.0,
+      "score": 43.4,
+      "signal": "neutral",
+      "confidence": 50,
+      "trend": 32.0,
       "momentum": 51.0,
       "mean_reversion": 50.0,
-      "volatility": 76.0,
+      "volatility": 75.0,
       "stat_arb": null
      },
      "type": "low_entry_not_buyable",
@@ -264,31 +278,31 @@
      "low_state": "LOW_PRICE",
      "quality_tier": "C",
      "action": "低檔觀察（不直接買）",
-     "reason": "價格跌深（距高點 -54%）、排名第 81 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
+     "reason": "價格跌深（距高點 -54%）、排名第 80 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
     },
     {
      "symbol": "GLW",
      "name": "",
-     "close": 156.1,
+     "close": 156.68,
      "rank": 89,
-     "dd_52w_pct": -38.8,
-     "ret_3y_pct": 452.8,
+     "dd_52w_pct": -38.6,
+     "ret_3y_pct": 454.8,
      "high_52w": 255.21,
      "low_entry_price": 178.65,
      "spike": null,
-     "bounce_20d_pct": 8.7,
+     "bounce_20d_pct": 9.1,
      "virattt": {
-      "score": 45.7,
+      "score": 45.9,
       "signal": "neutral",
       "confidence": 50,
       "trend": 50.0,
-      "momentum": 39.0,
+      "momentum": 40.0,
       "mean_reversion": 50.0,
       "volatility": 75.0,
       "stat_arb": null
      },
      "type": "low_entry_not_buyable",
-     "drawdown_type": "UNKNOWN",
+     "drawdown_type": "VALUATION_RESET",
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
@@ -297,20 +311,20 @@
     {
      "symbol": "ARM",
      "name": "",
-     "close": 267.09,
-     "rank": 26,
-     "dd_52w_pct": -39.2,
-     "ret_3y_pct": 399.6,
+     "close": 266.28,
+     "rank": 29,
+     "dd_52w_pct": -39.4,
+     "ret_3y_pct": 398.1,
      "high_52w": 439.46,
      "low_entry_price": 307.62,
      "spike": null,
-     "bounce_20d_pct": 11.7,
+     "bounce_20d_pct": 11.4,
      "virattt": {
-      "score": 65.4,
+      "score": 65.2,
       "signal": "bullish",
-      "confidence": 31,
+      "confidence": 30,
       "trend": 50.0,
-      "momentum": 89.0,
+      "momentum": 88.0,
       "mean_reversion": 50.0,
       "volatility": 55.0,
       "stat_arb": null
@@ -320,25 +334,25 @@
      "drawdown_type": "TEMPORARY_SHOCK",
      "low_state": "LOW_PRICE_OPPORTUNITY",
      "quality_tier": "A",
-     "reason": "在低檔區 10 天（距高點 -39%，已從 20 日低點反彈 +12%）；高排名（Tier A）的長線贏家回撤，回撤分類 TEMPORARY_SHOCK：低檔布局可分批買進。還沒買、且低檔槽位未滿可分批（優先買還沒反彈的）；已買者續抱。"
+     "reason": "在低檔區 10 天（距高點 -39%，已從 20 日低點反彈 +11%）；高排名（Tier A）的長線贏家回撤，回撤分類 TEMPORARY_SHOCK：低檔布局可分批買進。還沒買、且低檔槽位未滿可分批（優先買還沒反彈的）；已買者續抱。"
     },
     {
      "symbol": "NRG",
      "name": "",
-     "close": 107.12,
+     "close": 107.97,
      "rank": 102,
-     "dd_52w_pct": -41.4,
-     "ret_3y_pct": 202.2,
+     "dd_52w_pct": -40.9,
+     "ret_3y_pct": 204.6,
      "high_52w": 182.82,
      "low_entry_price": 127.97,
      "spike": null,
-     "bounce_20d_pct": 12.5,
+     "bounce_20d_pct": 13.4,
      "virattt": {
-      "score": 29.6,
+      "score": 29.9,
       "signal": "bearish",
-      "confidence": 41,
+      "confidence": 40,
       "trend": 25.0,
-      "momentum": 24.0,
+      "momentum": 25.0,
       "mean_reversion": 50.0,
       "volatility": 79.0,
       "stat_arb": null
@@ -353,20 +367,20 @@
     {
      "symbol": "KLAC",
      "name": "",
-     "close": 196.41,
-     "rank": 65,
-     "dd_52w_pct": -34.8,
-     "ret_3y_pct": 336.3,
+     "close": 195.57,
+     "rank": 68,
+     "dd_52w_pct": -35.1,
+     "ret_3y_pct": 334.4,
      "high_52w": 301.37,
      "low_entry_price": 210.96,
      "spike": null,
-     "bounce_20d_pct": 17.4,
+     "bounce_20d_pct": 16.9,
      "virattt": {
-      "score": 61.2,
+      "score": 61.0,
       "signal": "bullish",
       "confidence": 22,
       "trend": 70.0,
-      "momentum": 58.0,
+      "momentum": 57.0,
       "mean_reversion": 50.0,
       "volatility": 89.0,
       "stat_arb": null
@@ -376,101 +390,67 @@
      "low_state": "LOW_PRICE",
      "quality_tier": "C",
      "action": "低檔觀察（不直接買）",
-     "reason": "價格跌深（距高點 -35%）、排名第 65 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
-    },
-    {
-     "symbol": "CIEN",
-     "name": "",
-     "close": 441.61,
-     "rank": 92,
-     "dd_52w_pct": -29.6,
-     "ret_3y_pct": 871.0,
-     "high_52w": 627.0,
-     "low_entry_price": 438.9,
-     "spike": null,
-     "bounce_20d_pct": 38.2,
-     "virattt": {
-      "score": 63.1,
-      "signal": "bullish",
-      "confidence": 26,
-      "trend": 75.0,
-      "momentum": 58.0,
-      "mean_reversion": 50.0,
-      "volatility": 69.0,
-      "stat_arb": null
-     },
-     "type": "near_trigger",
-     "action": "接近低檔價（差 0.6%）",
-     "reason": "跌到 438.9（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+     "reason": "價格跌深（距高點 -35%）、排名第 68 名（Tier C）：價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。"
     },
     {
      "symbol": "AMAT",
      "name": "",
-     "close": 510.08,
+     "close": 507.03,
      "rank": 51,
-     "dd_52w_pct": -29.4,
-     "ret_3y_pct": 274.9,
+     "dd_52w_pct": -29.8,
+     "ret_3y_pct": 272.6,
      "high_52w": 722.23,
      "low_entry_price": 505.56,
      "spike": null,
-     "bounce_20d_pct": 22.8,
+     "bounce_20d_pct": 22.1,
      "virattt": {
-      "score": 74.5,
+      "score": 74.2,
       "signal": "bullish",
-      "confidence": 49,
+      "confidence": 48,
       "trend": 95.0,
-      "momentum": 66.0,
+      "momentum": 65.0,
       "mean_reversion": 50.0,
       "volatility": 88.0,
       "stat_arb": null
      },
      "type": "near_trigger",
-     "action": "接近低檔價（差 0.9%）",
+     "action": "接近低檔價（差 0.3%）",
      "reason": "跌到 505.56（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
+    },
+    {
+     "symbol": "QCOM",
+     "name": "",
+     "close": 175.5,
+     "rank": 43,
+     "dd_52w_pct": -29.4,
+     "ret_3y_pct": 70.2,
+     "high_52w": 248.74,
+     "low_entry_price": 174.12,
+     "spike": null,
+     "bounce_20d_pct": 0.0,
+     "virattt": {
+      "score": 49.0,
+      "signal": "neutral",
+      "confidence": 50,
+      "trend": 30.0,
+      "momentum": 68.0,
+      "mean_reversion": 50.0,
+      "volatility": 52.0,
+      "stat_arb": null
+     },
+     "type": "near_trigger",
+     "action": "接近低檔價（差 0.8%）",
+     "reason": "跌到 174.12（52 週高點 -30%）就是低檔買點；可先設好價位提醒。"
     }
    ],
    "virattt": {
     "bullish": [
      {
-      "symbol": "DDOG",
-      "name": "",
-      "close": 285.01,
-      "rank": 8,
-      "day_change_pct": 4.09,
-      "virattt": {
-       "score": 90.0,
-       "signal": "bullish",
-       "confidence": 80,
-       "trend": 100.0,
-       "momentum": 100.0,
-       "mean_reversion": 50.0,
-       "volatility": 97.0,
-       "stat_arb": null
-      }
-     },
-     {
       "symbol": "ZBRA",
       "name": "",
-      "close": 387.24,
+      "close": 387.18,
       "rank": 15,
-      "day_change_pct": 1.33,
-      "virattt": {
-       "score": 90.0,
-       "signal": "bullish",
-       "confidence": 80,
-       "trend": 100.0,
-       "momentum": 100.0,
-       "mean_reversion": 50.0,
-       "volatility": 100.0,
-       "stat_arb": null
-      }
-     },
-     {
-      "symbol": "PLTR",
-      "name": "",
-      "close": 205.3,
-      "rank": 25,
-      "day_change_pct": 3.28,
+      "day_change_pct": 1.32,
       "virattt": {
        "score": 90.0,
        "signal": "bullish",
@@ -485,9 +465,9 @@
      {
       "symbol": "MRVL",
       "name": "",
-      "close": 271.14,
-      "rank": 19,
-      "day_change_pct": -1.28,
+      "close": 275.28,
+      "rank": 20,
+      "day_change_pct": 0.25,
       "virattt": {
        "score": 89.0,
        "signal": "bullish",
@@ -495,84 +475,50 @@
        "trend": 98.0,
        "momentum": 100.0,
        "mean_reversion": 50.0,
-       "volatility": 91.0,
-       "stat_arb": null
-      }
-     },
-     {
-      "symbol": "SHOP",
-      "name": "",
-      "close": 168.75,
-      "rank": 29,
-      "day_change_pct": 2.55,
-      "virattt": {
-       "score": 88.9,
-       "signal": "bullish",
-       "confidence": 78,
-       "trend": 97.0,
-       "momentum": 100.0,
-       "mean_reversion": 50.0,
-       "volatility": 83.0,
-       "stat_arb": null
-      }
-     },
-     {
-      "symbol": "FFIV",
-      "name": "",
-      "close": 471.58,
-      "rank": 9,
-      "day_change_pct": 2.15,
-      "virattt": {
-       "score": 87.1,
-       "signal": "bullish",
-       "confidence": 74,
-       "trend": 100.0,
-       "momentum": 93.0,
-       "mean_reversion": 50.0,
-       "volatility": 77.0,
+       "volatility": 92.0,
        "stat_arb": null
       }
      },
      {
       "symbol": "PANW",
       "name": "",
-      "close": 412.92,
+      "close": 418.78,
       "rank": 2,
-      "day_change_pct": 3.62,
+      "day_change_pct": 5.09,
       "virattt": {
-       "score": 86.7,
+       "score": 86.9,
        "signal": "bullish",
-       "confidence": 73,
+       "confidence": 74,
        "trend": 92.0,
        "momentum": 100.0,
        "mean_reversion": 50.0,
-       "volatility": 68.0,
+       "volatility": 66.0,
        "stat_arb": null
       }
      },
      {
-      "symbol": "P",
+      "symbol": "DDOG",
       "name": "",
-      "close": 150.65,
-      "rank": 10,
-      "day_change_pct": 0.05,
+      "close": 293.26,
+      "rank": 8,
+      "day_change_pct": 7.11,
       "virattt": {
-       "score": 85.8,
+       "score": 85.9,
        "signal": "bullish",
        "confidence": 72,
        "trend": 100.0,
        "momentum": 100.0,
        "mean_reversion": 29.0,
-       "volatility": 78.0,
+       "volatility": 92.0,
        "stat_arb": null
       }
      },
      {
-      "symbol": "HPE",
+      "symbol": "PLTR",
       "name": "",
-      "close": 71.54,
-      "rank": 5,
-      "day_change_pct": 0.76,
+      "close": 209.05,
+      "rank": 25,
+      "day_change_pct": 5.17,
       "virattt": {
        "score": 85.7,
        "signal": "bullish",
@@ -580,24 +526,92 @@
        "trend": 100.0,
        "momentum": 100.0,
        "mean_reversion": 28.0,
-       "volatility": 61.0,
+       "volatility": 100.0,
+       "stat_arb": null
+      }
+     },
+     {
+      "symbol": "P",
+      "name": "",
+      "close": 154.49,
+      "rank": 10,
+      "day_change_pct": 2.6,
+      "virattt": {
+       "score": 85.4,
+       "signal": "bullish",
+       "confidence": 71,
+       "trend": 100.0,
+       "momentum": 100.0,
+       "mean_reversion": 27.0,
+       "volatility": 78.0,
        "stat_arb": null
       }
      },
      {
       "symbol": "FTNT",
       "name": "",
-      "close": 192.56,
+      "close": 194.75,
       "rank": 1,
-      "day_change_pct": 1.83,
+      "day_change_pct": 2.99,
       "virattt": {
-       "score": 85.5,
+       "score": 85.2,
        "signal": "bullish",
-       "confidence": 71,
+       "confidence": 70,
        "trend": 100.0,
        "momentum": 100.0,
-       "mean_reversion": 28.0,
-       "volatility": 74.0,
+       "mean_reversion": 26.0,
+       "volatility": 73.0,
+       "stat_arb": null
+      }
+     },
+     {
+      "symbol": "HPE",
+      "name": "",
+      "close": 73.46,
+      "rank": 5,
+      "day_change_pct": 3.46,
+      "virattt": {
+       "score": 85.1,
+       "signal": "bullish",
+       "confidence": 70,
+       "trend": 100.0,
+       "momentum": 100.0,
+       "mean_reversion": 26.0,
+       "volatility": 60.0,
+       "stat_arb": null
+      }
+     },
+     {
+      "symbol": "SHOP",
+      "name": "",
+      "close": 170.85,
+      "rank": 26,
+      "day_change_pct": 3.82,
+      "virattt": {
+       "score": 84.8,
+       "signal": "bullish",
+       "confidence": 70,
+       "trend": 98.0,
+       "momentum": 100.0,
+       "mean_reversion": 29.0,
+       "volatility": 82.0,
+       "stat_arb": null
+      }
+     },
+     {
+      "symbol": "NTAP",
+      "name": "",
+      "close": 237.15,
+      "rank": 4,
+      "day_change_pct": 2.87,
+      "virattt": {
+       "score": 84.6,
+       "signal": "bullish",
+       "confidence": 69,
+       "trend": 100.0,
+       "momentum": 100.0,
+       "mean_reversion": 23.0,
+       "volatility": 63.0,
        "stat_arb": null
       }
      }
@@ -606,32 +620,32 @@
      {
       "symbol": "FICO",
       "name": "",
-      "close": 695.02,
+      "close": 667.58,
       "rank": 101,
-      "day_change_pct": -1.75,
+      "day_change_pct": -5.63,
       "virattt": {
-       "score": 14.5,
+       "score": 13.2,
        "signal": "bearish",
-       "confidence": 71,
+       "confidence": 74,
        "trend": 0.0,
-       "momentum": 11.0,
+       "momentum": 8.0,
        "mean_reversion": 50.0,
-       "volatility": 33.0,
+       "volatility": 32.0,
        "stat_arb": null
       }
      },
      {
       "symbol": "OKLO",
       "name": "",
-      "close": 34.22,
+      "close": 34.7,
       "rank": 100,
-      "day_change_pct": -1.01,
+      "day_change_pct": 0.38,
       "virattt": {
-       "score": 23.9,
+       "score": 24.4,
        "signal": "bearish",
-       "confidence": 52,
+       "confidence": 51,
        "trend": 15.0,
-       "momentum": 20.0,
+       "momentum": 21.0,
        "mean_reversion": 50.0,
        "volatility": 76.0,
        "stat_arb": null
@@ -640,15 +654,15 @@
      {
       "symbol": "WDC",
       "name": "",
-      "close": 392.25,
+      "close": 397.28,
       "rank": 64,
-      "day_change_pct": -0.27,
+      "day_change_pct": 1.01,
       "virattt": {
-       "score": 28.9,
+       "score": 29.5,
        "signal": "bearish",
-       "confidence": 42,
+       "confidence": 41,
        "trend": 6.0,
-       "momentum": 41.0,
+       "momentum": 43.0,
        "mean_reversion": 50.0,
        "volatility": 84.0,
        "stat_arb": null
@@ -657,15 +671,15 @@
      {
       "symbol": "NRG",
       "name": "",
-      "close": 107.12,
+      "close": 107.97,
       "rank": 102,
-      "day_change_pct": 0.75,
+      "day_change_pct": 1.55,
       "virattt": {
-       "score": 29.6,
+       "score": 29.9,
        "signal": "bearish",
-       "confidence": 41,
+       "confidence": 40,
        "trend": 25.0,
-       "momentum": 24.0,
+       "momentum": 25.0,
        "mean_reversion": 50.0,
        "volatility": 79.0,
        "stat_arb": null
@@ -674,11 +688,11 @@
      {
       "symbol": "CRWV",
       "name": "",
-      "close": 82.02,
+      "close": 82.08,
       "rank": 93,
-      "day_change_pct": 0.54,
+      "day_change_pct": 0.61,
       "virattt": {
-       "score": 29.8,
+       "score": 29.9,
        "signal": "bearish",
        "confidence": 40,
        "trend": 13.0,
@@ -691,26 +705,43 @@
      {
       "symbol": "GEN",
       "name": "",
-      "close": 22.94,
+      "close": 23.25,
       "rank": 40,
-      "day_change_pct": 0.84,
+      "day_change_pct": 2.2,
       "virattt": {
-       "score": 30.3,
+       "score": 31.0,
        "signal": "bearish",
-       "confidence": 39,
+       "confidence": 38,
        "trend": 0.0,
-       "momentum": 51.0,
+       "momentum": 52.0,
        "mean_reversion": 50.0,
-       "volatility": 26.0,
+       "volatility": 25.0,
+       "stat_arb": null
+      }
+     },
+     {
+      "symbol": "NFLX",
+      "name": "",
+      "close": 70.3,
+      "rank": 103,
+      "day_change_pct": -1.77,
+      "virattt": {
+       "score": 32.3,
+       "signal": "bearish",
+       "confidence": 35,
+       "trend": 26.0,
+       "momentum": 29.0,
+       "mean_reversion": 50.0,
+       "volatility": 70.0,
        "stat_arb": null
       }
      },
      {
       "symbol": "FSLR",
       "name": "",
-      "close": 177.48,
-      "rank": 97,
-      "day_change_pct": -0.77,
+      "close": 177.82,
+      "rank": 96,
+      "day_change_pct": -0.58,
       "virattt": {
        "score": 32.6,
        "signal": "bearish",
@@ -723,67 +754,50 @@
       }
      },
      {
-      "symbol": "NFLX",
+      "symbol": "VRT",
       "name": "",
-      "close": 70.95,
-      "rank": 103,
-      "day_change_pct": -0.87,
+      "close": 242.78,
+      "rank": 97,
+      "day_change_pct": -0.39,
       "virattt": {
-       "score": 32.7,
+       "score": 36.3,
        "signal": "bearish",
-       "confidence": 35,
-       "trend": 26.0,
-       "momentum": 30.0,
+       "confidence": 27,
+       "trend": 32.0,
+       "momentum": 34.0,
        "mean_reversion": 50.0,
-       "volatility": 70.0,
+       "volatility": 92.0,
        "stat_arb": null
       }
      },
      {
       "symbol": "AKAM",
       "name": "",
-      "close": 103.92,
-      "rank": 66,
-      "day_change_pct": 2.99,
+      "close": 106.95,
+      "rank": 61,
+      "day_change_pct": 6.0,
       "virattt": {
-       "score": 35.6,
+       "score": 37.3,
        "signal": "bearish",
-       "confidence": 29,
+       "confidence": 25,
        "trend": 14.0,
-       "momentum": 50.0,
+       "momentum": 54.0,
        "mean_reversion": 50.0,
-       "volatility": 61.0,
-       "stat_arb": null
-      }
-     },
-     {
-      "symbol": "ORCL",
-      "name": "",
-      "close": 141.75,
-      "rank": 81,
-      "day_change_pct": 4.47,
-      "virattt": {
-       "score": 36.2,
-       "signal": "bearish",
-       "confidence": 28,
-       "trend": 15.0,
-       "momentum": 51.0,
-       "mean_reversion": 50.0,
-       "volatility": 76.0,
+       "volatility": 57.0,
        "stat_arb": null
       }
      }
     ],
     "counts": {
      "bullish": 69,
-     "neutral": 20,
-     "bearish": 13
+     "neutral": 21,
+     "bearish": 12
     },
     "used_in_ranking": false
    },
    "hot_groups": [],
    "oversold_groups": [],
-   "momentum_share": 0.3
+   "momentum_share": 0.7
   },
   "tw": {
    "level": "watch",
@@ -1340,7 +1354,7 @@
     "PCB/CCL/連接"
    ],
    "oversold_groups": [],
-   "momentum_share": 0.58
+   "momentum_share": 0.82
   }
  },
  "rules": [
@@ -1349,16 +1363,16 @@
    "check": "每天"
   },
   {
-   "rule": "動能輪動：月初買前 N 名、跌出 KEEP_N 名且長線破壞才賣",
-   "check": "每月前 3 個平日"
+   "rule": "動能輪動：買前 N 名、跌出 KEEP_N 名就換（每次最多 2 檔，最弱先換）",
+   "check": "美股每 4 週（每月前 3 個平日）、台股每週（週一、二）"
   },
   {
    "rule": "低檔區沒用到的資金放動能名單（不留現金）",
    "check": "每天（低檔訊號出現時從動能部位挪錢）"
   },
   {
-   "rule": "恐懼貪婪 < 25：月調只買不賣",
-   "check": "月調日"
+   "rule": "恐懼貪婪 < 25：調整日只買不賣",
+   "check": "調整日"
   },
   {
    "rule": "不追大長紅：近 3 日單日漲 ≥ 10% → 低檔股掛大漲前收盤價（20 日有效）、動能股等 3 日後再買",

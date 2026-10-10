@@ -1069,5 +1069,14 @@
     "top_score": 81,
     "strong_buy": 13,
     "pick_count": 50
+  },
+  {
+    "date": "2026-10-10",
+    "generated_at": "2026-10-10T09:52:07+08:00",
+    "macro_score": 62,
+    "top_ticker": "PLTR",
+    "top_score": 83,
+    "strong_buy": 14,
+    "pick_count": 50
   }
 ]
