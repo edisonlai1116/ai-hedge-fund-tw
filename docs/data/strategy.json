@@ -127,7 +127,7 @@
     },
     {
      "date": "2025-10-27",
-     "fg": 65.5
+     "fg": 65.6
     },
     {
      "date": "2025-10-28",
@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-10-11T09:07:55+08:00",
+ "generated_at": "2026-10-11T23:20:07+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -4061,6 +4061,7 @@
       "tier": "C",
       "drawdown_type": "VALUATION_RESET",
       "confirmations": [
+       "CATALYST",
        "POSITIVE_REVERSAL"
       ]
      }
@@ -4765,12 +4766,14 @@
      "name": "",
      "low_view": {
       "state": "LOW_PRICE_SPECULATIVE",
-      "recommendation": "SPECULATIVE_WATCH",
-      "label": "高風險反轉觀察（不買）",
-      "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
+      "recommendation": "BUY_ON_CONFIRMATION",
+      "label": "反轉候選：等確認後小量",
+      "why": "排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
       "tier": "D",
       "drawdown_type": "UNKNOWN",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -5101,14 +5104,12 @@
      "name": "",
      "low_view": {
       "state": "LOW_PRICE_SPECULATIVE",
-      "recommendation": "BUY_ON_CONFIRMATION",
-      "label": "反轉候選：等確認後小量",
-      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
+      "recommendation": "SPECULATIVE_WATCH",
+      "label": "高風險反轉觀察（不買）",
+      "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
       "tier": "D",
       "drawdown_type": "UNKNOWN",
-      "confirmations": [
-       "EARNINGS_ACCELERATION"
-      ]
+      "confirmations": []
      }
     },
     {
@@ -7527,6 +7528,16 @@
     "EARNINGS_ACCELERATION"
    ]
   },
+  "STX": {
+   "type": "VALUATION_RESET",
+   "why": "跌深後估值分數仍僅 27：是昂貴估值的修正，尚未便宜",
+   "status": "BUY_NOW",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
   "HPE": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -7538,15 +7549,6 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "STX": {
-   "type": "VALUATION_RESET",
-   "why": "跌深後估值分數仍僅 27：是昂貴估值的修正，尚未便宜",
-   "status": "BUY_NOW",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
   "BE": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -7554,15 +7556,6 @@
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "NTAP": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "POSITIVE_REVERSAL"
    ]
   },
   "AVGO": {
@@ -7573,13 +7566,23 @@
     "CATALYST"
    ]
   },
-  "2337.TW": {
-   "type": "FUNDAMENTAL_DISCOUNT",
-   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
+  "NTAP": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "POSITIVE_REVERSAL"
+   ]
+  },
+  "SNOW": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST",
+    "POSITIVE_REVERSAL"
    ]
   },
   "LITE": {
@@ -7593,12 +7596,13 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "2357.TW": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+  "2337.TW": {
+   "type": "FUNDAMENTAL_DISCOUNT",
+   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
-    "EARNINGS_ACCELERATION"
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY"
    ]
   },
   "CRWD": {
@@ -7607,16 +7611,6 @@
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "CATALYST",
-    "POSITIVE_REVERSAL"
-   ]
-  },
-  "SNOW": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY",
     "POSITIVE_REVERSAL"
    ]
   },
@@ -7637,6 +7631,14 @@
     "POSITIVE_REVERSAL"
    ]
   },
+  "2357.TW": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION"
+   ]
+  },
   "NXPI": {
    "type": "FUNDAMENTAL_DISCOUNT",
    "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
@@ -7651,20 +7653,21 @@
    "status": "BUY_NOW",
    "confirmations": []
   },
-  "3037.TW": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "WAIT",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY",
-    "POSITIVE_REVERSAL"
-   ]
-  },
   "AMAT": {
    "type": "VALUATION_RESET",
    "why": "跌深後估值分數仍僅 20：是昂貴估值的修正，尚未便宜",
    "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST",
+    "POSITIVE_REVERSAL"
+   ]
+  },
+  "3037.TW": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
@@ -7679,6 +7682,17 @@
     "CATALYST"
    ]
   },
+  "TER": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST",
+    "POSITIVE_REVERSAL"
+   ]
+  },
   "6488.TWO": {
    "type": "VALUATION_RESET",
    "why": "跌深後估值分數仍僅 29：是昂貴估值的修正，尚未便宜",
@@ -7688,15 +7702,11 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "TER": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+  "FSLR": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
    "status": "WAIT",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY",
-    "POSITIVE_REVERSAL"
-   ]
+   "confirmations": []
   },
   "VRT": {
    "type": "FUNDAMENTAL_DISCOUNT",
@@ -7706,12 +7716,13 @@
     "EARNINGS_ACCELERATION"
    ]
   },
-  "FSLR": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_ON_PULLBACK",
+  "KLAC": {
+   "type": "VALUATION_RESET",
+   "why": "跌深後估值分數仍僅 24：是昂貴估值的修正，尚未便宜",
+   "status": "WAIT",
    "confirmations": [
-    "EARNINGS_ACCELERATION"
+    "CATALYST",
+    "POSITIVE_REVERSAL"
    ]
   },
   "INTC": {
@@ -7720,14 +7731,6 @@
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION"
-   ]
-  },
-  "KLAC": {
-   "type": "VALUATION_RESET",
-   "why": "跌深後估值分數仍僅 24：是昂貴估值的修正，尚未便宜",
-   "status": "WAIT",
-   "confirmations": [
-    "POSITIVE_REVERSAL"
    ]
   },
   "6415.TW": {
@@ -7773,11 +7776,13 @@
     "CATALYST"
    ]
   },
-  "NFLX": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "WAIT",
-   "confirmations": []
+  "GLW": {
+   "type": "VALUATION_RESET",
+   "why": "跌深後估值分數仍僅 35：是昂貴估值的修正，尚未便宜",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "CATALYST"
+   ]
   },
   "3529.TWO": {
    "type": "FUNDAMENTAL_DAMAGE",
@@ -7785,9 +7790,15 @@
    "status": "WAIT",
    "confirmations": []
   },
-  "GLW": {
-   "type": "VALUATION_RESET",
-   "why": "跌深後估值分數仍僅 34：是昂貴估值的修正，尚未便宜",
+  "NFLX": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "WAIT",
+   "confirmations": []
+  },
+  "IBM": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "CATALYST"
@@ -7808,12 +7819,6 @@
    "confirmations": [
     "POSITIVE_REVERSAL"
    ]
-  },
-  "IBM": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "WAIT",
-   "confirmations": []
   },
   "OKLO": {
    "type": "SPECULATIVE_DE_RATING",
