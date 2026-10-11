@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-10-10T23:02:11+08:00",
- "date": "2026-10-10",
+ "generated_at": "2026-10-11T09:08:38+08:00",
+ "date": "2026-10-11",
  "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 43（恐懼）、VIX 14.8",
  "panic_no_sell": false,
  "in_rebalance_window": false,
@@ -109,8 +109,8 @@
      "drawdown_type": "UNKNOWN",
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
-     "action": "高風險反轉觀察（不買）",
-     "reason": "價格跌深（距高點 -44%）、排名第 96 名（Tier D）：深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
+     "action": "反轉候選：等確認後小量",
+     "reason": "價格跌深（距高點 -44%）、排名第 96 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "IBM",
@@ -166,7 +166,7 @@
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -35%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+     "reason": "價格跌深（距高點 -35%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "NXPI",
