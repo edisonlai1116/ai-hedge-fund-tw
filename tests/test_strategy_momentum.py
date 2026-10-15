@@ -67,3 +67,26 @@ def test_rebalance_window_first_three_weekdays():
     assert m.is_rebalance_window(date(2026, 11, 4))      # 第 3 個平日
     assert not m.is_rebalance_window(date(2026, 11, 5))
     assert m.next_rebalance(date(2026, 10, 6)) == "2026-11-02"
+
+
+def test_long_uptrend_holding_is_not_swapped():
+    syms = [(f"S{i:03d}", 5 - i * 0.01) for i in range(150)]
+    rep = _report(syms)
+    by = {r["symbol"]: r for r in rep["markets"]["us"]["rows"]}
+    by["S090"].update(dd_52w_pct=-3.0, ret_1y_pct=30.0)          # 第 91 名，但長期上漲、接近高點 → 不換
+    by["S100"].update(dd_52w_pct=-15.0, ret_1y_pct=30.0)         # 美股距高點超過 10% → 趨勢轉弱，照常換
+    holdings = [{"ticker": "S090", "cost": 50, "shares": 10}, {"ticker": "S100", "cost": 50, "shares": 10},
+                {"ticker": "VOO", "cost": 400, "shares": 20}]
+    ev = m.evaluate_holdings(holdings, rep, fx_usd_twd=30.0, extra_prices={"VOO": pd.DataFrame({"Close": [500.0] * 10})})
+    acts = {h["symbol"]: h for h in ev["holdings"]}
+    assert acts["S090"]["action"] == "續抱" and "長期上漲" in acts["S090"]["reason"]
+    assert acts["S100"]["action"] == "賣出換股"
+
+
+def test_long_uptrend_thresholds_by_market():
+    tsmc = {"symbol": "2330.TW", "ret_3y_pct": 392.3, "ret_1y_pct": 60.0, "dd_52w_pct": -1.4}
+    assert m.long_uptrend(tsmc)
+    assert m.long_uptrend({**tsmc, "dd_52w_pct": -18.0})                 # 台股門檻 20%
+    assert not m.long_uptrend({**tsmc, "dd_52w_pct": -21.0})
+    assert not m.long_uptrend({**tsmc, "ret_1y_pct": -5.0})
+    assert not m.long_uptrend({**tsmc, "symbol": "AAPL", "dd_52w_pct": -12.0})   # 美股門檻 10%

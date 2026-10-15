@@ -130,7 +130,7 @@ function StrategyRuleNote({ report }: { report: StrategyReport | null }) {
     <div className="text-xs leading-relaxed text-slate-500">
       AI 科技股池，兩條策略：<b>長線低檔布局 {Math.round((report?.strategy.allocation?.lowentry ?? 0.7) * 100)}%</b>（3 年報酬為正的長線贏家，
       自 52 週高點回落 ≥30% 就分批買、持有 12 個月）＋ <b>動能輪動 {Math.round((report?.strategy.allocation?.momentum ?? 0.3) * 100)}%</b>
-      （美股前 {report?.strategy.top_n.us ?? 10}／台股前 {report?.strategy.top_n.tw ?? 20} 名）。持股只有在動能轉弱「且」3 年長線趨勢破壞時才建議換股。
+      （美股前 {report?.strategy.top_n.us ?? 10}／台股前 {report?.strategy.top_n.tw ?? 20} 名）。持股跌出保留名單才換股；但<b>長期上漲中的股票不換</b>（3 年、1 年都上漲，且距 52 週高點不到美股 10%／台股 20%，例如 2330），跌破才換。
       回測見「策略回測」分頁（含倖存者偏差說明）。規則化訊號，非投資建議。
     </div>
   );

@@ -80,6 +80,13 @@ SPIKE_PCT = 0.10
 SPIKE_DAYS = 3
 LIMIT_VALID_DAYS = 20
 LOWENTRY_REENTRY_DAYS = 60   # 離開低檔區不到 60 個交易日又跌回 → 不算「新訊號」
+# 長期上漲股不換股（2026-10-15 依使用者投資方法「長期上漲的股票不應該換股」，例：2330）：
+#   3 年報酬 > 0 且 1 年報酬 > 0 且距 52 週高點不到 UPTREND_DD[市場] → 就算跌出保留名單也續抱；跌破這個距離（趨勢轉弱）才換。
+#   回測（低檔 30%/動能 70% 完整策略，T-1 訊號 → T 開盤、成本 0.2%；全期 / 2017-21 / 2022-今）：
+#   台股 門檻 20%：49.8% / 47.5% / 51.9%（原規則 47.7% / 44.6% / 50.4%），Sharpe 1.44 → 1.53，動能換股每年 129 → 58 次。
+#   美股 門檻 10%：49.5% / 41.9% / 57.1%（原規則 51.1% / 47.1% / 54.9%），回撤 -36.8% → -34.2%；全期少 1.6%，使用者選擇照自己的方法。
+#   不採用：只看 3 年 > 0（美 33.1% / 台 42.8%，弱股抱太久）、站上 200 日線（美 44.8% / 台 45.9%）、美股門檻 20%（39.7%）。
+UPTREND_DD = {"us": -0.10, "tw": -0.20}
 TECH_BARS = 300
 TPE = timezone(timedelta(hours=8))
 
@@ -281,6 +288,38 @@ def blend_rank_scores(mom: pd.Series, tech: Optional[pd.Series], w: float) -> pd
     return (1 - w) * a + w * tech.rank(pct=True).reindex(a.index).fillna(0.5)
 
 
+def long_uptrend(row: Optional[Dict]) -> bool:
+    """長期上漲中（3 年、1 年報酬都 > 0，且距 52 週高點不到 UPTREND_DD）→ 跌出保留名單也不換股。
+    舊的 strategy.json 沒有 1 年報酬時，只看 3 年與距高點。"""
+    if not row or row.get("dd_52w_pct") is None or row.get("ret_3y_pct") is None:
+        return False
+    r1 = row.get("ret_1y_pct")
+    return (row["ret_3y_pct"] > 0 and (r1 is None or r1 > 0)
+            and row["dd_52w_pct"] / 100 > UPTREND_DD[market_of(row["symbol"])])
+
+
+def uptrend_note(row: Dict) -> str:
+    """長期上漲續抱的說明＋什麼時候才換。"""
+    lim = UPTREND_DD[market_of(row["symbol"])]
+    brk = f"（約 {row['high_52w'] * (1 + lim):,.2f}）" if row.get("high_52w") else ""
+    r1 = f"、1 年 {_pct(row.get('ret_1y_pct'))}" if row.get("ret_1y_pct") is not None else ""
+    return (f"長期上漲中（3 年 {_pct(row.get('ret_3y_pct'))}{r1}、距 52 週高點 {_pct(row.get('dd_52w_pct'), False)}）→ 不換股、續抱；"
+            f"跌到距高點超過 {abs(lim):.0%}{brk}、長期趨勢轉弱才換。")
+
+
+def _uptrend_fail(row: Dict) -> str:
+    """不屬於長期上漲的原因（賣出說明用）。"""
+    lim = UPTREND_DD[market_of(row["symbol"])]
+    out = []
+    if (row.get("ret_3y_pct") or 0) <= 0:
+        out.append(f"3 年 {_pct(row.get('ret_3y_pct'))}")
+    if row.get("ret_1y_pct") is not None and row["ret_1y_pct"] <= 0:
+        out.append(f"1 年 {_pct(row.get('ret_1y_pct'))}")
+    if row.get("dd_52w_pct") is not None and row["dd_52w_pct"] / 100 <= lim:
+        out.append(f"距 52 週高點已回落 {_pct(row.get('dd_52w_pct'), False)}，超過 {abs(lim):.0%}")
+    return "、".join(out) or "長期趨勢資料不足"
+
+
 def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
     sc = sharpe_momentum(f["Close"])
     if sc is None:
@@ -309,6 +348,9 @@ def score_row(symbol: str, f: pd.DataFrame) -> Optional[Dict]:
     row["low_entry_watch"] = bool(lt_winner and dd is not None and LOWENTRY_DD < dd <= LOWENTRY_WATCH_DD)
     row["low_entry_price"] = round(hi252 * (1 + LOWENTRY_DD), 2) if lt_winner else None
     row["long_term_broken"] = r3 is not None and r3 <= 0
+    r1 = float(c.iloc[-1] / c.iloc[-253] - 1) if len(c) > 252 else None
+    row["ret_1y_pct"] = round(r1 * 100, 1) if r1 is not None else None
+    row["long_uptrend"] = long_uptrend(row)
     # 連續幾天處於低檔區；若這段之前 60 日內也在低檔區（只是短暫反彈出去又跌回）→ 不算新訊號
     if row["low_entry"]:
         hi = c.rolling(252, min_periods=200).max()
@@ -505,8 +547,10 @@ def build_strategy_report() -> Dict:
                                f"持有 {LOWENTRY_HOLD_MONTHS} 個月；回落 {abs(LOWENTRY_WATCH_DD):.0%}~{abs(LOWENTRY_DD):.0%} 列入觀察。"),
             "rule": (f"資金 {ALLOCATION['lowentry']:.0%} 給長線低檔布局、{ALLOCATION['momentum']:.0%} 給動能輪動"
                      f"（美股前 {TOP_N['us']} 名、跌出前 {KEEP_N['us']} 名才賣；台股前 {TOP_N['tw']} 名、跌出前 {KEEP_N['tw']} 名才賣）。"
-                     f"持股跌出保留名單就換；美股{REBALANCE_LABEL[REBALANCE_EVERY['us']]}、台股{REBALANCE_LABEL[REBALANCE_EVERY['tw']]}檢查，每次最多換 {MAX_SWAPS['us']} 檔（最弱先換）。"
+                     f"持股跌出保留名單就換，但長期上漲中的股票不換（3 年、1 年都上漲且距 52 週高點不到 美股 {abs(UPTREND_DD['us']):.0%}／台股 {abs(UPTREND_DD['tw']):.0%}）；"
+                     f"美股{REBALANCE_LABEL[REBALANCE_EVERY['us']]}、台股{REBALANCE_LABEL[REBALANCE_EVERY['tw']]}檢查，每次最多換 {MAX_SWAPS['us']} 檔（最弱先換）。"
                      f"低檔區沒用到的槽位資金放動能名單（不留現金）；恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}（極度恐懼）時調整只買不賣。"),
+            "uptrend_dd": UPTREND_DD,
             "idle_to_momentum": IDLE_TO_MOMENTUM, "panic_no_sell_fg": PANIC_NO_SELL_FG, "tech_blend": TECH_BLEND,
             "ranking_rule": (f"美股排名＝Sharpe 動能；台股排名＝動能 {1 - TECH_BLEND['tw']:.0%} ＋ virattt 技術分析師分數 "
                              f"{TECH_BLEND['tw']:.0%}（皆為股票池內百分位）。"),
@@ -735,7 +779,8 @@ def evaluate_holdings(
             "day_pnl_local": round((it.get("day_pnl_twd") or 0) / (1.0 if it["market"] == "tw" else fx_usd_twd), 2),
             "spike": (row or {}).get("spike"),
             "virattt": (row or {}).get("virattt"), "dd_52w_pct": (row or {}).get("dd_52w_pct"),
-            "lots": it.get("lots", 1),
+            "lots": it.get("lots", 1), "long_uptrend": long_uptrend(row) and not is_etf(sym),
+            "ret_1y_pct": (row or {}).get("ret_1y_pct"), "ret_3y_pct": (row or {}).get("ret_3y_pct"),
         }
         if is_etf(sym):
             act, why = "核心 ETF", "ETF 屬核心部位，不套用個股動能輪動；長期持有即可。"
@@ -753,7 +798,9 @@ def evaluate_holdings(
             why = (f"單檔佔總資產 {it['value_twd'] / conc_base:.0%}，超過 {CONCENTRATION_PCT:.0f}% 集中度上限："
                    f"賣 {trim_sh:,.0f} 股{lots}、約 NT${trim_twd:,.0f}（持股的 {trim_sh / it['shares']:.0%}），"
                    f"留 {keep:,.0f} 股、降到約 {CONCENTRATION_PCT:.0f}%——不是全賣；賣出資金怎麼用見「資產配置與調整建議」。")
-            if row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
+            if row["rank"] > KEEP_N[it["market"]] and long_uptrend(row):
+                why += f" 排名第 {row['rank']} 名在保留名單外，但" + uptrend_note(row) + "減碼後剩下的續抱。"
+            elif row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
                 why += f" 另外排名第 {row['rank']} 名已在保留名單外：下次調整日（{rebalance_info()[it['market']]['next']}）若仍在名單外，剩下的也賣出換股。"
         elif (row.get("low_entry") and it["value_twd"] < low_target[it["market"]] * UNDERWEIGHT_RATIO and not row.get("outside_universe")
               and (low_view(row, report) or {}).get("recommendation") not in ("BUY", "BUY_STAGED")):
@@ -769,15 +816,20 @@ def evaluate_holdings(
         elif row["rank"] <= TOP_N[it["market"]] and tgt and it["value_twd"] < tgt * UNDERWEIGHT_RATIO and not row.get("outside_universe"):
             act = "加碼"
             why = f"動能排名第 {row['rank']} 名（前 {TOP_N[it['market']]} 名買進區），部位僅目標的 {it['value_twd'] / tgt:.0%}，加碼至約 NT${tgt:,.0f}。"
+        elif row["rank"] > KEEP_N[it["market"]] and long_uptrend(row) and not _low_hold(row):
+            act = "續抱"
+            why = f"動能排名第 {row['rank']} 名（前 {KEEP_N[it['market']]} 名保留名單外），但" + uptrend_note(row)
+            base["uptrend_hold"] = True
         elif row["rank"] > KEEP_N[it["market"]] and panic and not _low_hold(row):
             act = "續抱"
             why = (f"動能排名第 {row['rank']} 名（跌出前 {KEEP_N[it['market']]} 名），原本該換股；但市場處於極度恐懼"
                    f"（恐懼貪婪 < {PANIC_NO_SELL_FG:.0f}）——回測顯示恐慌時不賣、等情緒回穩再換，報酬較高、回撤較小。")
         elif row["rank"] > KEEP_N[it["market"]] and not _low_hold(row):
             # 2026-10-10 回測：跌出保留名單就賣 美 52.3% / 台 49.5%；舊規則「還要長線破壞才賣」只有 35.0% / 43.0%（弱股抱太久）
+            # 2026-10-15 起：長期上漲中的股票（long_uptrend）例外，見 UPTREND_DD
             act = "賣出換股"
-            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名保留名單）：調整日賣出、換成排名前段的股票。"
-                   f"回測：跌出名單就換 美 52.3% / 台 49.5%，比等到長線趨勢破壞才賣（35.0% / 43.0%）好很多。")
+            why = (f"動能排名第 {row['rank']} 名（已跌出前 {KEEP_N[it['market']]} 名保留名單），而且不屬於長期上漲"
+                   f"（{_uptrend_fail(row)}）：調整日賣出、換成排名前段的股票。")
         else:
             act = "續抱"
             if row.get("low_entry"):
@@ -801,6 +853,8 @@ def evaluate_holdings(
         if base["ignition"] and act in ("續抱", "加碼"):
             why += f" 🔥 近 {base['ignition']['ignition_days_ago']} 日爆量長紅點火。"
         today, today_why = daily_holding_advice(act, row, it["market"], report)
+        if base.get("uptrend_hold"):
+            today_why = "長期上漲中：不換股，續抱。" + (f"（{row['spike']['date']} 大漲 +{row['spike']['gain_pct']}%，不追加。）" if row.get("spike") else "")
         if act == "減碼" and base.get("trim_shares"):
             today = f"今天減碼 {base['trim_shares']:,.0f} 股"
             today_why = f"只賣 {base['trim_shares'] / it['shares']:.0%}（約 NT${base['trim_twd']:,.0f}），降到總資產 {CONCENTRATION_PCT:.0f}%；集中度每天檢查。"
@@ -933,13 +987,17 @@ def lookup_symbols(tickers: Iterable[str], report: Dict) -> List[Dict]:
             verdict, detail = "可買進", f"動能排名第 {row['rank']} 名，在前 {TOP_N[m]} 名買進區；新資金可等權買進，每月初再檢查。"
         elif row["zone"] == "hold":
             verdict, detail = "持有續抱，不新買", f"排名第 {row['rank']} 名，在續抱區（{TOP_N[m] + 1}~{keep} 名）：已持有可續抱，沒持有則等它進前 {TOP_N[m]} 名。"
+        elif long_uptrend(row):
+            verdict, detail = "持有續抱，不新買", (f"動能排名第 {row['rank']} 名，在保留名單外，但" + uptrend_note(row)
+                                                + f"沒持有則等它進前 {TOP_N[m]} 名再買。")
         else:
             if row.get("long_term_broken"):
                 verdict, detail = "不買／月初換股", f"動能排名第 {row['rank']} 名且 3 年長線趨勢已破壞；不建議買進。"
             else:
                 lep = row.get("low_entry_price")
                 verdict, detail = "等低檔", (f"動能排名第 {row['rank']} 名偏弱、尚未跌到低檔區（距高點 {_pct(row.get('dd_52w_pct'), False)}）；"
-                                            + (f"跌到 {lep} 以下（回落 30%）才進入低檔布局區。已持有者長線續抱。" if lep else "觀望。"))
+                                            + (f"跌到 {lep} 以下（回落 30%）才進入低檔布局區。" if lep else "觀望。")
+                                            + f"已持有者：不屬於長期上漲（{_uptrend_fail(row)}），調整日換股。")
         if verdict in ("可買進",) or verdict.startswith(("低檔布局可買", "低檔分批")):
             detail += no_chase_note(row)
         closes = []

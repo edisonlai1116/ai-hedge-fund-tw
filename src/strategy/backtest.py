@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from src.strategy.momentum import (ALLOCATION, KEEP_N, MAX_SWAPS, REBALANCE_EVERY, LOOKBACK, LOWENTRY_DD, LOWENTRY_LT_YEARS, LOWENTRY_SLOTS,
-                                   LIMIT_VALID_DAYS, PANIC_NO_SELL_FG, SPIKE_DAYS, SPIKE_PCT, TECH_BLEND, TOP_N, blend_rank_scores, download_closes, tech_score,
+                                   LIMIT_VALID_DAYS, PANIC_NO_SELL_FG, SPIKE_DAYS, SPIKE_PCT, TECH_BLEND, TOP_N, UPTREND_DD, blend_rank_scores, download_closes, tech_score,
                                    universe)
 
 REBALANCE_DAYS = 21
@@ -39,14 +39,16 @@ def _stats(eq: pd.Series) -> Dict:
 
 def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str = "2017-07-01",
                  extra: Optional[Dict[str, pd.Series]] = None, opens: Optional[pd.DataFrame] = None,
-                 fg: Optional[pd.Series] = None, tech: Optional[Dict] = None, no_chase: bool = True) -> Dict:
+                 fg: Optional[pd.Series] = None, tech: Optional[Dict] = None, no_chase: bool = True,
+                 keep_uptrend: bool = True) -> Dict:
     """時序（point-in-time）：T-1 收盤算分數 → T 開盤成交 → 持有報酬以開盤對開盤計算。
     2026-10-07 修正：舊版用 T-1 收盤的分數、又從同一個 T-1 收盤開始計報酬（等於看完收盤價再用收盤價成交）。
     未提供 opens 時退而用「T 收盤成交」（訊號後下一個收盤，仍不使用訊號當日的價格成交）。
     fg（恐懼貪婪，已對齊為「T-1 收盤可知」）：月調日 T-1 值 < PANIC_NO_SELL_FG → 只買不賣。
     tech：{T-1 日期: 各股 virattt 技術分數}（只用 T-1 以前的 K 線），依 TECH_BLEND[market] 混入排名。
     no_chase：月調要新買的股票若 T-1 以前 SPIKE_DAYS 日內有單日漲 ≥ SPIKE_PCT → 先不買，之後每天檢查，
-    大長紅超過 SPIKE_DAYS 日且仍在前 TOP_N 名才買（到下次月調為止）。"""
+    大長紅超過 SPIKE_DAYS 日且仍在前 TOP_N 名才買（到下次月調為止）。
+    keep_uptrend：長期上漲中（T-1 的 3 年、1 年報酬 > 0 且距 52 週高點不到 UPTREND_DD）的持股，跌出保留名單也不賣。"""
     closes = closes.sort_index().ffill(limit=3)
     rets = closes.pct_change()
     if opens is not None:
@@ -56,7 +58,10 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         hold_ret = rets.shift(-1)                          # 第 i 天收盤買進，賺第 i+1 天的報酬
     score = rets.rolling(LOOKBACK).mean() / rets.rolling(LOOKBACK).std()
     spiky = (rets.rolling(SPIKE_DAYS, min_periods=1).max() >= SPIKE_PCT)
+    uptrend = ((closes / closes.shift(252 * LOWENTRY_LT_YEARS) - 1 > 0) & (closes / closes.shift(252) - 1 > 0)
+               & (closes / closes.rolling(252, min_periods=200).max() - 1 > UPTREND_DD[market]))
     idx = closes.index[closes.index >= start]
+    uptrend = uptrend.loc[idx]
     spiky = spiky.loc[idx]
     closes, rets, score = closes.loc[idx], rets.loc[idx].fillna(0.0), score.loc[idx]
     hold_ret = hold_ret.loc[idx].fillna(0.0)
@@ -83,7 +88,8 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
             if f_prev is not None and f_prev < PANIC_NO_SELL_FG:
                 stay = list(held)                                  # 極度恐懼：只買不賣
             else:
-                stay = [h for h in held if pos.get(h, 10 ** 9) < KEEP_N[market]]
+                up = uptrend.iloc[i - 1] if keep_uptrend else None
+                stay = [h for h in held if pos.get(h, 10 ** 9) < KEEP_N[market] or (up is not None and bool(up.get(h, False)))]
                 out_ = sorted([h for h in held if h not in stay], key=lambda h: pos.get(h, 10 ** 9), reverse=True)
                 stay = stay + out_[MAX_SWAPS[market]:]                   # 每次最多換 MAX_SWAPS 檔（最弱先換）
             new = [k for k in s.index if k not in stay][: max(0, TOP_N[market] - len(stay))]
@@ -143,6 +149,7 @@ def run_backtest(market: str, closes: pd.DataFrame, bench: pd.Series, start: str
         "current_holdings": held,
         "recent_rebalances": log[-6:],
         "rules": {"lookback_days": LOOKBACK, "top_n": TOP_N[market], "keep_n": KEEP_N[market],
+                  "keep_uptrend_dd": UPTREND_DD[market] if keep_uptrend else None,
                   "rebalance_days": R, "max_swaps": MAX_SWAPS[market], "cost_per_trade": COST},
         "caveat": "AI 科技股池是用現在眼光挑出的贏家族群，有明顯倖存者／後見之明偏差：實際報酬會比回測低很多，AI 族群轉弱時也可能大幅落後大盤。",
     }

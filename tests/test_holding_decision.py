@@ -72,7 +72,7 @@ def test_loss_stock_with_fundamental_damage_is_not_averaged_down():
 
 
 def test_loss_alone_is_not_a_sell_reason_and_profit_alone_is_not_a_hold_reason():
-    rep = _report()
+    rep = _report(overrides={"S070": {"dd_52w_pct": -25.0}})   # 距高點 25%：不屬於長期上漲
     fund = {"S005": _fund(80, 75, 60, 55, "NONE"), "S070": _fund(30, 25, 20, 30, "NONE")}
     ev = _eval([{"ticker": "S005", "cost": 150, "shares": 10},     # 虧損 33%，但排名第 5、基本面強
                 {"ticker": "S070", "cost": 20, "shares": 10},      # 獲利 400%，但排名 70、品質成長都低
@@ -164,3 +164,12 @@ def test_missing_scores_do_not_crash_and_report_still_builds():
     assert _row(ev, "S002")["decision"]["thesis"] == "unknown"
     r = hd.build_decision_report(ev, None, 0.0, 30.0)
     assert r["overall"]["verdict"]
+
+
+def test_long_uptrend_out_of_keep_list_is_not_swapped_even_with_weak_fundamentals():
+    rep = _report(overrides={"S070": {"ret_1y_pct": 40.0}})    # 3 年 +50%、1 年 +40%、距高點 5%：長期上漲
+    fund = {"S070": _fund(30, 25, 20, 30, "NONE")}
+    ev = _eval([{"ticker": "S070", "cost": 20, "shares": 10}, {"ticker": "VOO", "cost": 400, "shares": 400}], rep, fund)
+    h = _row(ev, "S070")
+    assert h["action"] == "續抱" and h["today"] == "不用動"
+    assert h["decision"]["group"] != "EXIT"

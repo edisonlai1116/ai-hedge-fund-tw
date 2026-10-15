@@ -366,7 +366,7 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
                      why=f"部位 {wpct:.1f}% 超過單檔上限 {cap:.0f}%：部分減碼控制風險，不是清倉。" +
                      ("長期邏輯仍在 → 減到上限後續抱。" if status != "broken" else f"另外長期邏輯已破壞（{swhy}）→ 列退出候選。"))
         # 3. 長期邏輯破壞＋動能也弱 → 全數退出
-        elif status == "broken" and (x["rank"] or 0) > TOP_N[m]:
+        elif status == "broken" and (x["rank"] or 0) > TOP_N[m] and not h.get("long_uptrend"):
             if act != "賣出換股":
                 h["action"] = "賣出換股"
                 h["today"], h["today_reason"] = "下一步換股", f"長期邏輯已破壞（{swhy}），{rank_txt}、動能也不在前段：列入下一次換股。"
@@ -408,7 +408,7 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
         elif dropped and grade in ("不宜加碼", "資料不足，不能判定"):
             if act in ("低檔加碼", "加碼"):
                 h["action"], h["today"] = "續抱", "不用動"
-            grp = "EXIT" if status == "broken" else ("WAIT" if status in ("weak", "unknown") else "CORE")
+            grp = "EXIT" if status == "broken" and not h.get("long_uptrend") else ("WAIT" if status in ("weak", "unknown") else "CORE")
             h["today_reason"] = f"{grade}：{gwhy}" + ("帳面虧損不代表便宜。" if (x["pnl"] or 0) < 0 else "")
             d.update(group=grp, decision="HOLD_NO_ADD", why=h["today_reason"],
                      **({"wait": wait_detail(x, a)} if grp == "WAIT" else {}))
@@ -418,7 +418,10 @@ def apply_decisions(rows: List[Dict], report: Dict, fundamentals: Optional[Dict[
             why = ({"intact": f"長期邏輯仍在（{swhy}）、價格沒有明顯回落 → 續抱；不是低價，不加碼。",
                     "weak": f"基本面偏弱（{swhy}）→ 續抱但停止加碼，等證據。",
                     "unknown": "基本面資料不足，不能判定 → 沿用原規則（續抱）。",
-                    "broken": f"長期邏輯有疑慮（{swhy}），但動能仍在前段 → 續抱、停止加碼，動能轉弱就換。"}[status])
+                    "broken": (f"長期邏輯有疑慮（{swhy}），但股價仍長期上漲 → 不換股、續抱、停止加碼。" if h.get("long_uptrend")
+                               else f"長期邏輯有疑慮（{swhy}），但動能仍在前段 → 續抱、停止加碼，動能轉弱就換。")}[status])
+            if h.get("uptrend_hold"):
+                why = "長期上漲中，跌出保留名單也不換股。" + why
             if act == "加碼" and status != "intact":
                 h["action"], h["today"], h["today_reason"] = "續抱", "不用動", why
             d.update(group=grp, decision="HOLD" if act == "加碼" and status == "intact" else "HOLD_NO_ADD", why=why,
