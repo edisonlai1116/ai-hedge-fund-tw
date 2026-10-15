@@ -1,19 +1,19 @@
 {
- "generated_at": "2026-10-14T14:20:44",
- "n_signals": 365,
+ "generated_at": "2026-10-15T00:42:43",
+ "n_signals": 410,
  "n_with_outcomes": 0,
  "rolling_days": 252,
  "min_sample": 30,
  "signal_accuracy": {
   "BUY_NOW": {
    "5d": {
-    "n": 12,
+    "n": 8,
     "hit_rate_pct": 25.0,
     "ci95": [
-     8.9,
-     53.2
+     7.1,
+     59.1
     ],
-    "mean_excess_pct": -6.95,
+    "mean_excess_pct": -7.22,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -39,18 +39,55 @@
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
-   "avg_mfe_60d_pct": -1.2,
+   "avg_mfe_60d_pct": -1.1,
    "avg_mae_60d_pct": -5.8
   },
   "BUY_ON_PULLBACK": {
    "5d": {
-    "n": 6,
-    "hit_rate_pct": 33.3,
+    "n": 5,
+    "hit_rate_pct": 40.0,
     "ci95": [
-     9.7,
-     70.0
+     11.8,
+     76.9
     ],
-    "mean_excess_pct": -4.46,
+    "mean_excess_pct": -3.87,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "20d": {
+    "n": 0,
+    "hit_rate_pct": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "mean_excess_pct": null,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "60d": {
+    "n": 0,
+    "hit_rate_pct": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "mean_excess_pct": null,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "avg_mfe_60d_pct": -0.7,
+   "avg_mae_60d_pct": -4.2
+  },
+  "WAIT": {
+   "5d": {
+    "n": 6,
+    "hit_rate_pct": 100.0,
+    "ci95": [
+     61.0,
+     100.0
+    ],
+    "mean_excess_pct": -9.91,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -77,44 +114,7 @@
     "note": "樣本 < 30，不下結論"
    },
    "avg_mfe_60d_pct": -0.8,
-   "avg_mae_60d_pct": -4.5
-  },
-  "WAIT": {
-   "5d": {
-    "n": 13,
-    "hit_rate_pct": 100.0,
-    "ci95": [
-     77.2,
-     100.0
-    ],
-    "mean_excess_pct": -7.69,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "20d": {
-    "n": 0,
-    "hit_rate_pct": null,
-    "ci95": [
-     null,
-     null
-    ],
-    "mean_excess_pct": null,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "60d": {
-    "n": 0,
-    "hit_rate_pct": null,
-    "ci95": [
-     null,
-     null
-    ],
-    "mean_excess_pct": null,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "avg_mfe_60d_pct": -0.6,
-   "avg_mae_60d_pct": -4.9
+   "avg_mae_60d_pct": -5.5
   }
  },
  "analyst_accuracy": {
