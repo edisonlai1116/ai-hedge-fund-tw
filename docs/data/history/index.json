@@ -1117,11 +1117,11 @@
   },
   {
     "date": "2026-10-15",
-    "generated_at": "2026-10-15T08:41:54+08:00",
-    "macro_score": 51,
-    "top_ticker": "PLTR",
-    "top_score": 81,
-    "strong_buy": 7,
+    "generated_at": "2026-10-15T21:54:05+08:00",
+    "macro_score": 44,
+    "top_ticker": "WMT",
+    "top_score": 68,
+    "strong_buy": 0,
     "pick_count": 50
   }
 ]
