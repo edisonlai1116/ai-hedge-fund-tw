@@ -1123,5 +1123,14 @@
     "top_score": 68,
     "strong_buy": 0,
     "pick_count": 50
+  },
+  {
+    "date": "2026-10-16",
+    "generated_at": "2026-10-16T08:33:14+08:00",
+    "macro_score": 57,
+    "top_ticker": "KOD",
+    "top_score": 75,
+    "strong_buy": 5,
+    "pick_count": 50
   }
 ]
