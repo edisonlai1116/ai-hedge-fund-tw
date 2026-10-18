@@ -107,7 +107,7 @@
     },
     {
      "date": "2025-10-27",
-     "fg": 65.5
+     "fg": 65.6
     },
     {
      "date": "2025-10-28",
@@ -271,7 +271,7 @@
     },
     {
      "date": "2025-12-24",
-     "fg": 81.5
+     "fg": 81.4
     },
     {
      "date": "2025-12-26",
@@ -1097,7 +1097,7 @@
    "previous_1_month": 27.3
   },
   "cnn_validation": {
-   "n_days": 250,
+   "n_days": 249,
    "corr": 0.81,
    "mean_abs_diff": 10.1
   },
@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-10-17T20:41:10+08:00",
+ "generated_at": "2026-10-18T08:09:41+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -4446,7 +4446,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -8107,19 +8108,20 @@
     "CATALYST"
    ]
   },
-  "SNOW": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
   "WDC": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "SNOW": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
@@ -8183,14 +8185,6 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
-  "VRT": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION"
-   ]
-  },
   "8299.TWO": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
@@ -8208,6 +8202,14 @@
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
     "CATALYST"
+   ]
+  },
+  "VRT": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION"
    ]
   },
   "INTC": {
