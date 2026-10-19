@@ -1159,5 +1159,14 @@
     "top_score": 75,
     "strong_buy": 5,
     "pick_count": 50
+  },
+  {
+    "date": "2026-10-20",
+    "generated_at": "2026-10-20T00:10:05+08:00",
+    "macro_score": 66,
+    "top_ticker": "DXC",
+    "top_score": 74,
+    "strong_buy": 4,
+    "pick_count": 50
   }
 ]
