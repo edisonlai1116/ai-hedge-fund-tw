@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-10-18T20:58:36+08:00",
+ "generated_at": "2026-10-19T08:20:21+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -1566,8 +1566,8 @@
    },
    "tw": {
     "every": "每週",
-    "next": "2026-10-19",
-    "in_window": false,
+    "next": "2026-10-26",
+    "in_window": true,
     "max_swaps": 2
    }
   }
@@ -3161,7 +3161,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -3903,7 +3904,8 @@
       "tier": "B",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -4855,7 +4857,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "UNKNOWN",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -7989,8 +7993,7 @@
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
    "status": "BUY_NOW",
    "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "CATALYST"
+    "EARNINGS_ACCELERATION"
    ]
   },
   "2327.TW": {
@@ -8037,7 +8040,8 @@
    "status": "BUY_NOW",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "3406.TW": {
@@ -8052,8 +8056,10 @@
   "NTAP": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": []
+   "status": "BUY_NOW",
+   "confirmations": [
+    "EARNINGS_ACCELERATION"
+   ]
   },
   "AVGO": {
    "type": "FUNDAMENTAL_DISCOUNT",
@@ -8090,6 +8096,14 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
+  "CRWD": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "CATALYST"
+   ]
+  },
   "PANW": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -8103,14 +8117,6 @@
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
-    "CATALYST"
-   ]
-  },
-  "CRWD": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
     "CATALYST"
    ]
   },
@@ -8178,7 +8184,8 @@
    "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
    "status": "BUY_NOW",
    "confirmations": [
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "8299.TWO": {
@@ -8279,7 +8286,9 @@
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
    "status": "WAIT",
-   "confirmations": []
+   "confirmations": [
+    "CATALYST"
+   ]
   },
   "3533.TW": {
    "type": "FUNDAMENTAL_DAMAGE",

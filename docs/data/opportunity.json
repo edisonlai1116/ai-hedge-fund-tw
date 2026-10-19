@@ -1,15 +1,15 @@
 {
- "generated_at": "2026-10-18T12:59:14+00:00",
+ "generated_at": "2026-10-19T00:21:04+00:00",
  "asof": "latest",
  "mode": "live",
  "regime": {
   "regime": "RISK_ON_ROTATION",
   "metrics": {
-   "spy_vs_ma200": 0.057312404796208805,
+   "spy_vs_ma200": 0.057312401667335866,
    "spy_20d": 0.00204807408997576,
    "vix": 19.989999771118164,
    "tnx_20d_change_bp": 0.9999990463256836,
-   "usd_20d": 0.016164389318056083,
+   "usd_20d": 0.013561679852435171,
    "qqq_rel_spy_60d": -0.009678769619317906,
    "smh_rel_spy_60d": -0.10612972719427227,
    "xlk_rel_spy_60d": -0.0071984479068138985,
@@ -100,7 +100,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 58.76936161960842,
+    "price_risk": 58.769365340677524,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -128,7 +128,7 @@
     "positioning": 100.0,
     "catalyst": null,
     "low_entry": 81.2,
-    "price_risk": 58.76936161960842,
+    "price_risk": 58.769365340677524,
     "fundamental_uncertainty": 10,
     "earnings": 72.9,
     "ai": 65.0,
@@ -158,19 +158,19 @@
     "vs_SPY_20d": -0.17611709472521397,
     "vs_SPY_60d": 0.1892641798153245,
     "vs_SPY_120d": 1.5166565326894657,
-    "vs_SPY_252d": 1.1124409397862645,
+    "vs_SPY_252d": 1.1124410693472482,
     "vs_QQQ_20d": -0.17611709472521397,
     "vs_QQQ_60d": 0.1892641798153245,
     "vs_QQQ_120d": 1.5166565326894657,
-    "vs_QQQ_252d": 1.1124409397862645,
+    "vs_QQQ_252d": 1.1124410693472482,
     "vs_ind_20d": -0.17611709472521397,
     "vs_ind_60d": 0.1892641798153245,
     "vs_ind_120d": 1.5166565326894657,
-    "vs_ind_252d": 1.1124409397862645,
+    "vs_ind_252d": 1.1124410693472482,
     "vs_theme_20d": -0.16006511617952687,
     "vs_theme_60d": 0.10846589958149525,
     "vs_theme_120d": 1.4261771749064718,
-    "vs_theme_252d": 0.9650587616730715
+    "vs_theme_252d": 0.9650587205695931
    },
    "technical_detail": {
     "dist_ma20": -0.15050666666666668,
@@ -181,8 +181,8 @@
     "up_volume_ratio": 0.2949344751404396,
     "breakout": false
    },
-   "vol_63": 0.789733685342013,
-   "beta": 0.9796427161579508,
+   "vol_63": 0.7897336853420124,
+   "beta": 0.9796429989592071,
    "downside_risk": 0.3115014869631372,
    "coverage": 0.94,
    "entry": {
@@ -260,7 +260,7 @@
     ],
     "worse_than": []
    },
-   "target_weight": 0.0834
+   "target_weight": 0.0826
   },
   {
    "ticker": "3443.TW",
@@ -325,7 +325,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 53.6348468826162,
+    "price_risk": 53.63484792815701,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -352,7 +352,7 @@
     "positioning": 100.0,
     "catalyst": null,
     "low_entry": 34.7,
-    "price_risk": 53.6348468826162,
+    "price_risk": 53.63484792815701,
     "fundamental_uncertainty": 10,
     "earnings": 55.1,
     "ai": 80.0,
@@ -382,19 +382,19 @@
     "vs_SPY_20d": 0.2135542667771333,
     "vs_SPY_60d": 0.7543253415523219,
     "vs_SPY_120d": 0.6517729783751403,
-    "vs_SPY_252d": 3.683452511648567,
+    "vs_SPY_252d": 3.6834526412095503,
     "vs_QQQ_20d": 0.2135542667771333,
     "vs_QQQ_60d": 0.7543253415523219,
     "vs_QQQ_120d": 0.6517729783751403,
-    "vs_QQQ_252d": 3.683452511648567,
+    "vs_QQQ_252d": 3.6834526412095503,
     "vs_ind_20d": 0.2135542667771333,
     "vs_ind_60d": 0.7543253415523219,
     "vs_ind_120d": 0.6517729783751403,
-    "vs_ind_252d": 3.683452511648567,
+    "vs_ind_252d": 3.6834526412095503,
     "vs_theme_20d": 0.26207885878134934,
     "vs_theme_60d": 0.7206154914632424,
     "vs_theme_120d": 0.48921999106595254,
-    "vs_theme_252d": 3.7503212978572322
+    "vs_theme_252d": 3.7503212567537543
    },
    "technical_detail": {
     "dist_ma20": -0.052384873630202056,
@@ -405,8 +405,8 @@
     "up_volume_ratio": 0.5857220331454965,
     "breakout": false
    },
-   "vol_63": 0.8276348165188899,
-   "beta": 1.4374783924054775,
+   "vol_63": 0.8276348165188913,
+   "beta": 1.437478471866572,
    "downside_risk": 0.13023255813953494,
    "coverage": 0.94,
    "entry": {
@@ -500,15 +500,15 @@
    "batch_rank": 2,
    "rotation_view": {
     "better_than": [
-     "STX",
      "3406.TW",
-     "NTAP"
+     "NTAP",
+     "AVGO"
     ],
     "worse_than": [
      "2059.TW"
     ]
    },
-   "target_weight": 0.0637
+   "target_weight": 0.0632
   },
   {
    "ticker": "FTNT",
@@ -518,10 +518,10 @@
    "theme": null,
    "sub_theme": null,
    "valuation_class": "A",
-   "opportunity": 72.3,
+   "opportunity": 70.9,
    "opportunity_detail": {
-    "score": 72.3,
-    "raw": 72.3,
+    "score": 70.9,
+    "raw": 70.9,
     "penalty": 0.0,
     "coverage": 0.92,
     "components_used": [
@@ -560,8 +560,7 @@
    "price_location": "PULLBACK",
    "quality_tier": "A",
    "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "CATALYST"
+    "EARNINGS_ACCELERATION"
    ],
    "universe_rank": [
     1,
@@ -569,11 +568,11 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 23.663748813449033,
+    "price_risk": 23.663730527417147,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "10 天後公布財報（事件風險）"
+      "9 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -595,9 +594,9 @@
     "earnings_acceleration": 69.2,
     "valuation": 28.0,
     "positioning": 65.3,
-    "catalyst": 71.6,
+    "catalyst": 50.0,
     "low_entry": 35.1,
-    "price_risk": 23.663748813449033,
+    "price_risk": 23.663730527417147,
     "fundamental_uncertainty": 10,
     "earnings": 69.2,
     "ai": null,
@@ -626,16 +625,16 @@
    "relative": {
     "vs_SPY_20d": -0.006228428955655452,
     "vs_SPY_60d": 0.0795456182164973,
-    "vs_SPY_120d": 0.9015682320299176,
-    "vs_SPY_252d": 0.8637396683857643,
+    "vs_SPY_120d": 0.9015683240361623,
+    "vs_SPY_252d": 0.8637397759585255,
     "vs_QQQ_20d": 0.01094252904634796,
     "vs_QQQ_60d": 0.08922438783581521,
     "vs_QQQ_120d": 0.9033086195791424,
     "vs_QQQ_252d": 0.8393933654924968,
     "vs_ind_20d": -0.006228428955655452,
     "vs_ind_60d": 0.0795456182164973,
-    "vs_ind_120d": 0.9015682320299176,
-    "vs_ind_252d": 0.8637396683857643,
+    "vs_ind_120d": 0.9015683240361623,
+    "vs_ind_252d": 0.8637397759585255,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -651,7 +650,7 @@
     "breakout": false
    },
    "vol_63": 0.4562841284409912,
-   "beta": 0.9664603666711408,
+   "beta": 0.9664589769327174,
    "downside_risk": 0.13155324835526316,
    "coverage": 0.92,
    "entry": {
@@ -682,7 +681,7 @@
     ],
     "notes": [
      "估值偏貴：各區下移 0.5 ATR",
-     "10 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "9 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 136.32,
     "condition": {
@@ -693,21 +692,22 @@
     }
    },
    "catalyst": {
-    "score": 71.6,
+    "score": 50.0,
     "events": [
      {
       "categories": [
-       "government_contract"
+       "guidance",
+       "analyst_revision"
       ],
-      "category": "government_contract",
-      "direction": 1,
-      "magnitude": 60,
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
       "duration": "long",
-      "title": "Does Fortinet's Strong Margin Profile Make the Stock Worth Buying Now? - Yahoo Finance",
-      "published": "2026-10-12",
-      "age_days": 5,
-      "priced_in": 0,
-      "effective": 55.6
+      "title": "Fortinet (FTNT) Stock Forecast and Price Target 2026 $FTNT - MarketBeat",
+      "published": "2026-10-15",
+      "age_days": 3,
+      "priced_in": null,
+      "effective": 0.0
      },
      {
       "categories": [
@@ -733,7 +733,7 @@
       "duration": "long",
       "title": "3 Reasons to Buy Fortinet Stock After a 119.9% Rise in 6 Months - TradingView",
       "published": "2026-10-05",
-      "age_days": 12,
+      "age_days": 13,
       "priced_in": null,
       "effective": 0.0
      },
@@ -778,24 +778,10 @@
       "age_days": 17,
       "priced_in": null,
       "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "A 459-share stock grant vests at Fortinet (FTNT), leaving director Ming Hsieh with 10,056 direct shares. - Stock Titan",
-      "published": "2026-10-01",
-      "age_days": 16,
-      "priced_in": null,
-      "effective": 0.0
      }
     ],
     "news_count": 40,
-    "key_catalyst": "government_contract（+，已反映 0%）：Does Fortinet's Strong Margin Profile Make the Stock Worth Buying Now? - Yahoo Finance",
+    "key_catalyst": "guidance（0，已反映 ?%）：Fortinet (FTNT) Stock Forecast and Price Target 2026 $FTNT - MarketBeat",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -830,7 +816,7 @@
     "verdict": null
    },
    "holding": null,
-   "expected_excess_60d": 0.033449999999999994,
+   "expected_excess_60d": 0.03135000000000001,
    "narrative": {
     "why_now": "動能排名 100、品質 96、技術 88。",
     "why_not_chase": "估值分數僅 28",
@@ -839,7 +825,7 @@
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 151.87；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "動能排名 100、品質 96、技術 88",
     "bear_thesis": "估值 28、低檔分數 35、成長 36",
-    "key_catalyst": "government_contract（+，已反映 0%）：Does Fortinet's Strong Margin Profile Make the Stock Worth Buying Now? - Yahoo Finance"
+    "key_catalyst": "guidance（0，已反映 ?%）：Fortinet (FTNT) Stock Forecast and Price Target 2026 $FTNT - MarketBeat"
    },
    "batch_rank": 3,
    "rotation_view": {
@@ -852,7 +838,7 @@
      "2059.TW"
     ]
    },
-   "target_weight": 0.0994
+   "target_weight": 0.0923
   },
   {
    "ticker": "2327.TW",
@@ -927,7 +913,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 83.14887836922449,
+    "price_risk": 83.14887832079754,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -955,7 +941,7 @@
     "positioning": 100.0,
     "catalyst": null,
     "low_entry": 100.0,
-    "price_risk": 83.14887836922449,
+    "price_risk": 83.14887832079754,
     "fundamental_uncertainty": 10,
     "earnings": 71.7,
     "ai": null,
@@ -985,15 +971,15 @@
     "vs_SPY_20d": 0.029983568846533082,
     "vs_SPY_60d": -0.2171459774299236,
     "vs_SPY_120d": 0.6658390435605146,
-    "vs_SPY_252d": 1.4351580692517476,
+    "vs_SPY_252d": 1.4351581988127313,
     "vs_QQQ_20d": 0.029983568846533082,
     "vs_QQQ_60d": -0.2171459774299236,
     "vs_QQQ_120d": 0.6658390435605146,
-    "vs_QQQ_252d": 1.4351580692517476,
+    "vs_QQQ_252d": 1.4351581988127313,
     "vs_ind_20d": 0.029983568846533082,
     "vs_ind_60d": -0.2171459774299236,
     "vs_ind_120d": 0.6658390435605146,
-    "vs_ind_252d": 1.4351580692517476,
+    "vs_ind_252d": 1.4351581988127313,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -1008,8 +994,8 @@
     "up_volume_ratio": 0.5647251588848692,
     "breakout": false
    },
-   "vol_63": 0.8638581703581028,
-   "beta": 1.3958934094543298,
+   "vol_63": 0.8638581703581026,
+   "beta": 1.395893405773883,
    "downside_risk": 0.5026315789473684,
    "coverage": 0.86,
    "entry": {
@@ -1109,7 +1095,7 @@
      "2059.TW"
     ]
    },
-   "target_weight": 0.0369
+   "target_weight": 0.0366
   },
   {
    "ticker": "HPE",
@@ -1174,7 +1160,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 61.53515046286044,
+    "price_risk": 61.535144188924406,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -1191,16 +1177,16 @@
     "technical": 83.99122807017544,
     "industry_momentum": 74.46808510638297,
     "risk": 36.9,
-    "overextension": 5.677672644233363,
+    "overextension": 5.677672580825189,
     "ai_exposure": 35.0,
     "quality": 38.6,
     "growth": 56.2,
     "earnings_acceleration": 72.7,
     "valuation": 85.3,
     "positioning": 79.4,
-    "catalyst": 79.4,
+    "catalyst": 79.7,
     "low_entry": 66.5,
-    "price_risk": 61.53515046286044,
+    "price_risk": 61.535144188924406,
     "fundamental_uncertainty": 0,
     "earnings": 72.7,
     "ai": 35.0,
@@ -1215,46 +1201,46 @@
     "5d": -0.24952352633818453,
     "20d": -0.09265960185885502,
     "60d": 0.16014785865525583,
-    "120d": 0.9367975682547975,
+    "120d": 0.9367974384739772,
     "252d": 1.2413775508621518,
-    "756d": 2.4559610938911542
+    "756d": 2.4559598542360592
    },
    "low_entry": {
     "in_zone": false,
     "dd_52w": -0.24952352633818453,
-    "ret_3y": 2.4559610938911542,
+    "ret_3y": 2.4559598542360592,
     "score": 66.5,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.09470767594883078,
     "vs_SPY_60d": 0.12361843149764651,
-    "vs_SPY_120d": 0.8641623627022832,
-    "vs_SPY_252d": 1.081546973046137,
+    "vs_SPY_120d": 0.8641623249277075,
+    "vs_SPY_252d": 1.081547080618898,
     "vs_QQQ_20d": -0.07753671794682737,
     "vs_QQQ_60d": 0.13329720111696441,
-    "vs_QQQ_120d": 0.865902750251508,
+    "vs_QQQ_120d": 0.8659026204706877,
     "vs_QQQ_252d": 1.0572006701528693,
     "vs_ind_20d": -0.06145763833285556,
     "vs_ind_60d": 0.1308168794044604,
-    "vs_ind_120d": 0.7914832459415004,
-    "vs_ind_252d": 0.9440784047957642,
+    "vs_ind_120d": 0.7914831161606801,
+    "vs_ind_252d": 0.94407826482565,
     "vs_theme_20d": 0.013567786792198763,
     "vs_theme_60d": 0.1916997728528098,
-    "vs_theme_120d": 0.7044568061414562,
-    "vs_theme_252d": 0.5731492408040741
+    "vs_theme_120d": 0.7044566763606359,
+    "vs_theme_252d": 0.5731492245014305
    },
    "technical_detail": {
     "dist_ma20": -0.15502454963147416,
     "dist_ma50": -0.07018873450886842,
     "dist_52w_high": -0.24952352633818453,
-    "rsi14": 37.43696034968755,
+    "rsi14": 37.43696035365197,
     "volume_spike": 1.5008206977976066,
     "up_volume_ratio": 0.45760193111729136,
     "breakout": false
    },
-   "vol_63": 0.6728637599639151,
-   "beta": 2.11411010779747,
+   "vol_63": 0.6728637599639152,
+   "beta": 2.114109630978332,
    "downside_risk": 0.24952352633818453,
    "coverage": 1.0,
    "entry": {
@@ -1293,7 +1279,7 @@
     }
    },
    "catalyst": {
-    "score": 79.4,
+    "score": 79.7,
     "events": [
      {
       "categories": [
@@ -1325,6 +1311,20 @@
      },
      {
       "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 1,
+      "magnitude": 80,
+      "duration": "long",
+      "title": "HPE Raises Fiscal 2027 Networking Revenue Growth Outlook - Yahoo Finance",
+      "published": "2026-09-30",
+      "age_days": 18,
+      "priced_in": 0,
+      "effective": 60.6
+     },
+     {
+      "categories": [
        "major_customer"
       ],
       "category": "major_customer",
@@ -1347,9 +1347,9 @@
       "duration": "short",
       "title": "HPE Stock Falls After Barclays Downgrade Questions AI Growth - Yahoo Finance",
       "published": "2026-10-14",
-      "age_days": 3,
+      "age_days": 4,
       "priced_in": 72,
-      "effective": -6.5
+      "effective": -5.6
      },
      {
       "categories": [
@@ -1361,9 +1361,9 @@
       "duration": "short",
       "title": "How Evercore’s Valuation-Driven Downgrade At Hewlett Packard Enterprise (HPE) Has Changed Its Investment Story - Yahoo Finance",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": 79,
-      "effective": -4.3
+      "effective": -3.7
      },
      {
       "categories": [
@@ -1389,20 +1389,6 @@
       "duration": "medium",
       "title": "Morgan Stanley resets Hewlett Packard HPE target after earnings - TheStreet",
       "published": "2026-10-07",
-      "age_days": 11,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "m_and_a"
-      ],
-      "category": "m_and_a",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "long",
-      "title": "Hewlett Packard Enterprise (NYSE:HPE) Stock Price Up 3.1% - Time to Buy? - MarketBeat",
-      "published": "2026-10-06",
       "age_days": 11,
       "priced_in": null,
       "effective": 0.0
@@ -1460,15 +1446,15 @@
    "batch_rank": 5,
    "rotation_view": {
     "better_than": [
-     "NTAP",
      "AVGO",
-     "2395.TW"
+     "2395.TW",
+     "BE"
     ],
     "worse_than": [
      "2059.TW"
     ]
    },
-   "target_weight": 0.063
+   "target_weight": 0.0624
   },
   {
    "ticker": "CRDO",
@@ -1568,7 +1554,7 @@
     "earnings_acceleration": 52.2,
     "valuation": 64.7,
     "positioning": 86.5,
-    "catalyst": 82.5,
+    "catalyst": 82.3,
     "low_entry": 93.9,
     "price_risk": 95.42840065671507,
     "fundamental_uncertainty": 0,
@@ -1599,8 +1585,8 @@
    "relative": {
     "vs_SPY_20d": -0.037240537918994066,
     "vs_SPY_60d": -0.31898187135108846,
-    "vs_SPY_120d": -0.13246901747361028,
-    "vs_SPY_252d": 0.13154749249122544,
+    "vs_SPY_120d": -0.13246892546736566,
+    "vs_SPY_252d": 0.13154760006398658,
     "vs_QQQ_20d": -0.020069579916990654,
     "vs_QQQ_60d": -0.30930310173177056,
     "vs_QQQ_120d": -0.1307286299243855,
@@ -1611,7 +1597,7 @@
     "vs_ind_252d": -0.2928854486547887,
     "vs_theme_20d": 0.026616690712922976,
     "vs_theme_60d": -0.22655619597906765,
-    "vs_theme_120d": -0.2950674525117011,
+    "vs_theme_120d": -0.2950674881083284,
     "vs_theme_252d": -0.23456951143398364
    },
    "technical_detail": {
@@ -1624,7 +1610,7 @@
     "breakout": false
    },
    "vol_63": 0.9593838361386305,
-   "beta": 3.3293279633066173,
+   "beta": 3.329331069235214,
    "downside_risk": 0.43904534208953416,
    "coverage": 1.0,
    "entry": {
@@ -1663,7 +1649,7 @@
     }
    },
    "catalyst": {
-    "score": 82.5,
+    "score": 82.3,
     "events": [
      {
       "categories": [
@@ -1675,9 +1661,9 @@
       "duration": "long",
       "title": "CRDO Stock Soars Post-Market On DustPhotonics Acquisition: Retail Eyes Surge To Over $200 - Stocktwits",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": 0,
-      "effective": 68.9
+      "effective": 67.9
      },
      {
       "categories": [
@@ -1735,6 +1721,20 @@
       "age_days": 1,
       "priced_in": null,
       "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Credo Technology Group Holding Stock Price Forecast. Should You Buy CRDO? - StockInvest.us",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
      }
     ],
     "news_count": 38,
@@ -1789,15 +1789,15 @@
    "batch_rank": 6,
    "rotation_view": {
     "better_than": [
-     "NTAP",
      "AVGO",
-     "2395.TW"
+     "2395.TW",
+     "BE"
     ],
     "worse_than": [
      "2059.TW"
     ]
    },
-   "target_weight": 0.0413
+   "target_weight": 0.041
   },
   {
    "ticker": "6274.TWO",
@@ -1861,7 +1861,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 56.859404955265056,
+    "price_risk": 56.85940518780762,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -1888,7 +1888,7 @@
     "positioning": 100.0,
     "catalyst": null,
     "low_entry": 40.0,
-    "price_risk": 56.859404955265056,
+    "price_risk": 56.85940518780762,
     "fundamental_uncertainty": 25,
     "earnings": 73.1,
     "ai": 70.0,
@@ -1918,15 +1918,15 @@
     "vs_SPY_20d": 0.15294976384714465,
     "vs_SPY_60d": 0.2442776735459662,
     "vs_SPY_120d": 0.43001404226332807,
-    "vs_SPY_252d": 3.2521409644570616,
+    "vs_SPY_252d": 3.252141094018045,
     "vs_QQQ_20d": 0.15294976384714465,
     "vs_QQQ_60d": 0.2442776735459662,
     "vs_QQQ_120d": 0.43001404226332807,
-    "vs_QQQ_252d": 3.2521409644570616,
+    "vs_QQQ_252d": 3.252141094018045,
     "vs_ind_20d": 0.15294976384714465,
     "vs_ind_60d": 0.2442776735459662,
     "vs_ind_120d": 0.43001404226332807,
-    "vs_ind_252d": 3.2521409644570616,
+    "vs_ind_252d": 3.252141094018045,
     "vs_theme_20d": 0.030330437721889397,
     "vs_theme_60d": 0.1554422119174765,
     "vs_theme_120d": 0.5731986193376288,
@@ -1942,7 +1942,7 @@
     "breakout": false
    },
    "vol_63": 0.8187855997317698,
-   "beta": 1.6131051321963548,
+   "beta": 1.6131051498695894,
    "downside_risk": 0.15000000000000002,
    "coverage": 0.94,
    "entry": {
@@ -2043,7 +2043,7 @@
      "2059.TW"
     ]
    },
-   "target_weight": 0.055
+   "target_weight": 0.0545
   },
   {
    "ticker": "STX",
@@ -2053,10 +2053,10 @@
    "theme": "Storage",
    "sub_theme": "HDD",
    "valuation_class": "D",
-   "opportunity": 67.5,
+   "opportunity": 69.2,
    "opportunity_detail": {
-    "score": 67.5,
-    "raw": 67.5,
+    "score": 69.2,
+    "raw": 69.2,
     "penalty": 0.0,
     "coverage": 1.0,
     "components_used": [
@@ -2101,7 +2101,8 @@
    "quality_tier": "B",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ],
    "universe_rank": [
     40,
@@ -2116,15 +2117,16 @@
     "drawdown_type": "TEMPORARY_SHOCK",
     "confirmations": [
      "EARNINGS_ACCELERATION",
-     "FUNDAMENTAL_RECOVERY"
+     "FUNDAMENTAL_RECOVERY",
+     "CATALYST"
     ]
    },
    "risk_detail": {
-    "price_risk": 81.41340585089473,
+    "price_risk": 81.41335260845102,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "9 天後公布財報（事件風險）"
+      "8 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -2145,9 +2147,9 @@
     "earnings_acceleration": 87.8,
     "valuation": 31.4,
     "positioning": 93.9,
-    "catalyst": 50.0,
+    "catalyst": 78.5,
     "low_entry": 91.5,
-    "price_risk": 81.41340585089473,
+    "price_risk": 81.41335260845102,
     "fundamental_uncertainty": 10,
     "earnings": 87.8,
     "ai": 55.0,
@@ -2162,13 +2164,13 @@
     "5d": -0.18389526211286722,
     "20d": -0.2553217140871653,
     "60d": -0.2998135964384293,
-    "120d": 0.074041211961549,
+    "120d": 0.07404132214448378,
     "252d": 1.9299689170371677,
     "756d": 8.751655997316547
    },
    "low_entry": {
     "in_zone": true,
-    "dd_52w": -0.4150321115106177,
+    "dd_52w": -0.41503217687879856,
     "ret_3y": 8.751655997316547,
     "score": 91.5,
     "long_term_broken": false
@@ -2176,33 +2178,33 @@
    "relative": {
     "vs_SPY_20d": -0.25736978817714107,
     "vs_SPY_60d": -0.3363430235960386,
-    "vs_SPY_120d": 0.0014060064090346547,
-    "vs_SPY_252d": 1.7701383392211527,
+    "vs_SPY_120d": 0.0014062085982140538,
+    "vs_SPY_252d": 1.7701384467939139,
     "vs_QQQ_20d": -0.24019883017513766,
     "vs_QQQ_60d": -0.3266642539767207,
-    "vs_QQQ_120d": 0.0031463939582594413,
+    "vs_QQQ_120d": 0.0031465041411942174,
     "vs_QQQ_252d": 1.7457920363278852,
     "vs_ind_20d": -0.22411975056116584,
     "vs_ind_60d": -0.3291445756892247,
-    "vs_ind_120d": -0.0712731103517481,
-    "vs_ind_252d": 1.63266977097078,
+    "vs_ind_120d": -0.07127300016881333,
+    "vs_ind_252d": 1.6326696310006659,
     "vs_theme_20d": -0.1477869425905594,
     "vs_theme_60d": -0.21756249233379493,
-    "vs_theme_120d": -0.2851141056189936,
-    "vs_theme_252d": 0.697326019822524
+    "vs_theme_120d": -0.2851139954360588,
+    "vs_theme_252d": 0.6973259321879253
    },
    "technical_detail": {
     "dist_ma20": -0.23450726996149385,
     "dist_ma50": -0.24035860468638048,
-    "dist_52w_high": -0.4150321115106177,
-    "rsi14": 27.574113968085143,
+    "dist_52w_high": -0.41503217687879856,
+    "rsi14": 27.574114013938242,
     "volume_spike": 1.2448698873749446,
     "up_volume_ratio": 0.3954963912400637,
     "breakout": false
    },
-   "vol_63": 0.7360874121503169,
-   "beta": 2.3725658811230734,
-   "downside_risk": 0.4150321115106177,
+   "vol_63": 0.7360874121503184,
+   "beta": 2.3725614620987128,
+   "downside_risk": 0.41503217687879856,
    "coverage": 1.0,
    "entry": {
     "zone_1": {
@@ -2231,7 +2233,7 @@
      1143.27
     ],
     "notes": [
-     "9 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "8 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 764.67,
     "condition": {
@@ -2242,21 +2244,22 @@
     }
    },
    "catalyst": {
-    "score": 50.0,
+    "score": 78.5,
     "events": [
      {
       "categories": [
-       "capacity_expansion"
+       "earnings",
+       "guidance"
       ],
-      "category": "capacity_expansion",
-      "direction": 0,
-      "magnitude": 27,
+      "category": "guidance",
+      "direction": 1,
+      "magnitude": 80,
       "duration": "long",
-      "title": "Seagate (STX) Stock Could Be 36% Undervalued After HDD Capacity News - Yahoo Finance",
-      "published": "2026-10-09",
-      "age_days": 9,
-      "priced_in": null,
-      "effective": 0.0
+      "title": "STX Stock Rallies As Much As 9% After-Hours On Q4 Beat, Raised Guidance, And Locked-In 2028 Demand - Stocktwits",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": 0,
+      "effective": 77.6
      },
      {
       "categories": [
@@ -2313,24 +2316,10 @@
       "age_days": 13,
       "priced_in": null,
       "effective": 0.0
-     },
-     {
-      "categories": [
-       "capacity_expansion"
-      ],
-      "category": "capacity_expansion",
-      "direction": -1,
-      "magnitude": 45,
-      "duration": "long",
-      "title": "STX, WDC Stocks Sink On Toshiba’s Reported Plan To Double AI Hard-Disk Capacity: Analysts Call The Drop Overdone - Stocktwits",
-      "published": "2026-10-02",
-      "age_days": 16,
-      "priced_in": 100,
-      "effective": -0.0
      }
     ],
     "news_count": 39,
-    "key_catalyst": "capacity_expansion（0，已反映 ?%）：Seagate (STX) Stock Could Be 36% Undervalued After HDD Capacity News - Yahoo Finance",
+    "key_catalyst": "guidance（+，已反映 0%）：STX Stock Rallies As Much As 9% After-Hours On Q4 Beat, Raised Guidance, And Locked-In 2028 Demand - Stocktwits",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -2365,7 +2354,7 @@
     "verdict": "POTENTIAL_OVERSOLD"
    },
    "holding": null,
-   "expected_excess_60d": 0.02625,
+   "expected_excess_60d": 0.028800000000000006,
    "narrative": {
     "why_now": "長線贏家（3 年 +875%）已自 52 週高點回落 42%，落入低檔布局區。低檔分數 92、財報加速 88、成長 85。大跌主因非公司基本面，屬潛在超跌。",
     "why_not_chase": "估值分數僅 31",
@@ -2374,21 +2363,20 @@
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 464.08；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "低檔分數 92、財報加速 88、成長 85",
     "bear_thesis": "估值 31、相對強度 38",
-    "key_catalyst": "capacity_expansion（0，已反映 ?%）：Seagate (STX) Stock Could Be 36% Undervalued After HDD Capacity News - Yahoo Finance"
+    "key_catalyst": "guidance（+，已反映 0%）：STX Stock Rallies As Much As 9% After-Hours On Q4 Beat, Raised Guidance, And Locked-In 2028 Demand - Stocktwits"
    },
    "batch_rank": 8,
    "rotation_view": {
     "better_than": [
      "2337.TW",
-     "PANW",
-     "WDC"
+     "CRWD",
+     "PANW"
     ],
     "worse_than": [
-     "2059.TW",
-     "3443.TW"
+     "2059.TW"
     ]
    },
-   "target_weight": 0.0433
+   "target_weight": 0.0471
   },
   {
    "ticker": "3406.TW",
@@ -2451,7 +2439,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 42.92166955242366,
+    "price_risk": 42.92166838107174,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -2477,7 +2465,7 @@
     "positioning": 65.0,
     "catalyst": null,
     "low_entry": 20.4,
-    "price_risk": 42.92166955242366,
+    "price_risk": 42.92166838107174,
     "fundamental_uncertainty": 0,
     "earnings": 75.6,
     "ai": null,
@@ -2507,15 +2495,15 @@
     "vs_SPY_20d": 0.15990999678559947,
     "vs_SPY_60d": 0.9798998667952779,
     "vs_SPY_120d": 0.9118508799804501,
-    "vs_SPY_252d": 0.6757846861192023,
+    "vs_SPY_252d": 0.675784815680186,
     "vs_QQQ_20d": 0.15990999678559947,
     "vs_QQQ_60d": 0.9798998667952779,
     "vs_QQQ_120d": 0.9118508799804501,
-    "vs_QQQ_252d": 0.6757846861192023,
+    "vs_QQQ_252d": 0.675784815680186,
     "vs_ind_20d": 0.15990999678559947,
     "vs_ind_60d": 0.9798998667952779,
     "vs_ind_120d": 0.9118508799804501,
-    "vs_ind_252d": 0.6757846861192023,
+    "vs_ind_252d": 0.675784815680186,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -2530,8 +2518,8 @@
     "up_volume_ratio": 0.5100171901200471,
     "breakout": false
    },
-   "vol_63": 0.8487748084937724,
-   "beta": 0.6923185359146242,
+   "vol_63": 0.8487748084937725,
+   "beta": 0.6923184468918773,
    "downside_risk": 0.07659574468085106,
    "coverage": 0.86,
    "entry": {
@@ -2623,15 +2611,15 @@
    "rotation_view": {
     "better_than": [
      "2337.TW",
-     "PANW",
-     "WDC"
+     "CRWD",
+     "PANW"
     ],
     "worse_than": [
      "2059.TW",
      "3443.TW"
     ]
    },
-   "target_weight": 0.0452
+   "target_weight": 0.0448
   },
   {
    "ticker": "NTAP",
@@ -2641,10 +2629,10 @@
    "theme": "Storage",
    "sub_theme": "enterprise storage",
    "valuation_class": "C",
-   "opportunity": 64.9,
+   "opportunity": 65.4,
    "opportunity_detail": {
-    "score": 64.9,
-    "raw": 64.9,
+    "score": 65.4,
+    "raw": 65.4,
     "penalty": 0.0,
     "coverage": 1.0,
     "components_used": [
@@ -2658,14 +2646,14 @@
     ],
     "validated_share": 0.29
    },
-   "status": "BUY_ON_PULLBACK",
+   "status": "BUY_NOW",
    "flags": [],
-   "status_why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 186.57–191.49）",
+   "status_why": "機會分數高、現價在可進場區且未過熱",
    "state": null,
-   "pullback_reason": "CONFIRMATION_REQUIRED",
+   "pullback_reason": null,
    "new_money_action": {
-    "status": "BUY_ON_PULLBACK",
-    "why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 186.57–191.49）",
+    "status": "BUY_NOW",
+    "why": "機會分數高、現價在可進場區且未過熱",
     "state": null
    },
    "entry_score": 60.7,
@@ -2683,14 +2671,16 @@
    "drawdown_type": "NONE",
    "price_location": "PULLBACK",
    "quality_tier": "A",
-   "confirmations": [],
+   "confirmations": [
+    "EARNINGS_ACCELERATION"
+   ],
    "universe_rank": [
     3,
     103
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 27.385657736293634,
+    "price_risk": 27.385620834185573,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -2706,18 +2696,18 @@
     "technical": 98.24561403508773,
     "industry_momentum": 12.76595744680851,
     "risk": 16.4,
-    "overextension": 5.699009819326471,
+    "overextension": 5.699009858901701,
     "ai_exposure": 40.0,
     "quality": 83.6,
     "growth": 39.7,
-    "earnings_acceleration": 61.6,
+    "earnings_acceleration": 65.2,
     "valuation": 26.5,
     "positioning": 71.1,
     "catalyst": 53.7,
     "low_entry": 39.4,
-    "price_risk": 27.385657736293634,
+    "price_risk": 27.385620834185573,
     "fundamental_uncertainty": 0,
-    "earnings": 61.6,
+    "earnings": 65.2,
     "ai": 40.0,
     "industry": 12.76595744680851
    },
@@ -2732,20 +2722,20 @@
     "60d": 0.24064454408933367,
     "120d": 0.889340586427841,
     "252d": 0.703583948712778,
-    "756d": 1.7920685838279886
+    "756d": 1.7920680001572027
    },
    "low_entry": {
     "in_zone": false,
     "dd_52w": -0.14792202821070632,
-    "ret_3y": 1.7920685838279886,
+    "ret_3y": 1.7920680001572027,
     "score": 39.4,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": 0.03066194830820712,
     "vs_SPY_60d": 0.20411511693172435,
-    "vs_SPY_120d": 0.8167053808753266,
-    "vs_SPY_252d": 0.543753370896763,
+    "vs_SPY_120d": 0.8167054728815712,
+    "vs_SPY_252d": 0.5437534784695242,
     "vs_QQQ_20d": 0.04783290631021053,
     "vs_QQQ_60d": 0.21379388655104226,
     "vs_QQQ_120d": 0.8184457684245514,
@@ -2753,23 +2743,23 @@
     "vs_ind_20d": 0.06391198592418235,
     "vs_ind_60d": 0.21131356483853825,
     "vs_ind_120d": 0.7440262641145439,
-    "vs_ind_252d": 0.40628480264639033,
+    "vs_ind_252d": 0.40628466267627616,
     "vs_theme_20d": 0.28426066213746287,
     "vs_theme_60d": 0.5931247184578495,
-    "vs_theme_120d": 0.9378349560804444,
-    "vs_theme_252d": -1.1422514326640607
+    "vs_theme_120d": 0.937834900988977,
+    "vs_theme_252d": -1.1422515202986594
    },
    "technical_detail": {
     "dist_ma20": -0.05629930743765721,
     "dist_ma50": 0.010650465737850112,
     "dist_52w_high": -0.14792202821070632,
-    "rsi14": 43.823945206681934,
+    "rsi14": 43.823945206714704,
     "volume_spike": 1.1808487797895941,
     "up_volume_ratio": 0.6304201073668645,
     "breakout": false
    },
-   "vol_63": 0.4238678053777202,
-   "beta": 1.3144002923118572,
+   "vol_63": 0.4238678053777199,
+   "beta": 1.314397487751646,
    "downside_risk": 0.14792202821070632,
    "coverage": 1.0,
    "entry": {
@@ -2921,7 +2911,7 @@
     "verdict": null
    },
    "holding": null,
-   "expected_excess_60d": 0.02235000000000001,
+   "expected_excess_60d": 0.02310000000000001,
    "narrative": {
     "why_now": "技術 98、動能排名 96、相對強度 86。",
     "why_not_chase": "估值分數僅 26",
@@ -2935,17 +2925,17 @@
    "batch_rank": 10,
    "rotation_view": {
     "better_than": [
+     "ARM",
      "LITE",
-     "3044.TW",
-     "FLEX"
+     "3044.TW"
     ],
     "worse_than": [
-     "2327.TW",
-     "HPE",
-     "CRDO"
+     "3443.TW",
+     "FTNT",
+     "2327.TW"
     ]
    },
-   "target_weight": 0.0742
+   "target_weight": 0.076
   },
   {
    "ticker": "AVGO",
@@ -3019,7 +3009,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 47.98100932839081,
+    "price_risk": 47.98100342356945,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -3039,14 +3029,14 @@
     "ai_exposure": 80.0,
     "quality": 97.5,
     "growth": 100.0,
-    "earnings_acceleration": 69.1,
+    "earnings_acceleration": 69.4,
     "valuation": 77.9,
     "positioning": 97.7,
     "catalyst": 75.8,
     "low_entry": 81.5,
-    "price_risk": 47.98100932839081,
+    "price_risk": 47.98100342356945,
     "fundamental_uncertainty": 0,
-    "earnings": 69.1,
+    "earnings": 69.4,
     "ai": 80.0,
     "industry": 97.87234042553192
    },
@@ -3065,7 +3055,7 @@
    },
    "low_entry": {
     "in_zone": true,
-    "dd_52w": -0.3150115349791781,
+    "dd_52w": -0.31501157853545925,
     "ret_3y": 2.883049434942716,
     "score": 81.5,
     "long_term_broken": false
@@ -3073,8 +3063,8 @@
    "relative": {
     "vs_SPY_20d": -0.08107651461656129,
     "vs_SPY_60d": -0.19736046031849686,
-    "vs_SPY_120d": -0.2838502149377735,
-    "vs_SPY_252d": -0.21714310714242246,
+    "vs_SPY_120d": -0.2838501229315289,
+    "vs_SPY_252d": -0.21714299956966132,
     "vs_QQQ_20d": -0.06390555661455788,
     "vs_QQQ_60d": -0.18768169069917895,
     "vs_QQQ_120d": -0.28210982738854873,
@@ -3085,21 +3075,21 @@
     "vs_ind_252d": -0.6415760482884366,
     "vs_theme_20d": 0.02856206425769521,
     "vs_theme_60d": -0.1613770081449479,
-    "vs_theme_120d": -0.5583570292626061,
-    "vs_theme_252d": -0.8554098474033413
+    "vs_theme_120d": -0.5583570162845242,
+    "vs_theme_252d": -0.8554098637059849
    },
    "technical_detail": {
     "dist_ma20": -0.07497032321537178,
     "dist_ma50": -0.10010212851098088,
-    "dist_52w_high": -0.3150115349791781,
-    "rsi14": 34.89164061336618,
+    "dist_52w_high": -0.31501157853545925,
+    "rsi14": 34.891640653715726,
     "volume_spike": 1.2899845347135799,
     "up_volume_ratio": 0.47385849878962816,
     "breakout": false
    },
-   "vol_63": 0.38195881690183475,
-   "beta": 2.1319921684274226,
-   "downside_risk": 0.3150115349791781,
+   "vol_63": 0.38195881690183536,
+   "beta": 2.1319914713901933,
+   "downside_risk": 0.31501157853545925,
    "coverage": 1.0,
    "entry": {
     "zone_1": {
@@ -3163,21 +3153,7 @@
       "duration": "long",
       "title": "Here's What a $10,000 Investment in Broadcom Stock Could Be Worth in 5 Years. (Hint: It Could Be 1 of the Best AI Stocks to Buy Today.) - The Motley Fool",
       "published": "2026-10-10",
-      "age_days": 7,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "Broadcom’s $29 Billion AI Backstop: How Much Risk Does the Cash Flow Cover? - Yahoo Finance",
-      "published": "2026-10-17",
-      "age_days": 0,
+      "age_days": 8,
       "priced_in": null,
       "effective": 0.0
      }
@@ -3222,7 +3198,7 @@
      "6274.TWO"
     ]
    },
-   "target_weight": 0.0593
+   "target_weight": 0.0587
   },
   {
    "ticker": "2395.TW",
@@ -3283,7 +3259,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 18.35389823948568,
+    "price_risk": 18.35389947935734,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -3311,7 +3287,7 @@
     "positioning": 91.8,
     "catalyst": 39.4,
     "low_entry": 19.8,
-    "price_risk": 18.35389823948568,
+    "price_risk": 18.35389947935734,
     "fundamental_uncertainty": 10,
     "earnings": 68.8,
     "ai": null,
@@ -3341,15 +3317,15 @@
     "vs_SPY_20d": -0.025882352941176467,
     "vs_SPY_60d": 0.14469824063320003,
     "vs_SPY_120d": 0.6927968536777884,
-    "vs_SPY_252d": 0.26944979508950717,
+    "vs_SPY_252d": 0.2694499246504909,
     "vs_QQQ_20d": -0.025882352941176467,
     "vs_QQQ_60d": 0.14469824063320003,
     "vs_QQQ_120d": 0.6927968536777884,
-    "vs_QQQ_252d": 0.26944979508950717,
+    "vs_QQQ_252d": 0.2694499246504909,
     "vs_ind_20d": -0.025882352941176467,
     "vs_ind_60d": 0.14469824063320003,
     "vs_ind_120d": 0.6927968536777884,
-    "vs_ind_252d": 0.26944979508950717,
+    "vs_ind_252d": 0.2694499246504909,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -3364,8 +3340,8 @@
     "up_volume_ratio": 0.35834772069319,
     "breakout": false
    },
-   "vol_63": 0.45405455221148217,
-   "beta": 0.7536583111105273,
+   "vol_63": 0.4540545522114824,
+   "beta": 0.7536584053407726,
    "downside_risk": 0.07432432432432434,
    "coverage": 0.92,
    "entry": {
@@ -3478,7 +3454,7 @@
      "6274.TWO"
     ]
    },
-   "target_weight": 0.0686
+   "target_weight": 0.068
   },
   {
    "ticker": "BE",
@@ -3559,7 +3535,7 @@
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "4 天後公布財報（事件風險）"
+      "3 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -3611,8 +3587,8 @@
    "relative": {
     "vs_SPY_20d": -0.16889672262187383,
     "vs_SPY_60d": -0.01807570212070342,
-    "vs_SPY_120d": -0.12960638134276858,
-    "vs_SPY_252d": 0.738522433700588,
+    "vs_SPY_120d": -0.12960628933652396,
+    "vs_SPY_252d": 0.7385225412733492,
     "vs_QQQ_20d": -0.15172576461987042,
     "vs_QQQ_60d": -0.008396932501385512,
     "vs_QQQ_120d": -0.1278659937935438,
@@ -3620,11 +3596,11 @@
     "vs_ind_20d": -0.15778161360049658,
     "vs_ind_60d": 0.09391341695544375,
     "vs_ind_120d": -0.03444911582726995,
-    "vs_ind_252d": 0.7864413485853616,
+    "vs_ind_252d": 0.786441573491933,
     "vs_theme_20d": -0.16584048473231888,
     "vs_theme_60d": 0.14453480692440349,
     "vs_theme_120d": 0.1283296427217164,
-    "vs_theme_252d": 1.0217625722951769
+    "vs_theme_252d": 1.0217625758587314
    },
    "technical_detail": {
     "dist_ma20": -0.18448792710392747,
@@ -3636,7 +3612,7 @@
     "breakout": false
    },
    "vol_63": 1.0427470510782402,
-   "beta": 4.31971085267509,
+   "beta": 4.319718093736012,
    "downside_risk": 0.36009832686730114,
    "coverage": 1.0,
    "entry": {
@@ -3666,7 +3642,7 @@
      351.28
     ],
     "notes": [
-     "4 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "3 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 242.1,
     "condition": {
@@ -3738,21 +3714,6 @@
      },
      {
       "categories": [
-       "earnings",
-       "analyst_revision"
-      ],
-      "category": "earnings",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
-      "title": "BE Stock Rises Overnight After Oracle Reaffirms Project Jupiter Role: Analyst Hikes Price Target On Gaining Market Acceptance Ahead Of Q3 Results - Stocktwits",
-      "published": "2026-10-16",
-      "age_days": 2,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
        "government_contract"
       ],
       "category": "government_contract",
@@ -3761,12 +3722,27 @@
       "duration": "long",
       "title": "BE Stock Recovers After 10% Selloff: Morgan Stanley Says Crusoe Project Pause Does Not Break AI Power Thesis - Stocktwits",
       "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "earnings",
+       "analyst_revision"
+      ],
+      "category": "earnings",
+      "direction": 0,
+      "magnitude": 42,
+      "duration": "medium",
+      "title": "BE Stock Rises Overnight After Oracle Reaffirms Project Jupiter Role: Analyst Hikes Price Target On Gaining Market Acceptance Ahead Of Q3 Results - Stocktwits",
+      "published": "2026-10-17",
       "age_days": 1,
       "priced_in": null,
       "effective": 0.0
      }
     ],
-    "news_count": 38,
+    "news_count": 40,
     "key_catalyst": "analyst_revision（+，已反映 0%）：Jefferies Just Raised Its Bloom Energy Price Target -- Stock Jumps 10% - Yahoo Finance",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
@@ -3827,7 +3803,7 @@
      "6274.TWO"
     ]
    },
-   "target_weight": 0.029
+   "target_weight": 0.0288
   },
   {
    "ticker": "2337.TW",
@@ -3866,7 +3842,7 @@
     "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。（Buy2 96.63–98.94）",
     "state": null
    },
-   "entry_score": 97.6,
+   "entry_score": 97.7,
    "entry_condition": {
     "ok": true,
     "reason": "現價 107.0 在 Buy1（≤ 109.31）內",
@@ -3902,7 +3878,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 69.5785022869775,
+    "price_risk": 69.57850525322209,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -3926,11 +3902,11 @@
     "quality": 75.1,
     "growth": 100.0,
     "earnings_acceleration": 99.4,
-    "valuation": 99.5,
+    "valuation": 100.0,
     "positioning": 80.0,
     "catalyst": 50.0,
     "low_entry": 92.3,
-    "price_risk": 69.5785022869775,
+    "price_risk": 69.57850525322209,
     "fundamental_uncertainty": 10,
     "earnings": 99.4,
     "ai": null,
@@ -3960,15 +3936,15 @@
     "vs_SPY_20d": -0.09138453634729005,
     "vs_SPY_60d": -0.1934959349593497,
     "vs_SPY_120d": -0.4207796085303227,
-    "vs_SPY_252d": 2.3473895424822047,
+    "vs_SPY_252d": 2.347389672043188,
     "vs_QQQ_20d": -0.09138453634729005,
     "vs_QQQ_60d": -0.1934959349593497,
     "vs_QQQ_120d": -0.4207796085303227,
-    "vs_QQQ_252d": 2.3473895424822047,
+    "vs_QQQ_252d": 2.347389672043188,
     "vs_ind_20d": -0.09138453634729005,
     "vs_ind_60d": -0.1934959349593497,
     "vs_ind_120d": -0.4207796085303227,
-    "vs_ind_252d": 2.3473895424822047,
+    "vs_ind_252d": 2.347389672043188,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -3984,7 +3960,7 @@
     "breakout": false
    },
    "vol_63": 0.7522446896605686,
-   "beta": 1.3477270242718882,
+   "beta": 1.3477272497064772,
    "downside_risk": 0.4231805929919138,
    "coverage": 0.92,
    "entry": {
@@ -4035,9 +4011,9 @@
       "direction": 0,
       "magnitude": 36,
       "duration": "long",
-      "title": "Ichigo (TSE:2337) Approves A Buyback, Does It Look Fairly Valued? - Yahoo Finance",
-      "published": "2026-10-16",
-      "age_days": 2,
+      "title": "Does Ichigo (TSE:2337) Trade At A Discount As Buybacks Begin? - Yahoo Finance",
+      "published": "2026-10-17",
+      "age_days": 1,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4049,15 +4025,15 @@
       "direction": 0,
       "magnitude": 36,
       "duration": "long",
-      "title": "Does Ichigo (TSE:2337) Trade At A Discount As Buybacks Begin? - Yahoo Finance",
-      "published": "2026-10-17",
-      "age_days": 0,
+      "title": "Ichigo (TSE:2337) Approves A Buyback, Does It Look Fairly Valued? - Yahoo Finance",
+      "published": "2026-10-16",
+      "age_days": 3,
       "priced_in": null,
       "effective": 0.0
      }
     ],
     "news_count": 6,
-    "key_catalyst": "government_contract（0，已反映 ?%）：Ichigo (TSE:2337) Approves A Buyback, Does It Look Fairly Valued? - Yahoo Finance",
+    "key_catalyst": "government_contract（0，已反映 ?%）：Does Ichigo (TSE:2337) Trade At A Discount As Buybacks Begin? - Yahoo Finance",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -4102,7 +4078,7 @@
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 92.03；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "成長 100、估值 100、財報加速 99",
     "bear_thesis": "動能排名 6、技術 15、相對強度 31",
-    "key_catalyst": "government_contract（0，已反映 ?%）：Ichigo (TSE:2337) Approves A Buyback, Does It Look Fairly Valued? - Yahoo Finance"
+    "key_catalyst": "government_contract（0，已反映 ?%）：Does Ichigo (TSE:2337) Trade At A Discount As Buybacks Begin? - Yahoo Finance"
    },
    "batch_rank": 14,
    "rotation_view": {
@@ -4117,7 +4093,366 @@
      "3406.TW"
     ]
    },
-   "target_weight": 0.0272
+   "target_weight": 0.027
+  },
+  {
+   "ticker": "CRWD",
+   "company": "CrowdStrike Holdings, Inc.",
+   "price": 227.39,
+   "held": false,
+   "theme": null,
+   "sub_theme": null,
+   "valuation_class": "A",
+   "opportunity": 62.1,
+   "opportunity_detail": {
+    "score": 62.1,
+    "raw": 62.1,
+    "penalty": 0.0,
+    "coverage": 0.92,
+    "components_used": [
+     "catalyst",
+     "earnings_acceleration",
+     "growth",
+     "momentum_rank",
+     "quality",
+     "valuation"
+    ],
+    "validated_share": 0.32
+   },
+   "status": "BUY_ON_PULLBACK",
+   "flags": [],
+   "status_why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 206.78–212.67）",
+   "state": null,
+   "pullback_reason": "CONFIRMATION_REQUIRED",
+   "new_money_action": {
+    "status": "BUY_ON_PULLBACK",
+    "why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 206.78–212.67）",
+    "state": null
+   },
+   "entry_score": 62.1,
+   "entry_condition": {
+    "ok": true,
+    "reason": "current price is still acceptable despite being above preferred entry zone：高於 Buy1 0.49 ATR（≤ 0.75）且未過熱",
+    "atr_above_buy1": 0.49,
+    "basis": "ACCEPTABLE_ABOVE_BUY1"
+   },
+   "overextension_tier": "Normal",
+   "drawdown": {
+    "type": "NONE",
+    "why": "距 52 週高點跌幅 < 20%，不做回撤分類"
+   },
+   "drawdown_type": "NONE",
+   "price_location": "DISCOUNTED",
+   "quality_tier": "A",
+   "confirmations": [
+    "CATALYST"
+   ],
+   "universe_rank": [
+    4,
+    103
+   ],
+   "low_price": null,
+   "risk_detail": {
+    "price_risk": 51.95717672594229,
+    "fundamental_uncertainty": {
+     "score": 30,
+     "evidence": [
+      "營業利益率 -2%（虧損）"
+     ],
+     "speculative": true
+    }
+   },
+   "theme_exposure": {
+    "Software / AI Platform": 0.5,
+    "Other": 0.5
+   },
+   "scores": {
+    "momentum_rank": 94.73684210526315,
+    "relative_strength": 75.35087719298245,
+    "technical": 84.86842105263158,
+    "industry_momentum": null,
+    "risk": 43.2,
+    "overextension": 5.631495638844315,
+    "ai_exposure": null,
+    "quality": 55.8,
+    "growth": 46.6,
+    "earnings_acceleration": 63.5,
+    "valuation": 6.2,
+    "positioning": 90.0,
+    "catalyst": 84.4,
+    "low_entry": 49.2,
+    "price_risk": 51.95717672594229,
+    "fundamental_uncertainty": 30,
+    "earnings": 63.5,
+    "ai": null,
+    "industry": null
+   },
+   "ai": {
+    "exposure": null,
+    "demand_sensitivity": null,
+    "cycle_position": null
+   },
+   "returns": {
+    "5d": -0.17324755553696414,
+    "20d": -0.04317271100501263,
+    "60d": 0.23972304906580066,
+    "120d": 1.0007479528968237,
+    "252d": 0.8599648644079547,
+    "756d": 3.832430090636655
+   },
+   "low_entry": {
+    "in_zone": false,
+    "dd_52w": -0.18457286332072764,
+    "ret_3y": 3.832430090636655,
+    "score": 49.2,
+    "long_term_broken": false
+   },
+   "relative": {
+    "vs_SPY_20d": -0.04522078509498839,
+    "vs_SPY_60d": 0.20319362190819135,
+    "vs_SPY_120d": 0.928112839350554,
+    "vs_SPY_252d": 0.7001343941647009,
+    "vs_QQQ_20d": -0.02804982709298498,
+    "vs_QQQ_60d": 0.21287239152750925,
+    "vs_QQQ_120d": 0.9298531348935342,
+    "vs_QQQ_252d": 0.6757879836986722,
+    "vs_ind_20d": -0.04522078509498839,
+    "vs_ind_60d": 0.20319362190819135,
+    "vs_ind_120d": 0.928112839350554,
+    "vs_ind_252d": 0.7001343941647009,
+    "vs_theme_20d": null,
+    "vs_theme_60d": null,
+    "vs_theme_120d": null,
+    "vs_theme_252d": null
+   },
+   "technical_detail": {
+    "dist_ma20": -0.12492833193684394,
+    "dist_ma50": -0.02480551496325445,
+    "dist_52w_high": -0.18457286332072764,
+    "rsi14": 38.98226333634679,
+    "volume_spike": 1.5343620038436445,
+    "up_volume_ratio": 0.5326317103720576,
+    "breakout": false
+   },
+   "vol_63": 0.711954953193856,
+   "beta": 1.5654144817820546,
+   "downside_risk": 0.18457286332072764,
+   "coverage": 0.92,
+   "entry": {
+    "zone_1": {
+     "low": 215.77,
+     "high": 221.66,
+     "basis": "20 日低點",
+     "pct_from_price": -3.8
+    },
+    "zone_2": {
+     "low": 206.78,
+     "high": 212.67,
+     "basis": "1 ATR",
+     "pct_from_price": -7.8
+    },
+    "zone_3": {
+     "low": 195.0,
+     "high": 200.89,
+     "basis": "2 ATR",
+     "pct_from_price": -13.0
+    },
+    "avoid_above": 289.3,
+    "atr": 11.78,
+    "price": 227.39,
+    "range_52w": [
+     85.68,
+     286.99
+    ],
+    "notes": [
+     "估值偏貴：各區下移 0.5 ATR"
+    ],
+    "low_entry_line": 195.2,
+    "condition": {
+     "ok": true,
+     "reason": "current price is still acceptable despite being above preferred entry zone：高於 Buy1 0.49 ATR（≤ 0.75）且未過熱",
+     "atr_above_buy1": 0.49,
+     "basis": "ACCEPTABLE_ABOVE_BUY1"
+    }
+   },
+   "catalyst": {
+    "score": 84.4,
+    "events": [
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 1,
+      "magnitude": 70,
+      "duration": "medium",
+      "title": "CRWD Stock Jumps After Q2 Beat As Analysts See Cybersecurity Demand Inflection — But KeyBanc Pushes Back - Stocktwits",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": 0,
+      "effective": 63.8
+     },
+     {
+      "categories": [
+       "capacity_expansion"
+      ],
+      "category": "capacity_expansion",
+      "direction": 1,
+      "magnitude": 45,
+      "duration": "long",
+      "title": "AWS and NVIDIA expand CrowdStrike's program; its startups have raised nearly $1B. - Stock Titan",
+      "published": "2026-10-06",
+      "age_days": 12,
+      "priced_in": 0,
+      "effective": 37.4
+     },
+     {
+      "categories": [
+       "guidance",
+       "analyst_revision"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "CrowdStrike (CRWD) Stock Forecast and Price Target 2026 - MarketBeat",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Crowdstrike Stock Price Forecast. Should You Buy CRWD? - StockInvest.us",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 0,
+      "magnitude": 42,
+      "duration": "medium",
+      "title": "CrowdStrike's Q1 Beat Wasn't Big Enough For Some Bulls — CRWD Stock Heads For Worst Drop In 22 Months - Stocktwits",
+      "published": "2026-10-17",
+      "age_days": 1,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "product_launch"
+      ],
+      "category": "product_launch",
+      "direction": 0,
+      "magnitude": 24,
+      "duration": "medium",
+      "title": "An AI security business at CrowdStrike grew more than 79-fold in three quarters since launch. - Stock Titan",
+      "published": "2026-10-07",
+      "age_days": 11,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "CRWD Stock Soars After Firm Lifts Full-Year Growth Outlook On AI Security Demand - Stocktwits",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 0,
+      "magnitude": 42,
+      "duration": "medium",
+      "title": "CrowdStrike (CRWD) Is Accelerating Again. Is 219 Times Earnings Too Far Ahead? - Yahoo Finance",
+      "published": "2026-10-12",
+      "age_days": 6,
+      "priced_in": null,
+      "effective": 0.0
+     }
+    ],
+    "news_count": 38,
+    "key_catalyst": "earnings（+，已反映 0%）：CRWD Stock Jumps After Q2 Beat As Analysts See Cybersecurity Demand Inflection — But KeyBanc Pushes Back - Stocktwits",
+    "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
+   },
+   "positioning": {
+    "score": 90.0,
+    "metrics": {
+     "short_pct_float": 0.025999999,
+     "institutional_pct": 0.77876997,
+     "recommendation_mean": 1.69811
+    },
+    "note": "以放空比例與分析師共識為代理；內部人交易需 financialdatasets API（LLM 流程中提供）"
+   },
+   "sec_valuation": null,
+   "shock": {
+    "shock": {
+     "date": "2026-10-16",
+     "return": -0.0702,
+     "severity": 1,
+     "market_return": -0.0111,
+     "theme_return": null,
+     "residual": -0.0529,
+     "causes": [
+      "company_specific"
+     ]
+    },
+    "fundamental_damage_score": 25,
+    "structural": false,
+    "nature": "temporary",
+    "evidence": [
+     "公司特有跌幅（扣除大盤與同業後仍大跌）"
+    ],
+    "point_in_time_news": true,
+    "verdict": null
+   },
+   "holding": null,
+   "expected_excess_60d": 0.018150000000000003,
+   "narrative": {
+    "why_now": "動能排名 95、技術 85、催化 84。",
+    "why_not_chase": "估值分數僅 6",
+    "key_risk": "估值 6",
+    "attractive_price": "215.77–221.66（20 日低點）起開始有吸引力",
+    "thesis_invalidation": "收盤跌破 Zone 3 下緣 195.0；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
+    "bull_thesis": "動能排名 95、技術 85、催化 84",
+    "bear_thesis": "估值 6",
+    "key_catalyst": "earnings（+，已反映 0%）：CRWD Stock Jumps After Q2 Beat As Analysts See Cybersecurity Demand Inflection — But KeyBanc Pushes Back - Stocktwits"
+   },
+   "batch_rank": 15,
+   "rotation_view": {
+    "better_than": [
+     "FLEX",
+     "2377.TW",
+     "FSLR"
+    ],
+    "worse_than": [
+     "6274.TWO",
+     "STX",
+     "3406.TW"
+    ]
+   },
+   "target_weight": 0.0351
   },
   {
    "ticker": "PANW",
@@ -4175,7 +4510,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 41.541628467244465,
+    "price_risk": 41.5416004278418,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -4201,7 +4536,7 @@
     "positioning": 90.1,
     "catalyst": 50.0,
     "low_entry": 49.5,
-    "price_risk": 41.541628467244465,
+    "price_risk": 41.5416004278418,
     "fundamental_uncertainty": 0,
     "earnings": 37.6,
     "ai": null,
@@ -4230,16 +4565,16 @@
    "relative": {
     "vs_SPY_20d": -0.06140223925103405,
     "vs_SPY_60d": 0.013742337949167904,
-    "vs_SPY_120d": 0.7972391050697223,
-    "vs_SPY_252d": 0.49474128986348487,
+    "vs_SPY_120d": 0.7972391970759669,
+    "vs_SPY_252d": 0.494741397436246,
     "vs_QQQ_20d": -0.04423128124903064,
     "vs_QQQ_60d": 0.02342110756848581,
     "vs_QQQ_120d": 0.7989794926189471,
     "vs_QQQ_252d": 0.4703949869702173,
     "vs_ind_20d": -0.06140223925103405,
     "vs_ind_60d": 0.013742337949167904,
-    "vs_ind_120d": 0.7972391050697223,
-    "vs_ind_252d": 0.49474128986348487,
+    "vs_ind_120d": 0.7972391970759669,
+    "vs_ind_252d": 0.494741397436246,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -4255,7 +4590,7 @@
     "breakout": false
    },
    "vol_63": 0.608586657959033,
-   "beta": 1.2733494277182877,
+   "beta": 1.2733472967236856,
    "downside_risk": 0.18553976562273455,
    "coverage": 0.92,
    "entry": {
@@ -4322,8 +4657,8 @@
       "magnitude": 48,
       "duration": "long",
       "title": "Palo Alto Networks (NasdaqGS:PANW) Stock Forecast & Analyst Predictions - Simply Wall Street",
-      "published": "2026-10-15",
-      "age_days": 3,
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4337,7 +4672,7 @@
       "duration": "long",
       "title": "Palo Alto Networks Stock Outlook: Can PANW Stock Keep Climbing After Hitting New Highs? - TradingKey",
       "published": "2026-10-17",
-      "age_days": 0,
+      "age_days": 1,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4351,7 +4686,7 @@
       "duration": "long",
       "title": "Palo Alto Networks (PANW) Stock Looks Stretched Against Its Cash Flow Outlook - Simply Wall Street",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4393,7 +4728,7 @@
       "duration": "long",
       "title": "Palo Alto Networks Inc Stock (PANW) Opened Down by 3.58% on Oct 16: What Signal Does It Send? - TradingKey",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4459,12 +4794,12 @@
     "bear_thesis": "估值 25、財報加速 38",
     "key_catalyst": "guidance（0，已反映 ?%）：Palo Alto Networks (PANW) Stock Forecast and Price Target 2026 - MarketBeat"
    },
-   "batch_rank": 15,
+   "batch_rank": 16,
    "rotation_view": {
     "better_than": [
+     "FSLR",
      "AMAT",
-     "8299.TWO",
-     "TER"
+     "8299.TWO"
     ],
     "worse_than": [
      "6274.TWO",
@@ -4472,7 +4807,7 @@
      "3406.TW"
     ]
    },
-   "target_weight": 0.0373
+   "target_weight": 0.037
   },
   {
    "ticker": "WDC",
@@ -4550,11 +4885,11 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 92.08019204733276,
+    "price_risk": 92.08019204733274,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "4 天後公布財報（事件風險）"
+      "3 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -4577,7 +4912,7 @@
     "positioning": 90.2,
     "catalyst": 71.4,
     "low_entry": 100.0,
-    "price_risk": 92.08019204733276,
+    "price_risk": 92.08019204733274,
     "fundamental_uncertainty": 10,
     "earnings": 85.8,
     "ai": 55.0,
@@ -4593,7 +4928,7 @@
     "20d": -0.24777956539139467,
     "60d": -0.4051467522986024,
     "120d": -0.1710299512667558,
-    "252d": 1.7617018457165097,
+    "252d": 1.761702020985707,
     "756d": 8.51473643863915
    },
    "low_entry": {
@@ -4606,32 +4941,32 @@
    "relative": {
     "vs_SPY_20d": -0.24982763948137043,
     "vs_SPY_60d": -0.44167617945621174,
-    "vs_SPY_120d": -0.24366515681927015,
-    "vs_SPY_252d": 1.6018712679004947,
+    "vs_SPY_120d": -0.24366506481302552,
+    "vs_SPY_252d": 1.6018715507424532,
     "vs_QQQ_20d": -0.23265668147936702,
     "vs_QQQ_60d": -0.43199740983689383,
     "vs_QQQ_120d": -0.24192476927004536,
-    "vs_QQQ_252d": 1.5775249650072272,
+    "vs_QQQ_252d": 1.5775251402764245,
     "vs_ind_20d": -0.2165776018653952,
     "vs_ind_60d": -0.43447773154939784,
     "vs_ind_120d": -0.3163442735800529,
-    "vs_ind_252d": 1.464402699650122,
+    "vs_ind_252d": 1.4644027349492053,
     "vs_theme_20d": -0.13647371954690346,
     "vs_theme_60d": -0.3755622261240546,
-    "vs_theme_120d": -0.6527208504614508,
-    "vs_theme_252d": 0.44492541284153697
+    "vs_theme_120d": -0.6527209055529182,
+    "vs_theme_252d": 0.44492558811073435
    },
    "technical_detail": {
     "dist_ma20": -0.20966400776996652,
     "dist_ma50": -0.2490743894766667,
     "dist_52w_high": -0.5549541052311888,
-    "rsi14": 26.97597900422562,
+    "rsi14": 26.975979004189327,
     "volume_spike": 0.8632147441854434,
     "up_volume_ratio": 0.3598488055033282,
     "breakout": false
    },
-   "vol_63": 0.776802987402954,
-   "beta": 2.999647434694336,
+   "vol_63": 0.7768029874029537,
+   "beta": 2.9996453929267317,
    "downside_risk": 0.5549541052311888,
    "coverage": 1.0,
    "entry": {
@@ -4661,7 +4996,7 @@
      799.61
     ],
     "notes": [
-     "4 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "3 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 522.19,
     "condition": {
@@ -4712,7 +5047,7 @@
       "duration": "long",
       "title": "WDC Stock Quote Price and Forecast - CNN",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4768,7 +5103,7 @@
       "duration": "medium",
       "title": "Western Digital Pre-Q1 Earnings: Buy the Stock Now or Wait for Results? - Yahoo Finance",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -4782,7 +5117,7 @@
       "duration": "medium",
       "title": "Western Digital (WDC) Stock Faces Rising DRAM Competition - Simply Wall Street",
       "published": "2026-10-15",
-      "age_days": 2,
+      "age_days": 3,
       "priced_in": null,
       "effective": 0.0
      }
@@ -4834,12 +5169,12 @@
     "bear_thesis": "相對強度 27、技術 31、動能排名 37",
     "key_catalyst": "earnings（+，已反映 0%）：WDC Stock Sinks 11% After-Hours Despite Earnings Beat — Retail Questions Selloff, Blames ‘Technicals And Algos’ - Stocktwits"
    },
-   "batch_rank": 16,
+   "batch_rank": 17,
    "rotation_view": {
     "better_than": [
-     "AMAT",
      "8299.TWO",
-     "TER"
+     "TER",
+     "VRT"
     ],
     "worse_than": [
      "6274.TWO",
@@ -4848,365 +5183,6 @@
     ]
    },
    "target_weight": 0.0
-  },
-  {
-   "ticker": "CRWD",
-   "company": "CrowdStrike Holdings, Inc.",
-   "price": 227.39,
-   "held": false,
-   "theme": null,
-   "sub_theme": null,
-   "valuation_class": "A",
-   "opportunity": 60.8,
-   "opportunity_detail": {
-    "score": 60.8,
-    "raw": 60.8,
-    "penalty": 0.0,
-    "coverage": 0.92,
-    "components_used": [
-     "catalyst",
-     "earnings_acceleration",
-     "growth",
-     "momentum_rank",
-     "quality",
-     "valuation"
-    ],
-    "validated_share": 0.32
-   },
-   "status": "BUY_ON_PULLBACK",
-   "flags": [],
-   "status_why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 206.78–212.67）",
-   "state": null,
-   "pullback_reason": "CONFIRMATION_REQUIRED",
-   "new_money_action": {
-    "status": "BUY_ON_PULLBACK",
-    "why": "機會分數中上：只在 Buy1 以下分批，不追價（Buy2 206.78–212.67）",
-    "state": null
-   },
-   "entry_score": 62.1,
-   "entry_condition": {
-    "ok": true,
-    "reason": "current price is still acceptable despite being above preferred entry zone：高於 Buy1 0.49 ATR（≤ 0.75）且未過熱",
-    "atr_above_buy1": 0.49,
-    "basis": "ACCEPTABLE_ABOVE_BUY1"
-   },
-   "overextension_tier": "Normal",
-   "drawdown": {
-    "type": "NONE",
-    "why": "距 52 週高點跌幅 < 20%，不做回撤分類"
-   },
-   "drawdown_type": "NONE",
-   "price_location": "DISCOUNTED",
-   "quality_tier": "A",
-   "confirmations": [
-    "CATALYST"
-   ],
-   "universe_rank": [
-    4,
-    103
-   ],
-   "low_price": null,
-   "risk_detail": {
-    "price_risk": 51.957189660469936,
-    "fundamental_uncertainty": {
-     "score": 30,
-     "evidence": [
-      "營業利益率 -2%（虧損）"
-     ],
-     "speculative": true
-    }
-   },
-   "theme_exposure": {
-    "Software / AI Platform": 0.5,
-    "Other": 0.5
-   },
-   "scores": {
-    "momentum_rank": 94.73684210526315,
-    "relative_strength": 75.35087719298245,
-    "technical": 84.86842105263158,
-    "industry_momentum": null,
-    "risk": 43.2,
-    "overextension": 5.631495638844315,
-    "ai_exposure": null,
-    "quality": 55.8,
-    "growth": 46.6,
-    "earnings_acceleration": 63.5,
-    "valuation": 6.2,
-    "positioning": 90.0,
-    "catalyst": 65.1,
-    "low_entry": 49.2,
-    "price_risk": 51.957189660469936,
-    "fundamental_uncertainty": 30,
-    "earnings": 63.5,
-    "ai": null,
-    "industry": null
-   },
-   "ai": {
-    "exposure": null,
-    "demand_sensitivity": null,
-    "cycle_position": null
-   },
-   "returns": {
-    "5d": -0.17324755553696414,
-    "20d": -0.04317271100501263,
-    "60d": 0.23972304906580066,
-    "120d": 1.0007479528968237,
-    "252d": 0.8599648644079547,
-    "756d": 3.832430090636655
-   },
-   "low_entry": {
-    "in_zone": false,
-    "dd_52w": -0.18457286332072764,
-    "ret_3y": 3.832430090636655,
-    "score": 49.2,
-    "long_term_broken": false
-   },
-   "relative": {
-    "vs_SPY_20d": -0.04522078509498839,
-    "vs_SPY_60d": 0.20319362190819135,
-    "vs_SPY_120d": 0.9281127473443094,
-    "vs_SPY_252d": 0.7001342865919398,
-    "vs_QQQ_20d": -0.02804982709298498,
-    "vs_QQQ_60d": 0.21287239152750925,
-    "vs_QQQ_120d": 0.9298531348935342,
-    "vs_QQQ_252d": 0.6757879836986722,
-    "vs_ind_20d": -0.04522078509498839,
-    "vs_ind_60d": 0.20319362190819135,
-    "vs_ind_120d": 0.9281127473443094,
-    "vs_ind_252d": 0.7001342865919398,
-    "vs_theme_20d": null,
-    "vs_theme_60d": null,
-    "vs_theme_120d": null,
-    "vs_theme_252d": null
-   },
-   "technical_detail": {
-    "dist_ma20": -0.12492833193684394,
-    "dist_ma50": -0.02480551496325445,
-    "dist_52w_high": -0.18457286332072764,
-    "rsi14": 38.98226333634679,
-    "volume_spike": 1.5343620038436445,
-    "up_volume_ratio": 0.5326317103720576,
-    "breakout": false
-   },
-   "vol_63": 0.711954953193856,
-   "beta": 1.5654154648061556,
-   "downside_risk": 0.18457286332072764,
-   "coverage": 0.92,
-   "entry": {
-    "zone_1": {
-     "low": 215.77,
-     "high": 221.66,
-     "basis": "20 日低點",
-     "pct_from_price": -3.8
-    },
-    "zone_2": {
-     "low": 206.78,
-     "high": 212.67,
-     "basis": "1 ATR",
-     "pct_from_price": -7.8
-    },
-    "zone_3": {
-     "low": 195.0,
-     "high": 200.89,
-     "basis": "2 ATR",
-     "pct_from_price": -13.0
-    },
-    "avoid_above": 289.3,
-    "atr": 11.78,
-    "price": 227.39,
-    "range_52w": [
-     85.68,
-     286.99
-    ],
-    "notes": [
-     "估值偏貴：各區下移 0.5 ATR"
-    ],
-    "low_entry_line": 195.2,
-    "condition": {
-     "ok": true,
-     "reason": "current price is still acceptable despite being above preferred entry zone：高於 Buy1 0.49 ATR（≤ 0.75）且未過熱",
-     "atr_above_buy1": 0.49,
-     "basis": "ACCEPTABLE_ABOVE_BUY1"
-    }
-   },
-   "catalyst": {
-    "score": 65.1,
-    "events": [
-     {
-      "categories": [
-       "capacity_expansion"
-      ],
-      "category": "capacity_expansion",
-      "direction": 1,
-      "magnitude": 45,
-      "duration": "long",
-      "title": "AWS and NVIDIA expand CrowdStrike's program; its startups have raised nearly $1B. - Stock Titan",
-      "published": "2026-10-06",
-      "age_days": 12,
-      "priced_in": 0,
-      "effective": 37.4
-     },
-     {
-      "categories": [
-       "guidance"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "CRWD Stock Quote Price and Forecast - CNN",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "guidance",
-       "analyst_revision"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "CrowdStrike (CRWD) Stock Forecast and Price Target 2026 - MarketBeat",
-      "published": "2026-10-16",
-      "age_days": 2,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "guidance"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "Crowdstrike Stock Price Forecast. Should You Buy CRWD? - StockInvest.us",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "earnings"
-      ],
-      "category": "earnings",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
-      "title": "CrowdStrike's Q1 Beat Wasn't Big Enough For Some Bulls — CRWD Stock Heads For Worst Drop In 22 Months - Stocktwits",
-      "published": "2026-10-17",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "product_launch"
-      ],
-      "category": "product_launch",
-      "direction": 0,
-      "magnitude": 24,
-      "duration": "medium",
-      "title": "An AI security business at CrowdStrike grew more than 79-fold in three quarters since launch. - Stock Titan",
-      "published": "2026-10-07",
-      "age_days": 11,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "earnings"
-      ],
-      "category": "earnings",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
-      "title": "CrowdStrike (CRWD) Is Accelerating Again. Is 219 Times Earnings Too Far Ahead? - Yahoo Finance",
-      "published": "2026-10-12",
-      "age_days": 5,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "CrowdStrike Stock Is Up 160% in Six Months. What Does Guardian Add to the Story? - Yahoo Finance",
-      "published": "2026-10-14",
-      "age_days": 3,
-      "priced_in": null,
-      "effective": 0.0
-     }
-    ],
-    "news_count": 38,
-    "key_catalyst": "capacity_expansion（+，已反映 0%）：AWS and NVIDIA expand CrowdStrike's program; its startups have raised nearly $1B. - Stock Titan",
-    "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
-   },
-   "positioning": {
-    "score": 90.0,
-    "metrics": {
-     "short_pct_float": 0.025999999,
-     "institutional_pct": 0.77876997,
-     "recommendation_mean": 1.69811
-    },
-    "note": "以放空比例與分析師共識為代理；內部人交易需 financialdatasets API（LLM 流程中提供）"
-   },
-   "sec_valuation": null,
-   "shock": {
-    "shock": {
-     "date": "2026-10-16",
-     "return": -0.0702,
-     "severity": 1,
-     "market_return": -0.0111,
-     "theme_return": null,
-     "residual": -0.0529,
-     "causes": [
-      "company_specific"
-     ]
-    },
-    "fundamental_damage_score": 25,
-    "structural": false,
-    "nature": "temporary",
-    "evidence": [
-     "公司特有跌幅（扣除大盤與同業後仍大跌）"
-    ],
-    "point_in_time_news": true,
-    "verdict": null
-   },
-   "holding": null,
-   "expected_excess_60d": 0.016199999999999996,
-   "narrative": {
-    "why_now": "動能排名 95、技術 85、相對強度 75。",
-    "why_not_chase": "估值分數僅 6",
-    "key_risk": "估值 6",
-    "attractive_price": "215.77–221.66（20 日低點）起開始有吸引力",
-    "thesis_invalidation": "收盤跌破 Zone 3 下緣 195.0；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
-    "bull_thesis": "動能排名 95、技術 85、相對強度 75",
-    "bear_thesis": "估值 6",
-    "key_catalyst": "capacity_expansion（+，已反映 0%）：AWS and NVIDIA expand CrowdStrike's program; its startups have raised nearly $1B. - Stock Titan"
-   },
-   "batch_rank": 17,
-   "rotation_view": {
-    "better_than": [
-     "AMAT",
-     "8299.TWO",
-     "TER"
-    ],
-    "worse_than": [
-     "6274.TWO",
-     "STX",
-     "3406.TW"
-    ]
-   },
-   "target_weight": 0.0316
   },
   {
    "ticker": "SNOW",
@@ -5269,7 +5245,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 37.42947416105724,
+    "price_risk": 37.429451647245614,
     "fundamental_uncertainty": {
      "score": 30,
      "evidence": [
@@ -5297,7 +5273,7 @@
     "positioning": 89.6,
     "catalyst": 41.0,
     "low_entry": 44.9,
-    "price_risk": 37.42947416105724,
+    "price_risk": 37.429451647245614,
     "fundamental_uncertainty": 30,
     "earnings": 74.1,
     "ai": null,
@@ -5326,16 +5302,16 @@
    "relative": {
     "vs_SPY_20d": -0.079026676808439,
     "vs_SPY_60d": 0.12078958874748946,
-    "vs_SPY_120d": 1.0545051503427414,
-    "vs_SPY_252d": 0.1141044697649134,
+    "vs_SPY_120d": 1.054505242348986,
+    "vs_SPY_252d": 0.11410457733767454,
     "vs_QQQ_20d": -0.06185571880643559,
     "vs_QQQ_60d": 0.13046835836680737,
     "vs_QQQ_120d": 1.0562455378919662,
     "vs_QQQ_252d": 0.08975816687164584,
     "vs_ind_20d": -0.079026676808439,
     "vs_ind_60d": 0.12078958874748946,
-    "vs_ind_120d": 1.0545051503427414,
-    "vs_ind_252d": 0.1141044697649134,
+    "vs_ind_120d": 1.054505242348986,
+    "vs_ind_252d": 0.11410457733767454,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -5351,7 +5327,7 @@
     "breakout": false
    },
    "vol_63": 0.5450660766863143,
-   "beta": 1.369963780343831,
+   "beta": 1.369962069294147,
    "downside_risk": 0.16820736763417754,
    "coverage": 0.92,
    "entry": {
@@ -5410,44 +5386,15 @@
      },
      {
       "categories": [
-       "guidance",
-       "analyst_revision"
+       "guidance"
       ],
       "category": "guidance",
       "direction": 0,
       "magnitude": 48,
       "duration": "long",
-      "title": "Snowflake (SNOW) Stock Forecast and Price Target 2026 $SNOW - MarketBeat",
-      "published": "2026-10-12",
-      "age_days": 6,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "m_and_a"
-      ],
-      "category": "m_and_a",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "long",
-      "title": "How to Buy Snowflake Stock (SNOW) in 2026 - The Motley Fool",
-      "published": "2026-10-11",
-      "age_days": 6,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "Does The Move In Snowflake Stock Change Anything? - Trefis",
+      "title": "Snowflake Stock Price Forecast. Should You Buy SNOW? - StockInvest.us",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -5467,15 +5414,15 @@
      },
      {
       "categories": [
-       "guidance"
+       "m_and_a"
       ],
-      "category": "guidance",
+      "category": "m_and_a",
       "direction": 0,
-      "magnitude": 48,
+      "magnitude": 42,
       "duration": "long",
-      "title": "Snowflake (NYSE:SNOW) Stock Forecast & Analyst Predictions - Simply Wall Street",
-      "published": "2026-10-14",
-      "age_days": 4,
+      "title": "How to Buy Snowflake Stock (SNOW) in 2026 - The Motley Fool",
+      "published": "2026-10-11",
+      "age_days": 7,
       "priced_in": null,
       "effective": 0.0
      },
@@ -5487,9 +5434,9 @@
       "direction": 0,
       "magnitude": 48,
       "duration": "long",
-      "title": "Snowflake Stock Jumped 7% in a Day. Here’s Why Its CFO Haircuts the CoCo Forecast - Yahoo Finance",
-      "published": "2026-10-10",
-      "age_days": 7,
+      "title": "Snowflake (NYSE:SNOW) Stock Forecast & Analyst Predictions - Simply Wall Street",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -5504,6 +5451,20 @@
       "title": "Snowflake Stock Is Up 45% in a Year. Is It Too Late to Buy? - TIKR.com",
       "published": "2026-09-22",
       "age_days": 26,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "government_contract"
+      ],
+      "category": "government_contract",
+      "direction": 0,
+      "magnitude": 36,
+      "duration": "long",
+      "title": "Does The Move In Snowflake Stock Change Anything? - Trefis",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      }
@@ -5558,9 +5519,9 @@
    "batch_rank": 18,
    "rotation_view": {
     "better_than": [
-     "AMAT",
      "8299.TWO",
-     "TER"
+     "TER",
+     "VRT"
     ],
     "worse_than": [
      "6274.TWO",
@@ -5568,7 +5529,7 @@
      "3406.TW"
     ]
    },
-   "target_weight": 0.0389
+   "target_weight": 0.0386
   },
   {
    "ticker": "ARM",
@@ -5692,8 +5653,8 @@
    "relative": {
     "vs_SPY_20d": -0.175517777079217,
     "vs_SPY_60d": -0.23169620155514759,
-    "vs_SPY_120d": -0.017419354619881977,
-    "vs_SPY_252d": 0.17490901025300132,
+    "vs_SPY_120d": -0.017419262613637354,
+    "vs_SPY_252d": 0.17490911782576246,
     "vs_QQQ_20d": -0.1583468190772136,
     "vs_QQQ_60d": -0.22201743193582968,
     "vs_QQQ_120d": -0.01567896707065719,
@@ -5704,8 +5665,8 @@
     "vs_ind_252d": -0.24952393089301284,
     "vs_theme_20d": -0.07532332445122608,
     "vs_theme_60d": -0.1991463235052637,
-    "vs_theme_120d": -0.26528308291292546,
-    "vs_theme_252d": -0.4241525182683751
+    "vs_theme_120d": -0.2652830699348435,
+    "vs_theme_252d": -0.42415253457101876
    },
    "technical_detail": {
     "dist_ma20": -0.20550218134315834,
@@ -5717,7 +5678,7 @@
     "breakout": false
    },
    "vol_63": 0.842680085698506,
-   "beta": 3.4756933941080494,
+   "beta": 3.4756900702087203,
    "downside_risk": 0.48163653692911046,
    "coverage": 1.0,
    "entry": {
@@ -5787,23 +5748,9 @@
       "age_days": 9,
       "priced_in": null,
       "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "What Does Arm Holdings (ARM) Winning An AI Ecosystem Award Really Signal? - Yahoo Finance",
-      "published": "2026-10-13",
-      "age_days": 5,
-      "priced_in": null,
-      "effective": 0.0
      }
     ],
-    "news_count": 37,
+    "news_count": 38,
     "key_catalyst": "analyst_revision（0，已反映 ?%）：Arm Stock Price Target Hits $612, 83% Upside [2026] - shattered.io",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
@@ -5853,17 +5800,17 @@
    "batch_rank": 19,
    "rotation_view": {
     "better_than": [
-     "AMAT",
      "8299.TWO",
-     "TER"
+     "TER",
+     "VRT"
     ],
     "worse_than": [
-     "6274.TWO",
      "STX",
-     "3406.TW"
+     "3406.TW",
+     "NTAP"
     ]
    },
-   "target_weight": 0.0215
+   "target_weight": 0.0213
   },
   {
    "ticker": "LITE",
@@ -5981,8 +5928,8 @@
    "relative": {
     "vs_SPY_20d": -0.11675300941366284,
     "vs_SPY_60d": -0.04793724060048432,
-    "vs_SPY_120d": -0.11398778802022802,
-    "vs_SPY_252d": 4.103821247761523,
+    "vs_SPY_120d": -0.1139876960139834,
+    "vs_SPY_252d": 4.103821355334285,
     "vs_QQQ_20d": -0.09958205141165943,
     "vs_QQQ_60d": -0.038258470981166415,
     "vs_QQQ_120d": -0.11224740047100323,
@@ -5990,7 +5937,7 @@
     "vs_ind_20d": -0.08350297179768762,
     "vs_ind_60d": -0.04073879269367042,
     "vs_ind_120d": -0.18666690478101078,
-    "vs_ind_252d": 3.9663526795111506,
+    "vs_ind_252d": 3.9663525395410364,
     "vs_theme_20d": 0.04981981841471769,
     "vs_theme_60d": 0.254403054871497,
     "vs_theme_120d": 0.3509678577578458,
@@ -6006,7 +5953,7 @@
     "breakout": false
    },
    "vol_63": 0.9599319201352867,
-   "beta": 2.953030978890199,
+   "beta": 2.953034769499519,
    "downside_risk": 0.27286925434039433,
    "coverage": 1.0,
    "entry": {
@@ -6085,7 +6032,7 @@
       "duration": "long",
       "title": "Lumentum Holdings Stock Price Forecast. Should You Buy LITE? - StockInvest.us",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -6114,6 +6061,20 @@
       "title": "Lumentum Stock Jumps as CEO Reveals AI Optical Components Sold Out Through 2029 - TIKR.com",
       "published": "2026-10-09",
       "age_days": 9,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Stifel Nicolaus Issues Positive Forecast for Lumentum (NASDAQ:LITE) Stock Price - MarketBeat",
+      "published": "2026-10-05",
+      "age_days": 13,
       "priced_in": null,
       "effective": 0.0
      }
@@ -6170,9 +6131,9 @@
    "batch_rank": 20,
    "rotation_view": {
     "better_than": [
-     "AMAT",
      "8299.TWO",
-     "TER"
+     "TER",
+     "VRT"
     ],
     "worse_than": [
      "STX",
@@ -6180,7 +6141,7 @@
      "NTAP"
     ]
    },
-   "target_weight": 0.0224
+   "target_weight": 0.0222
   },
   {
    "ticker": "3044.TW",
@@ -6242,7 +6203,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 25.609170325586526,
+    "price_risk": 25.60917062353333,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -6267,7 +6228,7 @@
     "positioning": null,
     "catalyst": null,
     "low_entry": 8.4,
-    "price_risk": 25.609170325586526,
+    "price_risk": 25.60917062353333,
     "fundamental_uncertainty": 0,
     "earnings": 73.0,
     "ai": 45.0,
@@ -6284,12 +6245,12 @@
     "60d": 0.44375772558714455,
     "120d": 0.2976174412043,
     "252d": 0.9971648448695496,
-    "756d": 2.5250917054707736
+    "756d": 2.5250913807963924
    },
    "low_entry": {
     "in_zone": false,
     "dd_52w": -0.031509121061359835,
-    "ret_3y": 2.5250917054707736,
+    "ret_3y": 2.5250913807963924,
     "score": 8.4,
     "long_term_broken": false
    },
@@ -6297,15 +6258,15 @@
     "vs_SPY_20d": 0.1647394615338491,
     "vs_SPY_60d": 0.380343091440803,
     "vs_SPY_120d": 0.027631483467628115,
-    "vs_SPY_252d": 0.07309717142907002,
+    "vs_SPY_252d": 0.07309730099005374,
     "vs_QQQ_20d": 0.1647394615338491,
     "vs_QQQ_60d": 0.380343091440803,
     "vs_QQQ_120d": 0.027631483467628115,
-    "vs_QQQ_252d": 0.07309717142907002,
+    "vs_QQQ_252d": 0.07309730099005374,
     "vs_ind_20d": 0.1647394615338491,
     "vs_ind_60d": 0.380343091440803,
     "vs_ind_120d": 0.027631483467628115,
-    "vs_ind_252d": 0.07309717142907002,
+    "vs_ind_252d": 0.07309730099005374,
     "vs_theme_20d": 0.04408508502304462,
     "vs_theme_60d": 0.31418519946145285,
     "vs_theme_120d": 0.10375230074264552,
@@ -6321,7 +6282,7 @@
     "breakout": false
    },
    "vol_63": 0.5312192535781086,
-   "beta": 0.9280543058343879,
+   "beta": 0.9280543284783451,
    "downside_risk": 0.031509121061359835,
    "coverage": 0.94,
    "entry": {
@@ -6526,16 +6487,16 @@
    "relative": {
     "vs_SPY_20d": -0.16839221468907617,
     "vs_SPY_60d": -0.3294792680339891,
-    "vs_SPY_120d": -0.06841676365982141,
-    "vs_SPY_252d": 0.26249648593825414,
+    "vs_SPY_120d": -0.06841667165357679,
+    "vs_SPY_252d": 0.2624965935110153,
     "vs_QQQ_20d": -0.15122125668707276,
     "vs_QQQ_60d": -0.3198004984146712,
     "vs_QQQ_120d": -0.06667637611059662,
     "vs_QQQ_252d": 0.23815018304498659,
     "vs_ind_20d": -0.16839221468907617,
     "vs_ind_60d": -0.3294792680339891,
-    "vs_ind_120d": -0.06841676365982141,
-    "vs_ind_252d": 0.26249648593825414,
+    "vs_ind_120d": -0.06841667165357679,
+    "vs_ind_252d": 0.2624965935110153,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -6551,7 +6512,7 @@
     "breakout": false
    },
    "vol_63": 0.6247263701556545,
-   "beta": 3.0246946653879263,
+   "beta": 3.0246942084019466,
    "downside_risk": 0.4418461467487398,
    "coverage": 0.92,
    "entry": {
@@ -6604,7 +6565,21 @@
       "duration": "long",
       "title": "Flex Ltd Stock (FLEX) Moved Down by 7.23% on Oct 13: What Signal Does It Send? - TradingKey",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "FLEX LNG (NYSE:FLNG) Stock Forecast & Analyst Predictions - Simply Wall Street",
+      "published": "2026-10-12",
+      "age_days": 6,
       "priced_in": null,
       "effective": 0.0
      },
@@ -6693,9 +6668,9 @@
      "ORCL"
     ],
     "worse_than": [
-     "2395.TW",
      "BE",
-     "2337.TW"
+     "2337.TW",
+     "CRWD"
     ]
    },
    "target_weight": 0.0
@@ -6760,7 +6735,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 16.407385479603846,
+    "price_risk": 16.407385479603875,
     "fundamental_uncertainty": {
      "score": 0,
      "evidence": [],
@@ -6786,7 +6761,7 @@
     "positioning": 57.1,
     "catalyst": 50.0,
     "low_entry": 4.3,
-    "price_risk": 16.407385479603846,
+    "price_risk": 16.407385479603875,
     "fundamental_uncertainty": 0,
     "earnings": 65.0,
     "ai": 35.0,
@@ -6816,19 +6791,19 @@
     "vs_SPY_20d": 0.06533386327503976,
     "vs_SPY_60d": 0.07539833911882976,
     "vs_SPY_120d": 0.42661289828428606,
-    "vs_SPY_252d": -0.49073410762972025,
+    "vs_SPY_252d": -0.49073397806873653,
     "vs_QQQ_20d": 0.06533386327503976,
     "vs_QQQ_60d": 0.07539833911882976,
     "vs_QQQ_120d": 0.42661289828428606,
-    "vs_QQQ_252d": -0.49073410762972025,
+    "vs_QQQ_252d": -0.49073397806873653,
     "vs_ind_20d": 0.06533386327503976,
     "vs_ind_60d": 0.07539833911882976,
     "vs_ind_120d": 0.42661289828428606,
-    "vs_ind_252d": -0.49073410762972025,
+    "vs_ind_252d": -0.49073397806873653,
     "vs_theme_20d": 0.10150675498741467,
     "vs_theme_60d": -0.014888761173040749,
     "vs_theme_120d": 0.24529657096752716,
-    "vs_theme_252d": -0.7717142063609119
+    "vs_theme_252d": -0.7717142474643903
    },
    "technical_detail": {
     "dist_ma20": 0.04496926560983483,
@@ -6839,8 +6814,8 @@
     "up_volume_ratio": 0.5729340719840496,
     "breakout": false
    },
-   "vol_63": 0.45522599634939315,
-   "beta": 0.4765858760833787,
+   "vol_63": 0.45522599634939354,
+   "beta": 0.47658583226169515,
    "downside_risk": 0.01617345656869884,
    "coverage": 1.0,
    "entry": {
@@ -6891,7 +6866,7 @@
       "duration": "medium",
       "title": "Micro-Star International stock reports 123 percent Q2 EPS growth - AD HOC NEWS",
       "published": "2026-10-06",
-      "age_days": 11,
+      "age_days": 12,
       "priced_in": null,
       "effective": 0.0
      }
@@ -6931,12 +6906,12 @@
      "ORCL"
     ],
     "worse_than": [
-     "2395.TW",
      "BE",
-     "2337.TW"
+     "2337.TW",
+     "CRWD"
     ]
    },
-   "target_weight": 0.0349
+   "target_weight": 0.0346
   },
   {
    "ticker": "FSLR",
@@ -6946,10 +6921,10 @@
    "theme": null,
    "sub_theme": null,
    "valuation_class": "C",
-   "opportunity": 56.3,
+   "opportunity": 56.2,
    "opportunity_detail": {
-    "score": 56.3,
-    "raw": 56.3,
+    "score": 56.2,
+    "raw": 56.2,
     "penalty": 0.0,
     "coverage": 0.92,
     "components_used": [
@@ -7008,10 +6983,12 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 62.997863492707296,
+    "price_risk": 62.99788758837687,
     "fundamental_uncertainty": {
-     "score": 0,
-     "evidence": [],
+     "score": 10,
+     "evidence": [
+      "10 天後公布財報（事件風險）"
+     ],
      "speculative": false
     }
    },
@@ -7024,7 +7001,7 @@
     "relative_strength": 33.201754385964904,
     "technical": 12.280701754385964,
     "industry_momentum": null,
-    "risk": 37.8,
+    "risk": 41.8,
     "overextension": 0.0,
     "ai_exposure": null,
     "quality": 81.0,
@@ -7032,10 +7009,10 @@
     "earnings_acceleration": 75.2,
     "valuation": 100.0,
     "positioning": 65.6,
-    "catalyst": 58.3,
+    "catalyst": 57.2,
     "low_entry": 95.8,
-    "price_risk": 62.997863492707296,
-    "fundamental_uncertainty": 0,
+    "price_risk": 62.99788758837687,
+    "fundamental_uncertainty": 10,
     "earnings": 75.2,
     "ai": null,
     "industry": null
@@ -7063,16 +7040,16 @@
    "relative": {
     "vs_SPY_20d": -0.12105198573134279,
     "vs_SPY_60d": -0.19814558428282736,
-    "vs_SPY_120d": -0.19842007933872852,
-    "vs_SPY_252d": -0.4534475839491243,
+    "vs_SPY_120d": -0.1984199873324839,
+    "vs_SPY_252d": -0.4534474763763632,
     "vs_QQQ_20d": -0.10388102772933938,
     "vs_QQQ_60d": -0.18846681466350945,
     "vs_QQQ_120d": -0.19667969178950373,
     "vs_QQQ_252d": -0.4777938868423919,
     "vs_ind_20d": -0.12105198573134279,
     "vs_ind_60d": -0.19814558428282736,
-    "vs_ind_120d": -0.19842007933872852,
-    "vs_ind_252d": -0.4534475839491243,
+    "vs_ind_120d": -0.1984199873324839,
+    "vs_ind_252d": -0.4534474763763632,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -7088,7 +7065,7 @@
     "breakout": false
    },
    "vol_63": 0.5025879971228857,
-   "beta": 1.8715388157776662,
+   "beta": 1.8715406470485543,
    "downside_risk": 0.45753338762090046,
    "coverage": 0.92,
    "entry": {
@@ -7117,7 +7094,9 @@
      168.6,
      320.95
     ],
-    "notes": [],
+    "notes": [
+     "10 天後公布財報：Zone 1 只建小部位，財報後再決定"
+    ],
     "low_entry_line": 222.77,
     "condition": {
      "ok": true,
@@ -7127,7 +7106,7 @@
     }
    },
    "catalyst": {
-    "score": 58.3,
+    "score": 57.2,
     "events": [
      {
       "categories": [
@@ -7139,9 +7118,9 @@
       "duration": "short",
       "title": "First Solar (FSLR) Stock May Trade At A Discount After Analyst Upgrade - Yahoo Finance",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": 0,
-      "effective": 20.1
+      "effective": 17.5
      },
      {
       "categories": [
@@ -7156,6 +7135,20 @@
       "age_days": 24,
       "priced_in": 38,
       "effective": -0.8
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "FSLR Stock Quote Price and Forecast - CNN",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
      },
      {
       "categories": [
@@ -7181,7 +7174,7 @@
       "duration": "medium",
       "title": "At 4:30 p.m. ET on Oct. 29, First Solar's quarterly results call will be webcast live. - Stock Titan",
       "published": "2026-10-15",
-      "age_days": 2,
+      "age_days": 3,
       "priced_in": null,
       "effective": 0.0
      },
@@ -7195,7 +7188,7 @@
       "duration": "short",
       "title": "Barclays Adjusts First Solar Price Target to $259 From $279 - Yahoo Finance",
       "published": "2026-10-14",
-      "age_days": 3,
+      "age_days": 4,
       "priced_in": null,
       "effective": 0.0
      },
@@ -7230,7 +7223,7 @@
    "sec_valuation": null,
    "shock": null,
    "holding": null,
-   "expected_excess_60d": 0.009449999999999997,
+   "expected_excess_60d": 0.009300000000000004,
    "narrative": {
     "why_now": "長線贏家（3 年 +14%）已自 52 週高點回落 46%，落入低檔布局區。估值 100、低檔分數 96、品質 81。",
     "why_not_chase": "未過熱、可在進場區分批。",
@@ -7244,14 +7237,14 @@
    "batch_rank": 24,
    "rotation_view": {
     "better_than": [
-     "VRT",
      "INTC",
-     "ORCL"
+     "ORCL",
+     "COHR"
     ],
     "worse_than": [
-     "2395.TW",
-     "BE",
-     "2337.TW"
+     "2337.TW",
+     "CRWD",
+     "PANW"
     ]
    },
    "target_weight": 0.0
@@ -7264,10 +7257,10 @@
    "theme": "Semiconductor Equipment",
    "sub_theme": "wafer fab equipment",
    "valuation_class": "D",
-   "opportunity": 54.6,
+   "opportunity": 56.0,
    "opportunity_detail": {
-    "score": 54.6,
-    "raw": 54.6,
+    "score": 56.0,
+    "raw": 56.0,
     "penalty": 0.0,
     "coverage": 1.0,
     "components_used": [
@@ -7310,7 +7303,8 @@
    "price_location": "DEEPLY_DISCOUNTED",
    "quality_tier": "B",
    "confirmations": [
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ],
    "universe_rank": [
     58,
@@ -7324,7 +7318,8 @@
     "tier": "B",
     "drawdown_type": "TEMPORARY_SHOCK",
     "confirmations": [
-     "FUNDAMENTAL_RECOVERY"
+     "FUNDAMENTAL_RECOVERY",
+     "CATALYST"
     ]
    },
    "risk_detail": {
@@ -7352,7 +7347,7 @@
     "earnings_acceleration": 64.9,
     "valuation": 27.2,
     "positioning": 96.6,
-    "catalyst": 50.0,
+    "catalyst": 74.3,
     "low_entry": 93.3,
     "price_risk": 77.59733070782426,
     "fundamental_uncertainty": 0,
@@ -7371,20 +7366,20 @@
     "60d": -0.2719834785662678,
     "120d": 0.013281225268356955,
     "252d": 0.8083918017847527,
-    "756d": 1.9469554760078376
+    "756d": 1.946956447316972
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.4332950730327503,
-    "ret_3y": 1.9469554760078376,
+    "ret_3y": 1.946956447316972,
     "score": 93.3,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.08140565151999712,
     "vs_SPY_60d": -0.30851290572387713,
-    "vs_SPY_120d": -0.05935398028415739,
-    "vs_SPY_252d": 0.6485612239687377,
+    "vs_SPY_120d": -0.05935388827791277,
+    "vs_SPY_252d": 0.6485613315414989,
     "vs_QQQ_20d": -0.06423469351799371,
     "vs_QQQ_60d": -0.2988341361045592,
     "vs_QQQ_120d": -0.057613592734932606,
@@ -7395,20 +7390,20 @@
     "vs_ind_252d": 0.22412828282272357,
     "vs_theme_20d": -0.005748325109632912,
     "vs_theme_60d": -0.11357498506373884,
-    "vs_theme_120d": 0.05079163482815502,
-    "vs_theme_252d": -0.019017901481637622
+    "vs_theme_120d": 0.05079165242639794,
+    "vs_theme_252d": -0.019017915726039725
    },
    "technical_detail": {
     "dist_ma20": -0.16533771572239453,
     "dist_ma50": -0.15104666266078148,
     "dist_52w_high": -0.4332950730327503,
-    "rsi14": 29.207069000968318,
+    "rsi14": 29.20706900365097,
     "volume_spike": 1.2708174229939575,
     "up_volume_ratio": 0.42881718958284404,
     "breakout": false
    },
-   "vol_63": 0.6293364480279464,
-   "beta": 2.7031772334027244,
+   "vol_63": 0.6293364480279465,
+   "beta": 2.7031768566313965,
    "downside_risk": 0.4332950730327503,
    "coverage": 1.0,
    "entry": {
@@ -7449,8 +7444,22 @@
     }
    },
    "catalyst": {
-    "score": 50.0,
+    "score": 74.3,
     "events": [
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 1,
+      "magnitude": 70,
+      "duration": "medium",
+      "title": "AMAT Stock Extends Slide Overnight Despite Beat: Applied Materials’ DRAM Ramp Sends ‘Loudest Demand Signal’ - Stocktwits",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": 0,
+      "effective": 63.8
+     },
      {
       "categories": [
        "product_launch"
@@ -7461,7 +7470,22 @@
       "duration": "medium",
       "title": "Is Applied Materials (AMAT) A Bargain Following Its EPIC Center Launch? - Yahoo Finance",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance",
+       "analyst_revision"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Applied Materials (AMAT) Stock Forecast and Price Target 2026 - MarketBeat",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -7473,37 +7497,9 @@
       "direction": 0,
       "magnitude": 48,
       "duration": "long",
-      "title": "Applied Materials shares slide as chip equipment outlook remains uncertain - Yahoo Finance",
-      "published": "2026-10-13",
-      "age_days": 4,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "earnings"
-      ],
-      "category": "earnings",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
-      "title": "Jim Cramer Sees More to Applied Materials (AMAT) Than Its Earnings Multiple - Yahoo Finance",
-      "published": "2026-10-07",
-      "age_days": 11,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "analyst_revision"
-      ],
-      "category": "analyst_revision",
-      "direction": 0,
-      "magnitude": 21,
-      "duration": "short",
-      "title": "Morgan Stanley resets AMAT stock price target by $79 - TheStreet",
-      "published": "2026-09-29",
-      "age_days": 19,
+      "title": "Applied Materials (NasdaqGS:AMAT) Stock Forecast & Analyst Predictions - Simply Wall Street",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -7520,10 +7516,38 @@
       "age_days": 19,
       "priced_in": null,
       "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Applied Materials shares slide as chip equipment outlook remains uncertain - Yahoo Finance",
+      "published": "2026-10-13",
+      "age_days": 5,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "analyst_revision"
+      ],
+      "category": "analyst_revision",
+      "direction": 0,
+      "magnitude": 21,
+      "duration": "short",
+      "title": "Morgan Stanley resets AMAT stock price target by $79 - TheStreet",
+      "published": "2026-09-29",
+      "age_days": 19,
+      "priced_in": null,
+      "effective": 0.0
      }
     ],
     "news_count": 37,
-    "key_catalyst": "product_launch（0，已反映 ?%）：Is Applied Materials (AMAT) A Bargain Following Its EPIC Center Launch? - Yahoo Finance",
+    "key_catalyst": "earnings（+，已反映 0%）：AMAT Stock Extends Slide Overnight Despite Beat: Applied Materials’ DRAM Ramp Sends ‘Loudest Demand Signal’ - Stocktwits",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -7559,31 +7583,31 @@
     "verdict": null
    },
    "holding": null,
-   "expected_excess_60d": 0.0069000000000000025,
+   "expected_excess_60d": 0.009000000000000001,
    "narrative": {
-    "why_now": "長線贏家（3 年 +195%）已自 52 週高點回落 43%，落入低檔布局區。低檔分數 93、品質 77、財報加速 65。",
+    "why_now": "長線贏家（3 年 +195%）已自 52 週高點回落 43%，落入低檔布局區。低檔分數 93、品質 77、催化 74。",
     "why_not_chase": "估值分數僅 27",
     "key_risk": "估值 27、技術 38、產業動能 38",
     "attractive_price": "373.17–419.61（已驗證低檔區（52 週高點 −30% 線 505.56 以下））起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 331.9；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
-    "bull_thesis": "低檔分數 93、品質 77、財報加速 65",
+    "bull_thesis": "低檔分數 93、品質 77、催化 74",
     "bear_thesis": "估值 27、技術 38、產業動能 38",
-    "key_catalyst": "product_launch（0，已反映 ?%）：Is Applied Materials (AMAT) A Bargain Following Its EPIC Center Launch? - Yahoo Finance"
+    "key_catalyst": "earnings（+，已反映 0%）：AMAT Stock Extends Slide Overnight Despite Beat: Applied Materials’ DRAM Ramp Sends ‘Loudest Demand Signal’ - Stocktwits"
    },
    "batch_rank": 25,
    "rotation_view": {
     "better_than": [
-     "2308.TW",
-     "CIEN",
-     "KLAC"
+     "INTC",
+     "ORCL",
+     "COHR"
     ],
     "worse_than": [
-     "SNOW",
-     "ARM",
-     "LITE"
+     "2337.TW",
+     "CRWD",
+     "PANW"
     ]
    },
-   "target_weight": 0.0123
+   "target_weight": 0.0159
   },
   {
    "ticker": "8299.TWO",
@@ -7659,7 +7683,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 58.04326024419649,
+    "price_risk": 58.043264710257986,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -7686,7 +7710,7 @@
     "positioning": 89.2,
     "catalyst": null,
     "low_entry": 83.9,
-    "price_risk": 58.04326024419649,
+    "price_risk": 58.043264710257986,
     "fundamental_uncertainty": 25,
     "earnings": 76.6,
     "ai": 45.0,
@@ -7716,15 +7740,15 @@
     "vs_SPY_20d": -0.04150735294117647,
     "vs_SPY_60d": -0.04454670961803964,
     "vs_SPY_120d": -0.1533865618430461,
-    "vs_SPY_252d": 0.7875476241253965,
+    "vs_SPY_252d": 0.7875477536863802,
     "vs_QQQ_20d": -0.04150735294117647,
     "vs_QQQ_60d": -0.04454670961803964,
     "vs_QQQ_120d": -0.1533865618430461,
-    "vs_QQQ_252d": 0.7875476241253965,
+    "vs_QQQ_252d": 0.7875477536863802,
     "vs_ind_20d": -0.04150735294117647,
     "vs_ind_60d": -0.04454670961803964,
     "vs_ind_120d": -0.1533865618430461,
-    "vs_ind_252d": 0.7875476241253965,
+    "vs_ind_252d": 0.7875477536863802,
     "vs_theme_20d": -0.002560543067251675,
     "vs_theme_60d": -0.05289381577577501,
     "vs_theme_120d": -0.8822829469070423,
@@ -7734,13 +7758,13 @@
     "dist_ma20": -0.08374742455459949,
     "dist_ma50": -0.08394726638231864,
     "dist_52w_high": -0.3389576943307807,
-    "rsi14": 37.26214294635286,
+    "rsi14": 37.26214294635317,
     "volume_spike": 1.0610754132468085,
     "up_volume_ratio": 0.5257989654709594,
     "breakout": false
    },
-   "vol_63": 0.6500414760847328,
-   "beta": 1.4504548520023604,
+   "vol_63": 0.6500414760847334,
+   "beta": 1.4504551914230308,
    "downside_risk": 0.3389576943307807,
    "coverage": 0.94,
    "entry": {
@@ -7781,7 +7805,7 @@
    "catalyst": {
     "score": null,
     "events": [],
-    "news_count": 1,
+    "news_count": 2,
     "note": "近 30 天無可分類事件（不當中性）"
    },
    "positioning": {
@@ -7923,7 +7947,7 @@
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "9 天後公布財報（事件風險）"
+      "8 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -7945,7 +7969,7 @@
     "earnings_acceleration": 75.6,
     "valuation": 11.1,
     "positioning": 83.7,
-    "catalyst": 75.3,
+    "catalyst": 76.3,
     "low_entry": 82.8,
     "price_risk": 77.83772319544221,
     "fundamental_uncertainty": 10,
@@ -7963,7 +7987,7 @@
     "20d": -0.12509758814438876,
     "60d": -0.1301007315841738,
     "120d": -0.19092630414093392,
-    "252d": 1.3089379635529665,
+    "252d": 1.3089377132527704,
     "756d": 2.299859928853587
    },
    "low_entry": {
@@ -7976,32 +8000,32 @@
    "relative": {
     "vs_SPY_20d": -0.12714566223436452,
     "vs_SPY_60d": -0.1666301587417831,
-    "vs_SPY_120d": -0.26356150969344827,
-    "vs_SPY_252d": 1.1491073857369516,
+    "vs_SPY_120d": -0.26356141768720365,
+    "vs_SPY_252d": 1.1491072430095166,
     "vs_QQQ_20d": -0.10997470423236111,
     "vs_QQQ_60d": -0.1569513891224652,
     "vs_QQQ_120d": -0.2618211221442235,
-    "vs_QQQ_252d": 1.124761082843684,
+    "vs_QQQ_252d": 1.124760832543488,
     "vs_ind_20d": -0.06713943461444771,
     "vs_ind_60d": -0.060500431547510836,
     "vs_ind_120d": -0.25715703067460094,
-    "vs_ind_252d": 0.7246744445909374,
+    "vs_ind_252d": 0.7246741942907413,
     "vs_theme_20d": -0.06292333850259216,
     "vs_theme_60d": 0.06377844866387869,
-    "vs_theme_120d": -0.20446777693345858,
-    "vs_theme_252d": 0.6066648007286297
+    "vs_theme_120d": -0.20446775933521566,
+    "vs_theme_252d": 0.6066644736089825
    },
    "technical_detail": {
     "dist_ma20": -0.1777699399195547,
     "dist_ma50": -0.14572057136598016,
     "dist_52w_high": -0.32803230815816453,
-    "rsi14": 33.108723909371335,
+    "rsi14": 33.108723909386626,
     "volume_spike": 1.2507026419336706,
     "up_volume_ratio": 0.3755047428378861,
     "breakout": false
    },
-   "vol_63": 0.755882445744576,
-   "beta": 3.2700600533427133,
+   "vol_63": 0.7558824457445757,
+   "beta": 3.270062120369506,
    "downside_risk": 0.32803230815816453,
    "coverage": 1.0,
    "entry": {
@@ -8032,7 +8056,7 @@
     ],
     "notes": [
      "估值偏貴：各區下移 0.5 ATR",
-     "9 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "8 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 338.56,
     "condition": {
@@ -8043,8 +8067,23 @@
     }
    },
    "catalyst": {
-    "score": 75.3,
+    "score": 76.3,
     "events": [
+     {
+      "categories": [
+       "earnings",
+       "demand_increase"
+      ],
+      "category": "earnings",
+      "direction": 1,
+      "magnitude": 70,
+      "duration": "medium",
+      "title": "TER Stock Gains After Q2 Beat – CEO Says AI Demand Remains 'Robust,' Sees Growth Extending Into 2027 - Stocktwits",
+      "published": "2026-10-18",
+      "age_days": 0,
+      "priced_in": null,
+      "effective": 70.0
+     },
      {
       "categories": [
        "earnings"
@@ -8069,9 +8108,9 @@
       "duration": "medium",
       "title": "Teradyne Boosts Test Portfolio With Titan HP: Can It Beat KLAC & COHU? - TradingView",
       "published": "2026-10-12",
-      "age_days": 5,
+      "age_days": 6,
       "priced_in": 0,
-      "effective": 55.6
+      "effective": 53.1
      },
      {
       "categories": [
@@ -8117,15 +8156,15 @@
      },
      {
       "categories": [
-       "earnings"
+       "government_contract"
       ],
-      "category": "earnings",
+      "category": "government_contract",
       "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
-      "title": "Reflecting On Semiconductor Manufacturing Stocks’ Q2 Earnings: Teradyne (NASDAQ:TER) - StockStory",
-      "published": "2026-09-23",
-      "age_days": 25,
+      "magnitude": 36,
+      "duration": "long",
+      "title": "What Does Teradyne (TER) Mean For AI Infrastructure Manufacturing Now? - Yahoo Finance",
+      "published": "2026-10-08",
+      "age_days": 10,
       "priced_in": null,
       "effective": 0.0
      },
@@ -8139,27 +8178,13 @@
       "duration": "medium",
       "title": "Teradyne (TER) Launches Edge AI Test Platform, Is The Upside Already Priced In? - Yahoo Finance",
       "published": "2026-10-14",
-      "age_days": 3,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "capacity_expansion"
-      ],
-      "category": "capacity_expansion",
-      "direction": 0,
-      "magnitude": 27,
-      "duration": "long",
-      "title": "Is Teradyne (TER) Using Edge AI Test Expansion To Redefine Its Long‑Term Competitive Moat? - Yahoo Finance",
-      "published": "2026-10-14",
-      "age_days": 3,
+      "age_days": 4,
       "priced_in": null,
       "effective": 0.0
      }
     ],
     "news_count": 36,
-    "key_catalyst": "earnings（+，已反映 ?%）：Teradyne (NASDAQ:TER) Shows High-Growth Fundamentals as Earnings Revisions and Sales Surge - ChartMill",
+    "key_catalyst": "earnings（+，已反映 ?%）：TER Stock Gains After Q2 Beat – CEO Says AI Demand Remains 'Robust,' Sees Growth Extending Into 2027 - Stocktwits",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -8197,14 +8222,14 @@
    "holding": null,
    "expected_excess_60d": 0.002849999999999998,
    "narrative": {
-    "why_now": "長線贏家（3 年 +230%）已自 52 週高點回落 33%，落入低檔布局區。低檔分數 83、品質 80、財報加速 76。大跌主因非公司基本面，屬潛在超跌。",
+    "why_now": "長線贏家（3 年 +230%）已自 52 週高點回落 33%，落入低檔布局區。低檔分數 83、品質 80、催化 76。大跌主因非公司基本面，屬潛在超跌。",
     "why_not_chase": "估值分數僅 11",
     "key_risk": "估值 11、動能排名 32、技術 41",
     "attractive_price": "288.18–335.52（已驗證低檔區（52 週高點 −30% 線 338.56 以下））起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 246.09；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
-    "bull_thesis": "低檔分數 83、品質 80、財報加速 76",
+    "bull_thesis": "低檔分數 83、品質 80、催化 76",
     "bear_thesis": "估值 11、動能排名 32、技術 41",
-    "key_catalyst": "earnings（+，已反映 ?%）：Teradyne (NASDAQ:TER) Shows High-Growth Fundamentals as Earnings Revisions and Sales Surge - ChartMill"
+    "key_catalyst": "earnings（+，已反映 ?%）：TER Stock Gains After Q2 Beat – CEO Says AI Demand Remains 'Robust,' Sees Growth Extending Into 2027 - Stocktwits"
    },
    "batch_rank": 27,
    "rotation_view": {
@@ -8229,10 +8254,10 @@
    "theme": "Cooling",
    "sub_theme": "liquid cooling / thermal / power",
    "valuation_class": "A",
-   "opportunity": 51.0,
+   "opportunity": 51.5,
    "opportunity_detail": {
-    "score": 51.0,
-    "raw": 51.0,
+    "score": 51.5,
+    "raw": 51.5,
     "penalty": 0.0,
     "coverage": 1.0,
     "components_used": [
@@ -8293,7 +8318,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 80.31768539034137,
+    "price_risk": 80.3176853903413,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -8319,9 +8344,9 @@
     "earnings_acceleration": 76.0,
     "valuation": 83.3,
     "positioning": 92.5,
-    "catalyst": 16.5,
+    "catalyst": 24.7,
     "low_entry": 95.1,
-    "price_risk": 80.31768539034137,
+    "price_risk": 80.3176853903413,
     "fundamental_uncertainty": 10,
     "earnings": 76.0,
     "ai": 80.0,
@@ -8337,29 +8362,29 @@
     "20d": -0.17230041832417886,
     "60d": -0.3209097459615088,
     "120d": -0.3595088214219667,
-    "252d": 0.14475540985604174,
-    "756d": 3.965723674882801
+    "252d": 0.1447555067270334,
+    "756d": 3.9657232191887424
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.4510975621532878,
-    "ret_3y": 3.965723674882801,
+    "ret_3y": 3.9657232191887424,
     "score": 95.1,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.17434849241415462,
     "vs_SPY_60d": -0.3574391731191181,
-    "vs_SPY_120d": -0.43214402697448107,
-    "vs_SPY_252d": -0.015075167959973212,
+    "vs_SPY_120d": -0.43214393496823644,
+    "vs_SPY_252d": -0.015074963516220397,
     "vs_QQQ_20d": -0.1571775344121512,
     "vs_QQQ_60d": -0.3477604034998002,
     "vs_QQQ_120d": -0.4304036394252563,
-    "vs_QQQ_252d": -0.03942147085324077,
+    "vs_QQQ_252d": -0.0394213739822491,
     "vs_ind_20d": -0.16323338339277738,
     "vs_ind_60d": -0.24545005404297093,
     "vs_ind_120d": -0.33698676145898243,
-    "vs_ind_252d": 0.03284374692480041,
+    "vs_ind_252d": 0.03284406870236345,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -8369,13 +8394,13 @@
     "dist_ma20": -0.14774322723258282,
     "dist_ma50": -0.19186628506754377,
     "dist_52w_high": -0.4510975621532878,
-    "rsi14": 27.32350309950803,
+    "rsi14": 27.323503092960408,
     "volume_spike": 1.303529636141007,
     "up_volume_ratio": 0.27756879010719265,
     "breakout": false
    },
-   "vol_63": 0.6508835057820301,
-   "beta": 2.8003511224720548,
+   "vol_63": 0.650883505782029,
+   "beta": 2.8003506955144077,
    "downside_risk": 0.4510975621532878,
    "coverage": 1.0,
    "entry": {
@@ -8416,7 +8441,7 @@
     }
    },
    "catalyst": {
-    "score": 16.5,
+    "score": 24.7,
     "events": [
      {
       "categories": [
@@ -8429,9 +8454,9 @@
       "duration": "medium",
       "title": "VRT Stock Heads For Worst Week In 4 Years After Revenue Miss – But This Analyst Still Sees 68% Upside As CEO Defends AI Demand - Stocktwits",
       "published": "2026-10-17",
-      "age_days": 0,
+      "age_days": 1,
       "priced_in": null,
-      "effective": -70.0
+      "effective": -66.8
      },
      {
       "categories": [
@@ -8446,20 +8471,6 @@
       "age_days": 17,
       "priced_in": 0,
       "effective": 31.9
-     },
-     {
-      "categories": [
-       "analyst_revision"
-      ],
-      "category": "analyst_revision",
-      "direction": -1,
-      "magnitude": 35,
-      "duration": "short",
-      "title": "Vertiv (NYSE:VRT) Stock Falls 4% on Analyst Downgrade - MarketBeat",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": 11,
-      "effective": -27.1
      },
      {
       "categories": [
@@ -8505,20 +8516,6 @@
      },
      {
       "categories": [
-       "m_and_a"
-      ],
-      "category": "m_and_a",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "long",
-      "title": "AI data centers rely on clean cooling fluid. Vertiv agreed to buy a company that flushes and tests those systems. - Stock Titan",
-      "published": "2026-09-24",
-      "age_days": 24,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
        "earnings"
       ],
       "category": "earnings",
@@ -8530,9 +8527,23 @@
       "age_days": 6,
       "priced_in": null,
       "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "VRT Stock Surges Pre-Market On Blowout 2026 Forecast On AI Data Centre Demand - Stocktwits",
+      "published": "2026-10-14",
+      "age_days": 4,
+      "priced_in": null,
+      "effective": 0.0
      }
     ],
-    "news_count": 39,
+    "news_count": 38,
     "key_catalyst": "earnings（-，已反映 ?%）：VRT Stock Heads For Worst Week In 4 Years After Revenue Miss – But This Analyst Still Sees 68% Upside As CEO Defends AI Demand - Stocktwits",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
@@ -8569,15 +8580,15 @@
     "verdict": null
    },
    "holding": null,
-   "expected_excess_60d": 0.0015,
+   "expected_excess_60d": 0.0022500000000000003,
    "narrative": {
     "why_now": "長線贏家（3 年 +397%）已自 52 週高點回落 45%，落入低檔布局區。低檔分數 95、估值 83、AI 曝險 80。",
     "why_not_chase": "未過熱、可在進場區分批。",
-    "key_risk": "技術 4、動能排名 9、催化 16",
+    "key_risk": "技術 4、動能排名 9、催化 25",
     "attractive_price": "201.74–207.02（60 日低點）起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 182.64；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "低檔分數 95、估值 83、AI 曝險 80",
-    "bear_thesis": "技術 4、動能排名 9、催化 16",
+    "bear_thesis": "技術 4、動能排名 9、催化 25",
     "key_catalyst": "earnings（-，已反映 ?%）：VRT Stock Heads For Worst Week In 4 Years After Revenue Miss – But This Analyst Still Sees 68% Upside As CEO Defends AI Demand - Stocktwits"
    },
    "batch_rank": 28,
@@ -8588,9 +8599,9 @@
      "3533.TW"
     ],
     "worse_than": [
+     "3044.TW",
      "FLEX",
-     "2377.TW",
-     "FSLR"
+     "2377.TW"
     ]
    },
    "target_weight": 0.0
@@ -8603,10 +8614,10 @@
    "theme": "AI Compute",
    "sub_theme": "CPU / foundry",
    "valuation_class": "D",
-   "opportunity": 50.9,
+   "opportunity": 50.8,
    "opportunity_detail": {
-    "score": 50.9,
-    "raw": 50.9,
+    "score": 50.8,
+    "raw": 50.8,
     "penalty": 0.0,
     "coverage": 1.0,
     "components_used": [
@@ -8670,10 +8681,12 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 76.99241810613759,
+    "price_risk": 76.9924181061376,
     "fundamental_uncertainty": {
-     "score": 0,
-     "evidence": [],
+     "score": 10,
+     "evidence": [
+      "10 天後公布財報（事件風險）"
+     ],
      "speculative": false
     }
    },
@@ -8685,7 +8698,7 @@
     "relative_strength": 51.41004106009706,
     "technical": 73.46491228070175,
     "industry_momentum": 93.61702127659575,
-    "risk": 46.2,
+    "risk": 50.2,
     "overextension": 0.0,
     "ai_exposure": 35.0,
     "quality": 34.4,
@@ -8693,10 +8706,10 @@
     "earnings_acceleration": 83.1,
     "valuation": 1.1,
     "positioning": 70.4,
-    "catalyst": 75.3,
+    "catalyst": 73.0,
     "low_entry": 86.2,
-    "price_risk": 76.99241810613759,
-    "fundamental_uncertainty": 0,
+    "price_risk": 76.9924181061376,
+    "fundamental_uncertainty": 10,
     "earnings": 83.1,
     "ai": 35.0,
     "industry": 93.61702127659575
@@ -8712,20 +8725,20 @@
     "60d": -0.10356185308951649,
     "120d": 0.057183206642052786,
     "252d": 1.4185732108659823,
-    "756d": 1.4770266809761656
+    "756d": 1.477026420478805
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.36249470045613974,
-    "ret_3y": 1.4770266809761656,
+    "ret_3y": 1.477026420478805,
     "score": 86.2,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.17470001021747072,
     "vs_SPY_60d": -0.1400912802471258,
-    "vs_SPY_120d": -0.015451998910461562,
-    "vs_SPY_252d": 1.2587426330499674,
+    "vs_SPY_120d": -0.015451906904216939,
+    "vs_SPY_252d": 1.2587427406227285,
     "vs_QQQ_20d": -0.1575290522154673,
     "vs_QQQ_60d": -0.1304125106278079,
     "vs_QQQ_120d": -0.013711611361236775,
@@ -8736,8 +8749,8 @@
     "vs_ind_252d": 0.8343096919039532,
     "vs_theme_20d": -0.07442378090330518,
     "vs_theme_60d": -0.09838091006643974,
-    "vs_theme_120d": -0.263118991632563,
-    "vs_theme_252d": 0.7680644668082877
+    "vs_theme_120d": -0.26311897865448103,
+    "vs_theme_252d": 0.768064450505644
    },
    "technical_detail": {
     "dist_ma20": -0.20177326047083766,
@@ -8748,8 +8761,8 @@
     "up_volume_ratio": 0.32704478507076185,
     "breakout": false
    },
-   "vol_63": 0.7025271311188662,
-   "beta": 3.0325817260787487,
+   "vol_63": 0.7025271311188664,
+   "beta": 3.0325775748597477,
    "downside_risk": 0.36249470045613974,
    "coverage": 1.0,
    "entry": {
@@ -8779,7 +8792,8 @@
      142.35
     ],
     "notes": [
-     "估值偏貴：各區下移 0.5 ATR"
+     "估值偏貴：各區下移 0.5 ATR",
+     "10 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 98.66,
     "condition": {
@@ -8790,7 +8804,7 @@
     }
    },
    "catalyst": {
-    "score": 75.3,
+    "score": 73.0,
     "events": [
      {
       "categories": [
@@ -8802,9 +8816,23 @@
       "duration": "medium",
       "title": "Will Intel (INTC) Beat Estimates Again in Its Next Earnings Report? - Yahoo Finance",
       "published": "2026-10-16",
-      "age_days": 1,
+      "age_days": 2,
       "priced_in": 0,
-      "effective": 66.8
+      "effective": 63.8
+     },
+     {
+      "categories": [
+       "analyst_revision"
+      ],
+      "category": "analyst_revision",
+      "direction": -1,
+      "magnitude": 35,
+      "duration": "short",
+      "title": "Intel Corporation Stock 12‑Month Price Target Cut to $120.83, Implies 15% Upside - TradingView",
+      "published": "2026-10-09",
+      "age_days": 9,
+      "priced_in": 59,
+      "effective": -4.1
      },
      {
       "categories": [
@@ -8844,21 +8872,21 @@
       "duration": "medium",
       "title": "INTC Stock: What to Watch Before Earnings on October 22 - Barchart.com",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": null,
       "effective": 0.0
      },
      {
       "categories": [
-       "m_and_a"
+       "major_customer"
       ],
-      "category": "m_and_a",
+      "category": "major_customer",
       "direction": 0,
-      "magnitude": 42,
-      "duration": "long",
-      "title": "3 Reasons to Buy Intel Stock Before 2027 - Yahoo Finance",
-      "published": "2026-10-14",
-      "age_days": 3,
+      "magnitude": 33,
+      "duration": "medium",
+      "title": "Intel (INTC) Lands A Major Customer For Its 14A Foundry Process - Yahoo Finance",
+      "published": "2026-10-18",
+      "age_days": 0,
       "priced_in": null,
       "effective": 0.0
      },
@@ -8913,7 +8941,7 @@
     "verdict": "POTENTIAL_OVERSOLD"
    },
    "holding": null,
-   "expected_excess_60d": 0.001349999999999998,
+   "expected_excess_60d": 0.0011999999999999958,
    "narrative": {
     "why_now": "長線贏家（3 年 +148%）已自 52 週高點回落 36%，落入低檔布局區。產業動能 94、低檔分數 86、財報加速 83。大跌主因非公司基本面，屬潛在超跌。",
     "why_not_chase": "估值分數僅 1",
@@ -8932,9 +8960,9 @@
      "3533.TW"
     ],
     "worse_than": [
-     "FLEX",
      "2377.TW",
-     "FSLR"
+     "FSLR",
+     "AMAT"
     ]
    },
    "target_weight": 0.0
@@ -9012,7 +9040,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 74.26143289341555,
+    "price_risk": 74.26146384040216,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -9039,7 +9067,7 @@
     "positioning": 92.8,
     "catalyst": 73.6,
     "low_entry": 100.0,
-    "price_risk": 74.26143289341555,
+    "price_risk": 74.26146384040216,
     "fundamental_uncertainty": 25,
     "earnings": 61.5,
     "ai": 60.0,
@@ -9055,46 +9083,46 @@
     "20d": -0.12807899713242887,
     "60d": 0.07217802913592353,
     "120d": -0.2532839780682494,
-    "252d": -0.5720121479011859,
-    "756d": 0.21162957676420335
+    "252d": -0.5720121043075226,
+    "756d": 0.2116296641096378
    },
    "low_entry": {
     "in_zone": true,
-    "dd_52w": -0.5848380807053238,
-    "ret_3y": 0.21162957676420335,
+    "dd_52w": -0.5848380396853383,
+    "ret_3y": 0.2116296641096378,
     "score": 100.0,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.13012707122240463,
     "vs_SPY_60d": 0.03564860197831421,
-    "vs_SPY_120d": -0.3259191836207638,
-    "vs_SPY_252d": -0.7318427257172009,
+    "vs_SPY_120d": -0.32591909161451915,
+    "vs_SPY_252d": -0.7318425745507764,
     "vs_QQQ_20d": -0.11295611322040122,
     "vs_QQQ_60d": 0.045327371597632116,
     "vs_QQQ_120d": -0.324178796071539,
-    "vs_QQQ_252d": -0.7561890286104684,
+    "vs_QQQ_252d": -0.7561889850168051,
     "vs_ind_20d": -0.09687703360642941,
     "vs_ind_60d": 0.04284704988512811,
     "vs_ind_120d": -0.39859830038154653,
-    "vs_ind_252d": -0.8693112939675736,
+    "vs_ind_252d": -0.8693113903440244,
     "vs_theme_20d": -0.06012473425106894,
     "vs_theme_60d": 0.03737332420360543,
-    "vs_theme_120d": -0.23954307063894864,
-    "vs_theme_252d": -0.6231345868034213
+    "vs_theme_120d": -0.23954308478802278,
+    "vs_theme_252d": -0.6231345331261211
    },
    "technical_detail": {
     "dist_ma20": -0.07797549173727591,
     "dist_ma50": -0.11347092691183647,
-    "dist_52w_high": -0.5848380807053238,
-    "rsi14": 39.99281560630031,
+    "dist_52w_high": -0.5848380396853383,
+    "rsi14": 39.992815606292034,
     "volume_spike": 1.1715829657405596,
     "up_volume_ratio": 0.46076820498556037,
     "breakout": false
    },
-   "vol_63": 0.5686463532326718,
-   "beta": 2.1627681455342422,
-   "downside_risk": 0.5848380807053238,
+   "vol_63": 0.5686463532326717,
+   "beta": 2.1627704975052247,
+   "downside_risk": 0.5848380396853383,
    "coverage": 1.0,
    "entry": {
     "zone_1": {
@@ -9192,20 +9220,6 @@
      },
      {
       "categories": [
-       "analyst_revision"
-      ],
-      "category": "analyst_revision",
-      "direction": 0,
-      "magnitude": 21,
-      "duration": "short",
-      "title": "Wall Street analyst updates Oracle stock price target - Finbold",
-      "published": "2026-10-14",
-      "age_days": 3,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
        "guidance"
       ],
       "category": "guidance",
@@ -9275,9 +9289,9 @@
      "3533.TW"
     ],
     "worse_than": [
-     "FLEX",
      "2377.TW",
-     "FSLR"
+     "FSLR",
+     "AMAT"
     ]
    },
    "target_weight": 0.0
@@ -9413,8 +9427,8 @@
    "relative": {
     "vs_SPY_20d": -0.2681811575078985,
     "vs_SPY_60d": -0.2929626274998287,
-    "vs_SPY_120d": -0.34828601642335166,
-    "vs_SPY_252d": 0.9495796764326339,
+    "vs_SPY_120d": -0.34828592441710704,
+    "vs_SPY_252d": 0.949579784005395,
     "vs_QQQ_20d": -0.2510101995058951,
     "vs_QQQ_60d": -0.2832838578805108,
     "vs_QQQ_120d": -0.3465456288741269,
@@ -9422,7 +9436,7 @@
     "vs_ind_20d": -0.23493111989192328,
     "vs_ind_60d": -0.2857641795930148,
     "vs_ind_120d": -0.4209651331841344,
-    "vs_ind_252d": 0.8121111081822612,
+    "vs_ind_252d": 0.812110968212147,
     "vs_theme_20d": -0.13946536670307688,
     "vs_theme_60d": -0.05187867875268348,
     "vs_theme_120d": 0.05809507225394123,
@@ -9438,7 +9452,7 @@
     "breakout": false
    },
    "vol_63": 1.039968518529064,
-   "beta": 3.3327665428558344,
+   "beta": 3.332764516970204,
    "downside_risk": 0.45442623180519304,
    "coverage": 1.0,
    "entry": {
@@ -9481,20 +9495,6 @@
     "events": [
      {
       "categories": [
-       "guidance"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "COHR Stock Quote Price and Forecast - CNN",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
        "m_and_a"
       ],
       "category": "m_and_a",
@@ -9504,21 +9504,6 @@
       "title": "Coherent Has Ripped 59% in 2026: Is It Too Late to Buy COHR Stock Now? - 24/7 Wall St.",
       "published": "2026-09-24",
       "age_days": 24,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "capacity_expansion",
-       "demand_increase"
-      ],
-      "category": "demand_increase",
-      "direction": 0,
-      "magnitude": 33,
-      "duration": "medium",
-      "title": "Coherent (COHR) Stock Looks About Right Following Sold Out Capacity News - Yahoo Finance",
-      "published": "2026-10-13",
-      "age_days": 4,
       "priced_in": null,
       "effective": 0.0
      },
@@ -9560,7 +9545,7 @@
       "duration": "medium",
       "title": "Coherent's results discussion is scheduled for 4:30 p.m. ET on Nov. 4, after the earnings release. - Stock Titan",
       "published": "2026-10-14",
-      "age_days": 3,
+      "age_days": 4,
       "priced_in": null,
       "effective": 0.0
      },
@@ -9574,6 +9559,20 @@
       "duration": "long",
       "title": "Is Coherent (COHR) Using Its AI Capacity Buildout And TSX CDR Listing To Redefine Its Edge? - Yahoo Finance",
       "published": "2026-10-15",
+      "age_days": 3,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "capacity_expansion"
+      ],
+      "category": "capacity_expansion",
+      "direction": 0,
+      "magnitude": 27,
+      "duration": "long",
+      "title": "COHR, AAOI, LITE, POET: Photonic Stocks Join Google Capex-Fueled AI Rally - Stocktwits",
+      "published": "2026-10-16",
       "age_days": 2,
       "priced_in": null,
       "effective": 0.0
@@ -9594,7 +9593,7 @@
      }
     ],
     "news_count": 40,
-    "key_catalyst": "guidance（0，已反映 ?%）：COHR Stock Quote Price and Forecast - CNN",
+    "key_catalyst": "m_and_a（0，已反映 ?%）：Coherent Has Ripped 59% in 2026: Is It Too Late to Buy COHR Stock Now? - 24/7 Wall St.",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -9639,7 +9638,7 @@
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 179.97；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "低檔分數 95、財報加速 80、成長 72",
     "bear_thesis": "產業動能 6、動能排名 21、相對強度 29",
-    "key_catalyst": "guidance（0，已反映 ?%）：COHR Stock Quote Price and Forecast - CNN"
+    "key_catalyst": "m_and_a（0，已反映 ?%）：Coherent Has Ripped 59% in 2026: Is It Too Late to Buy COHR Stock Now? - 24/7 Wall St."
    },
    "batch_rank": 31,
    "rotation_view": {
@@ -9649,9 +9648,9 @@
      "3533.TW"
     ],
     "worse_than": [
-     "FLEX",
      "2377.TW",
-     "FSLR"
+     "FSLR",
+     "AMAT"
     ]
    },
    "target_weight": 0.0
@@ -9726,7 +9725,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 57.46340315046611,
+    "price_risk": 57.46340428605852,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -9744,7 +9743,7 @@
     "technical": 37.5,
     "industry_momentum": 80.64516129032258,
     "risk": 44.5,
-    "overextension": 4.50740602305904,
+    "overextension": 4.507406023059039,
     "ai_exposure": 85.0,
     "quality": 43.6,
     "growth": 46.5,
@@ -9753,7 +9752,7 @@
     "positioning": 100.0,
     "catalyst": null,
     "low_entry": 80.9,
-    "price_risk": 57.46340315046611,
+    "price_risk": 57.46340428605852,
     "fundamental_uncertainty": 25,
     "earnings": 71.6,
     "ai": 85.0,
@@ -9783,19 +9782,19 @@
     "vs_SPY_20d": 0.07247830279652856,
     "vs_SPY_60d": 0.0007121127388316495,
     "vs_SPY_120d": -0.3368698233000341,
-    "vs_SPY_252d": -0.8522633081861262,
+    "vs_SPY_252d": -0.8522631786251424,
     "vs_QQQ_20d": 0.07247830279652856,
     "vs_QQQ_60d": 0.0007121127388316495,
     "vs_QQQ_120d": -0.3368698233000341,
-    "vs_QQQ_252d": -0.8522633081861262,
+    "vs_QQQ_252d": -0.8522631786251424,
     "vs_ind_20d": 0.07247830279652856,
     "vs_ind_60d": 0.0007121127388316495,
     "vs_ind_120d": -0.3368698233000341,
-    "vs_ind_252d": -0.8522633081861262,
+    "vs_ind_252d": -0.8522631786251424,
     "vs_theme_20d": 0.10924656446902754,
     "vs_theme_60d": -0.09579883975137202,
     "vs_theme_120d": -0.5818097107488197,
-    "vs_theme_252d": -1.1633708402970184
+    "vs_theme_252d": -1.1633708814004966
    },
    "technical_detail": {
     "dist_ma20": -0.03704187626576072,
@@ -9806,8 +9805,8 @@
     "up_volume_ratio": 0.657371627385814,
     "breakout": false
    },
-   "vol_63": 0.6954146479593751,
-   "beta": 1.3551219084882633,
+   "vol_63": 0.6954146479593747,
+   "beta": 1.3551219947932887,
    "downside_risk": 0.30906005404560144,
    "coverage": 0.94,
    "entry": {
@@ -9904,9 +9903,9 @@
      "3533.TW"
     ],
     "worse_than": [
-     "FLEX",
      "2377.TW",
-     "FSLR"
+     "FSLR",
+     "AMAT"
     ]
    },
    "target_weight": 0.0
@@ -9979,7 +9978,7 @@
     "confirmations": []
    },
    "risk_detail": {
-    "price_risk": 58.45126662311568,
+    "price_risk": 58.45126873918233,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -10007,7 +10006,7 @@
     "positioning": 100.0,
     "catalyst": 50.0,
     "low_entry": 84.8,
-    "price_risk": 58.45126662311568,
+    "price_risk": 58.45126873918233,
     "fundamental_uncertainty": 10,
     "earnings": 71.3,
     "ai": 60.0,
@@ -10037,19 +10036,19 @@
     "vs_SPY_20d": -0.046840436773511795,
     "vs_SPY_60d": -0.1724064597594206,
     "vs_SPY_120d": -0.4399104968945412,
-    "vs_SPY_252d": 0.0004632229438046309,
+    "vs_SPY_252d": 0.0004633525047883502,
     "vs_QQQ_20d": -0.046840436773511795,
     "vs_QQQ_60d": -0.1724064597594206,
     "vs_QQQ_120d": -0.4399104968945412,
-    "vs_QQQ_252d": 0.0004632229438046309,
+    "vs_QQQ_252d": 0.0004633525047883502,
     "vs_ind_20d": -0.046840436773511795,
     "vs_ind_60d": -0.1724064597594206,
     "vs_ind_120d": -0.4399104968945412,
-    "vs_ind_252d": 0.0004632229438046309,
+    "vs_ind_252d": 0.0004633525047883502,
     "vs_theme_20d": 0.013713449014379986,
     "vs_theme_60d": -0.39855729633205517,
     "vs_theme_120d": -0.7926603835514209,
-    "vs_theme_252d": 0.34925322556307803
+    "vs_theme_252d": 0.3492533687187591
    },
    "technical_detail": {
     "dist_ma20": -0.11537941295820375,
@@ -10061,7 +10060,7 @@
     "breakout": false
    },
    "vol_63": 0.6368392964161305,
-   "beta": 1.4955766793465084,
+   "beta": 1.4955768401675742,
    "downside_risk": 0.34779782332431874,
    "coverage": 1.0,
    "entry": {
@@ -10306,7 +10305,7 @@
     "quality": 56.1,
     "growth": 77.9,
     "earnings_acceleration": 78.5,
-    "valuation": 46.0,
+    "valuation": 45.9,
     "positioning": 86.3,
     "catalyst": 64.8,
     "low_entry": 96.9,
@@ -10339,8 +10338,8 @@
    "relative": {
     "vs_SPY_20d": -0.04812025691407329,
     "vs_SPY_60d": -0.2200741674638994,
-    "vs_SPY_120d": -0.41550755734616796,
-    "vs_SPY_252d": 0.8123702267909074,
+    "vs_SPY_120d": -0.41550746533992333,
+    "vs_SPY_252d": 0.8123703343636686,
     "vs_QQQ_20d": -0.030949298912069878,
     "vs_QQQ_60d": -0.2103953978445815,
     "vs_QQQ_120d": -0.41376716979694317,
@@ -10348,7 +10347,7 @@
     "vs_ind_20d": -0.014870219298098064,
     "vs_ind_60d": -0.2128757195570855,
     "vs_ind_120d": -0.4881866741069507,
-    "vs_ind_252d": 0.6749016585405347,
+    "vs_ind_252d": 0.6749015185704206,
     "vs_theme_20d": 0.13561075903920464,
     "vs_theme_60d": 0.03923189629222815,
     "vs_theme_120d": -0.025931853899579138,
@@ -10364,7 +10363,7 @@
     "breakout": false
    },
    "vol_63": 0.835627341993134,
-   "beta": 2.636496899039053,
+   "beta": 2.6364969705314873,
    "downside_risk": 0.46933012601861546,
    "coverage": 1.0,
    "entry": {
@@ -10418,6 +10417,20 @@
       "age_days": 15,
       "priced_in": 0,
       "effective": 35.0
+     },
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 1,
+      "magnitude": 70,
+      "duration": "medium",
+      "title": "Ciena (CIEN) Following Record Q3 Results And 2029 Targets Looks Back In Valuation Focus - Yahoo Finance",
+      "published": "2026-09-22",
+      "age_days": 26,
+      "priced_in": 0,
+      "effective": 21.1
      },
      {
       "categories": [
@@ -10621,11 +10634,11 @@
     "confirmations": []
    },
    "risk_detail": {
-    "price_risk": 72.67748945620397,
+    "price_risk": 72.67748945620392,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "10 天後公布財報（事件風險）"
+      "9 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -10649,7 +10662,7 @@
     "positioning": 88.3,
     "catalyst": 50.0,
     "low_entry": 95.0,
-    "price_risk": 72.67748945620397,
+    "price_risk": 72.67748945620392,
     "fundamental_uncertainty": 10,
     "earnings": 58.7,
     "ai": 50.0,
@@ -10664,8 +10677,8 @@
     "5d": -0.1525285100675079,
     "20d": -0.0635629111861602,
     "60d": -0.2414057025223162,
-    "120d": -0.1255835749155505,
-    "252d": 0.5329584088414756,
+    "120d": -0.12558364530852217,
+    "252d": 0.5329585170156277,
     "756d": 2.5168641770888343
    },
    "low_entry": {
@@ -10678,32 +10691,32 @@
    "relative": {
     "vs_SPY_20d": -0.06561098527613596,
     "vs_SPY_60d": -0.2779351296799255,
-    "vs_SPY_120d": -0.19821878046806485,
-    "vs_SPY_252d": 0.37312783102546065,
+    "vs_SPY_120d": -0.1982187588547919,
+    "vs_SPY_252d": 0.3731280467723739,
     "vs_QQQ_20d": -0.04844002727413255,
     "vs_QQQ_60d": -0.2682563600606076,
-    "vs_QQQ_120d": -0.19647839291884006,
-    "vs_QQQ_252d": 0.3487815281321931,
+    "vs_QQQ_120d": -0.19647846331181174,
+    "vs_QQQ_252d": 0.3487816363063452,
     "vs_ind_20d": -0.00560475765621915,
     "vs_ind_60d": -0.17180540248565324,
-    "vs_ind_120d": -0.19181430144921752,
-    "vs_ind_252d": -0.0513051101205535,
+    "vs_ind_120d": -0.1918143718421892,
+    "vs_ind_252d": -0.05130500194640142,
     "vs_theme_20d": 0.013995007695193545,
     "vs_theme_60d": -0.07535276500879931,
-    "vs_theme_120d": -0.1227893654017293,
-    "vs_theme_252d": -0.36330964266073396
+    "vs_theme_120d": -0.12278943579470097,
+    "vs_theme_252d": -0.363309521687446
    },
    "technical_detail": {
     "dist_ma20": -0.12988009562819003,
     "dist_ma50": -0.11311034027271327,
     "dist_52w_high": -0.4500435988035164,
-    "rsi14": 31.054829468850258,
+    "rsi14": 31.05482947041544,
     "volume_spike": 1.3893074124226261,
     "up_volume_ratio": 0.32245920620907215,
     "breakout": false
    },
-   "vol_63": 0.5332656373812927,
-   "beta": 2.753756390592056,
+   "vol_63": 0.5332656373812917,
+   "beta": 2.7537545838262756,
    "downside_risk": 0.4500435988035164,
    "coverage": 1.0,
    "entry": {
@@ -10734,7 +10747,7 @@
     ],
     "notes": [
      "估值偏貴：各區下移 0.5 ATR",
-     "10 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "9 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 210.96,
     "condition": {
@@ -10887,7 +10900,7 @@
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "8 天後公布財報（事件風險）"
+      "7 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -10906,7 +10919,7 @@
     "quality": 86.2,
     "growth": 37.6,
     "earnings_acceleration": 50.2,
-    "valuation": 59.9,
+    "valuation": 60.0,
     "positioning": 88.0,
     "catalyst": 50.0,
     "low_entry": 98.9,
@@ -10939,8 +10952,8 @@
    "relative": {
     "vs_SPY_20d": -0.006043490530816098,
     "vs_SPY_60d": -0.19100177975259414,
-    "vs_SPY_120d": -0.4551983538971879,
-    "vs_SPY_252d": -0.2623815045339628,
+    "vs_SPY_120d": -0.45519826189094326,
+    "vs_SPY_252d": -0.26238139696120166,
     "vs_QQQ_20d": 0.011127467471187313,
     "vs_QQQ_60d": -0.18132301013327623,
     "vs_QQQ_120d": -0.4534579663479631,
@@ -10964,7 +10977,7 @@
     "breakout": false
    },
    "vol_63": 0.6571006876728932,
-   "beta": 3.506630718350114,
+   "beta": 3.506627941955213,
    "downside_risk": 0.4887495715003808,
    "coverage": 1.0,
    "entry": {
@@ -10994,7 +11007,7 @@
      174.1
     ],
     "notes": [
-     "8 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "7 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 119.46,
     "condition": {
@@ -11031,7 +11044,7 @@
       "duration": "medium",
       "title": "Rambus (RMBS) Stock Looks Stretched With Earnings Needing To Catch Up - Simply Wall Street",
       "published": "2026-10-10",
-      "age_days": 7,
+      "age_days": 8,
       "priced_in": null,
       "effective": 0.0
      },
@@ -11046,6 +11059,34 @@
       "title": "Is Rambus (RMBS) a Good AI Stock to Buy Now? - Yahoo Finance",
       "published": "2026-10-05",
       "age_days": 13,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "product_launch"
+      ],
+      "category": "product_launch",
+      "direction": 0,
+      "magnitude": 24,
+      "duration": "medium",
+      "title": "Is Rambus (RMBS) Undervalued Following Its New AI Memory Chip Launch? - Yahoo Finance",
+      "published": "2026-10-15",
+      "age_days": 3,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "capacity_expansion"
+      ],
+      "category": "capacity_expansion",
+      "direction": 0,
+      "magnitude": 27,
+      "duration": "long",
+      "title": "Rambus (RMBS): Capitalizing on Data Center Infrastructure Expansion - Yahoo Finance",
+      "published": "2026-10-09",
+      "age_days": 9,
       "priced_in": null,
       "effective": 0.0
      },
@@ -11194,7 +11235,7 @@
     "confirmations": []
    },
    "risk_detail": {
-    "price_risk": 76.43352692145251,
+    "price_risk": 76.43352938141109,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -11222,7 +11263,7 @@
     "positioning": 62.9,
     "catalyst": null,
     "low_entry": 90.2,
-    "price_risk": 76.43352692145251,
+    "price_risk": 76.43352938141109,
     "fundamental_uncertainty": 25,
     "earnings": 40.2,
     "ai": 25.0,
@@ -11239,12 +11280,12 @@
     "60d": -0.25145228215767634,
     "120d": 0.5830199257590927,
     "252d": 0.9504687251091453,
-    "756d": 1.0820580669534485
+    "756d": 1.0820579202875416
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.40231856444198655,
-    "ret_3y": 1.0820580669534485,
+    "ret_3y": 1.0820579202875416,
     "score": 90.2,
     "long_term_broken": false
    },
@@ -11252,15 +11293,15 @@
     "vs_SPY_20d": -0.03901145578581544,
     "vs_SPY_60d": -0.31486691630401786,
     "vs_SPY_120d": 0.3130339680224208,
-    "vs_SPY_252d": 0.026401051668665687,
+    "vs_SPY_252d": 0.026401181229649406,
     "vs_QQQ_20d": -0.03901145578581544,
     "vs_QQQ_60d": -0.31486691630401786,
     "vs_QQQ_120d": 0.3130339680224208,
-    "vs_QQQ_252d": 0.026401051668665687,
+    "vs_QQQ_252d": 0.026401181229649406,
     "vs_ind_20d": -0.03901145578581544,
     "vs_ind_60d": -0.31486691630401786,
     "vs_ind_120d": 0.3130339680224208,
-    "vs_ind_252d": 0.026401051668665687,
+    "vs_ind_252d": 0.026401181229649406,
     "vs_theme_20d": -0.11487153107053028,
     "vs_theme_60d": -0.30091733645426233,
     "vs_theme_120d": 0.3318788973382225,
@@ -11270,13 +11311,13 @@
     "dist_ma20": -0.1222692550965796,
     "dist_ma50": -0.07961062019142462,
     "dist_52w_high": -0.40231856444198655,
-    "rsi14": 38.7934061688003,
+    "rsi14": 38.793406168799805,
     "volume_spike": 1.053285728008941,
     "up_volume_ratio": 0.4605965077621327,
     "breakout": false
    },
    "vol_63": 0.8816236516323098,
-   "beta": 1.3555138164503533,
+   "beta": 1.3555140034072062,
    "downside_risk": 0.40231856444198655,
    "coverage": 0.94,
    "entry": {
@@ -11388,10 +11429,10 @@
    "theme": null,
    "sub_theme": null,
    "valuation_class": "B",
-   "opportunity": 39.6,
+   "opportunity": 40.8,
    "opportunity_detail": {
-    "score": 39.6,
-    "raw": 39.6,
+    "score": 40.8,
+    "raw": 40.8,
     "penalty": 0.0,
     "coverage": 0.92,
     "components_used": [
@@ -11431,7 +11472,9 @@
    "drawdown_type": "UNKNOWN",
    "price_location": "DEEPLY_DISCOUNTED",
    "quality_tier": "C",
-   "confirmations": [],
+   "confirmations": [
+    "CATALYST"
+   ],
    "universe_rank": [
     82,
     103
@@ -11443,10 +11486,12 @@
     "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
     "tier": "C",
     "drawdown_type": "UNKNOWN",
-    "confirmations": []
+    "confirmations": [
+     "CATALYST"
+    ]
    },
    "risk_detail": {
-    "price_risk": 88.311946318949,
+    "price_risk": 88.31194631894903,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -11472,9 +11517,9 @@
     "earnings_acceleration": 55.4,
     "valuation": 46.4,
     "positioning": 94.2,
-    "catalyst": 50.0,
+    "catalyst": 68.1,
     "low_entry": 98.3,
-    "price_risk": 88.311946318949,
+    "price_risk": 88.31194631894903,
     "fundamental_uncertainty": 10,
     "earnings": 55.4,
     "ai": null,
@@ -11491,28 +11536,28 @@
     "60d": -0.15257878715863893,
     "120d": -0.21164663952354423,
     "252d": 0.537186870935416,
-    "756d": 3.8299763030694622
+    "756d": 3.829976640159705
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.48277775738298967,
-    "ret_3y": 3.8299763030694622,
+    "ret_3y": 3.829976640159705,
     "score": 98.3,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": -0.12281010894746014,
     "vs_SPY_60d": -0.18910821431624825,
-    "vs_SPY_120d": -0.2842818450760586,
-    "vs_SPY_252d": 0.377356293119401,
+    "vs_SPY_120d": -0.28428175306981396,
+    "vs_SPY_252d": 0.37735640069216214,
     "vs_QQQ_20d": -0.10563915094545673,
     "vs_QQQ_60d": -0.17942944469693034,
     "vs_QQQ_120d": -0.2825414575268338,
     "vs_QQQ_252d": 0.35300999022613344,
     "vs_ind_20d": -0.12281010894746014,
     "vs_ind_60d": -0.18910821431624825,
-    "vs_ind_120d": -0.2842818450760586,
-    "vs_ind_252d": 0.377356293119401,
+    "vs_ind_120d": -0.28428175306981396,
+    "vs_ind_252d": 0.37735640069216214,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -11522,13 +11567,13 @@
     "dist_ma20": -0.14312143047928572,
     "dist_ma50": -0.1447326146625869,
     "dist_52w_high": -0.48277775738298967,
-    "rsi14": 35.90878508841833,
+    "rsi14": 35.90878509037087,
     "volume_spike": 0.990850477317544,
     "up_volume_ratio": 0.4533991474688257,
     "breakout": false
    },
-   "vol_63": 0.7382784480146077,
-   "beta": 2.950881189531822,
+   "vol_63": 0.738278448014608,
+   "beta": 2.9508778776704907,
    "downside_risk": 0.48277775738298967,
    "coverage": 0.92,
    "entry": {
@@ -11569,8 +11614,22 @@
     }
    },
    "catalyst": {
-    "score": 50.0,
+    "score": 68.1,
     "events": [
+     {
+      "categories": [
+       "government_contract"
+      ],
+      "category": "government_contract",
+      "direction": 1,
+      "magnitude": 60,
+      "duration": "long",
+      "title": "Does AT&T’s US$3 Billion Fiber Deal Reshape the Bull Case for Corning (GLW)? - Yahoo Finance",
+      "published": "2026-09-30",
+      "age_days": 18,
+      "priced_in": 0,
+      "effective": 45.5
+     },
      {
       "categories": [
        "guidance"
@@ -11637,7 +11696,7 @@
       "duration": "long",
       "title": "Corning (GLW): Fiber-Optic Demand Intact Despite Near-Term Guidance Friction - Yahoo Finance",
       "published": "2026-10-14",
-      "age_days": 3,
+      "age_days": 4,
       "priced_in": null,
       "effective": 0.0
      },
@@ -11668,24 +11727,10 @@
       "age_days": 24,
       "priced_in": null,
       "effective": 0.0
-     },
-     {
-      "categories": [
-       "government_contract"
-      ],
-      "category": "government_contract",
-      "direction": 0,
-      "magnitude": 36,
-      "duration": "long",
-      "title": "Corning Inc Stock (GLW) Moved Down by 3.30% on Sep 30: What Signal Does It Send? - TradingKey",
-      "published": "2026-09-30",
-      "age_days": 18,
-      "priced_in": null,
-      "effective": 0.0
      }
     ],
     "news_count": 40,
-    "key_catalyst": "guidance（0，已反映 ?%）：Corning (NYSE:GLW) Stock Forecast & Analyst Predictions - Simply Wall Street",
+    "key_catalyst": "government_contract（+，已反映 0%）：Does AT&T’s US$3 Billion Fiber Deal Reshape the Bull Case for Corning (GLW)? - Yahoo Finance",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -11721,23 +11766,23 @@
     "verdict": null
    },
    "holding": null,
-   "expected_excess_60d": -0.015599999999999998,
+   "expected_excess_60d": -0.013800000000000005,
    "narrative": {
-    "why_now": "長線贏家（3 年 +383%）已自 52 週高點回落 48%，落入低檔布局區。低檔分數 98。",
+    "why_now": "長線贏家（3 年 +383%）已自 52 週高點回落 48%，落入低檔布局區。低檔分數 98、催化 68。",
     "why_not_chase": "未過熱、可在進場區分批。",
     "key_risk": "技術 26、動能排名 26、相對強度 39",
     "attractive_price": "121.22–125.53（1 ATR）起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 103.97；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
-    "bull_thesis": "低檔分數 98",
+    "bull_thesis": "低檔分數 98、催化 68",
     "bear_thesis": "技術 26、動能排名 26、相對強度 39",
-    "key_catalyst": "guidance（0，已反映 ?%）：Corning (NYSE:GLW) Stock Forecast & Analyst Predictions - Simply Wall Street"
+    "key_catalyst": "government_contract（+，已反映 0%）：Does AT&T’s US$3 Billion Fiber Deal Reshape the Bull Case for Corning (GLW)? - Yahoo Finance"
    },
    "batch_rank": 38,
    "rotation_view": {
     "better_than": [
-     "CEG",
-     "OKLO",
-     "NRG"
+     "VST",
+     "NFLX",
+     "CEG"
     ],
     "worse_than": [
      "CIEN",
@@ -11819,7 +11864,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 52.11198117538183,
+    "price_risk": 52.111981715017365,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -11837,7 +11882,7 @@
     "technical": 13.88888888888889,
     "industry_momentum": 38.70967741935484,
     "risk": 35.3,
-    "overextension": 23.90577526373018,
+    "overextension": 23.905775263730185,
     "ai_exposure": 55.0,
     "quality": 55.4,
     "growth": 59.2,
@@ -11846,7 +11891,7 @@
     "positioning": 95.0,
     "catalyst": null,
     "low_entry": 85.5,
-    "price_risk": 52.11198117538183,
+    "price_risk": 52.111981715017365,
     "fundamental_uncertainty": 10,
     "earnings": 31.1,
     "ai": 55.0,
@@ -11876,15 +11921,15 @@
     "vs_SPY_20d": 0.16161764705882353,
     "vs_SPY_60d": -0.1584849000195121,
     "vs_SPY_120d": -0.5232350294845675,
-    "vs_SPY_252d": -0.7350661243232512,
+    "vs_SPY_252d": -0.7350659947622675,
     "vs_QQQ_20d": 0.16161764705882353,
     "vs_QQQ_60d": -0.1584849000195121,
     "vs_QQQ_120d": -0.5232350294845675,
-    "vs_QQQ_252d": -0.7350661243232512,
+    "vs_QQQ_252d": -0.7350659947622675,
     "vs_ind_20d": 0.16161764705882353,
     "vs_ind_60d": -0.1584849000195121,
     "vs_ind_120d": -0.5232350294845675,
-    "vs_ind_252d": -0.7350661243232512,
+    "vs_ind_252d": -0.7350659947622675,
     "vs_theme_20d": 0.04044296813551476,
     "vs_theme_60d": -0.3144474572422482,
     "vs_theme_120d": -0.5389252977015826,
@@ -11899,8 +11944,8 @@
     "up_volume_ratio": 0.5315692109198965,
     "breakout": false
    },
-   "vol_63": 0.6066646147457533,
-   "beta": 1.117677967790785,
+   "vol_63": 0.6066646147457537,
+   "beta": 1.1176780088030842,
    "downside_risk": 0.35543604978603693,
    "coverage": 0.94,
    "entry": {
@@ -12012,10 +12057,10 @@
    "theme": null,
    "sub_theme": null,
    "valuation_class": "B",
-   "opportunity": 37.8,
+   "opportunity": 37.6,
    "opportunity_detail": {
-    "score": 37.8,
-    "raw": 37.8,
+    "score": 37.6,
+    "raw": 37.6,
     "penalty": 0.0,
     "coverage": 0.86,
     "components_used": [
@@ -12041,7 +12086,7 @@
     "why": "基本面受損：不承接（大跌不等於便宜）",
     "state": null
    },
-   "entry_score": 74.5,
+   "entry_score": 74.3,
    "entry_condition": {
     "ok": true,
     "reason": "現價 2750.0 低於已驗證低檔線 3272.2（52 週高點 -30%）",
@@ -12071,7 +12116,7 @@
     "confirmations": []
    },
    "risk_detail": {
-    "price_risk": 71.03468551475065,
+    "price_risk": 71.0346856953527,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -12095,11 +12140,11 @@
     "quality": 100.0,
     "growth": 49.9,
     "earnings_acceleration": 44.8,
-    "valuation": 14.3,
+    "valuation": 13.4,
     "positioning": null,
     "catalyst": null,
     "low_entry": 91.2,
-    "price_risk": 71.03468551475065,
+    "price_risk": 71.0346856953527,
     "fundamental_uncertainty": 10,
     "earnings": 44.8,
     "ai": null,
@@ -12129,15 +12174,15 @@
     "vs_SPY_20d": 0.021736694677871204,
     "vs_SPY_60d": 0.09937606352807715,
     "vs_SPY_120d": -0.5745338036285742,
-    "vs_SPY_252d": -0.5504201930421511,
+    "vs_SPY_252d": -0.5504200634811673,
     "vs_QQQ_20d": 0.021736694677871204,
     "vs_QQQ_60d": 0.09937606352807715,
     "vs_QQQ_120d": -0.5745338036285742,
-    "vs_QQQ_252d": -0.5504201930421511,
+    "vs_QQQ_252d": -0.5504200634811673,
     "vs_ind_20d": 0.021736694677871204,
     "vs_ind_60d": 0.09937606352807715,
     "vs_ind_120d": -0.5745338036285742,
-    "vs_ind_252d": -0.5504201930421511,
+    "vs_ind_252d": -0.5504200634811673,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -12152,8 +12197,8 @@
     "up_volume_ratio": 0.4727470352821399,
     "breakout": false
    },
-   "vol_63": 0.8336528482807932,
-   "beta": 1.1260366040541934,
+   "vol_63": 0.8336528482807933,
+   "beta": 1.1260366177799501,
    "downside_risk": 0.4117110038662871,
    "coverage": 0.86,
    "entry": {
@@ -12227,15 +12272,15 @@
     "verdict": "POTENTIAL_OVERSOLD"
    },
    "holding": null,
-   "expected_excess_60d": -0.018300000000000004,
+   "expected_excess_60d": -0.0186,
    "narrative": {
     "why_now": "長線贏家（3 年 +50%）已自 52 週高點回落 41%，落入低檔布局區。品質 100、低檔分數 91。大跌主因非公司基本面，屬潛在超跌。",
-    "why_not_chase": "估值分數僅 14",
-    "key_risk": "動能排名 8、估值 14、相對強度 39",
+    "why_not_chase": "估值分數僅 13",
+    "key_risk": "動能排名 8、估值 13、相對強度 39",
     "attractive_price": "2592.25–2674.22（MA50）起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 2299.2；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "品質 100、低檔分數 91",
-    "bear_thesis": "動能排名 8、估值 14、相對強度 39",
+    "bear_thesis": "動能排名 8、估值 13、相對強度 39",
     "key_catalyst": "近 30 天無明確事件"
    },
    "batch_rank": 40,
@@ -12314,7 +12359,7 @@
    ],
    "low_price": null,
    "risk_detail": {
-    "price_risk": 42.72404800081675,
+    "price_risk": 42.72410145782194,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -12333,16 +12378,16 @@
     "technical": 26.535087719298247,
     "industry_momentum": 25.53191489361702,
     "risk": 29.6,
-    "overextension": 2.505877986659195,
+    "overextension": 2.5058779866591956,
     "ai_exposure": 60.0,
     "quality": 43.7,
     "growth": 8.2,
     "earnings_acceleration": 25.2,
     "valuation": 52.9,
     "positioning": 92.8,
-    "catalyst": 59.9,
+    "catalyst": 60.2,
     "low_entry": 72.9,
-    "price_risk": 42.72404800081675,
+    "price_risk": 42.72410145782194,
     "fundamental_uncertainty": 10,
     "earnings": 25.2,
     "ai": 60.0,
@@ -12359,20 +12404,20 @@
     "60d": -0.09889350431243527,
     "120d": -0.08463081602396794,
     "252d": -0.27482523875678044,
-    "756d": 3.7590865369027417
+    "756d": 3.7590862527338595
    },
    "low_entry": {
     "in_zone": false,
     "dd_52w": -0.27327418737402565,
-    "ret_3y": 3.7590865369027417,
+    "ret_3y": 3.7590862527338595,
     "score": 72.9,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": 0.08040707850008522,
     "vs_SPY_60d": -0.13542293147004458,
-    "vs_SPY_120d": -0.15726602157648228,
-    "vs_SPY_252d": -0.4346558165727954,
+    "vs_SPY_120d": -0.15726592957023766,
+    "vs_SPY_252d": -0.43465570900003425,
     "vs_QQQ_20d": 0.09757803650208863,
     "vs_QQQ_60d": -0.12574416185072668,
     "vs_QQQ_120d": -0.1555256340272575,
@@ -12384,19 +12429,19 @@
     "vs_theme_20d": 0.11462629152988503,
     "vs_theme_60d": 0.012519173906394676,
     "vs_theme_120d": 0.09721254745878849,
-    "vs_theme_252d": -0.29806295926237947
+    "vs_theme_252d": -0.2980629556988249
    },
    "technical_detail": {
     "dist_ma20": 0.026908923980867305,
     "dist_ma50": 0.050300479980590174,
     "dist_52w_high": -0.27327418737402565,
-    "rsi14": 52.46577148181476,
+    "rsi14": 52.46577148170821,
     "volume_spike": 0.7027857382942162,
     "up_volume_ratio": 0.6239700308779729,
     "breakout": false
    },
-   "vol_63": 0.4897203996393105,
-   "beta": 1.4438736846494955,
+   "vol_63": 0.4897203996393108,
+   "beta": 1.4438777473818882,
    "downside_risk": 0.27327418737402565,
    "coverage": 1.0,
    "entry": {
@@ -12435,7 +12480,7 @@
     }
    },
    "catalyst": {
-    "score": 59.9,
+    "score": 60.2,
     "events": [
      {
       "categories": [
@@ -12461,9 +12506,9 @@
       "duration": "short",
       "title": "BMO cuts Vistra Energy stock price target on regulatory challenges - Investing.com",
       "published": "2026-10-05",
-      "age_days": 12,
+      "age_days": 13,
       "priced_in": 0,
-      "effective": -6.6
+      "effective": -5.8
      },
      {
       "categories": [
@@ -12476,6 +12521,20 @@
       "title": "BMO Capital Markets Issues Pessimistic Forecast for Vistra (NYSE:VST) Stock Price - MarketBeat",
       "published": "2026-10-05",
       "age_days": 13,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "guidance"
+      ],
+      "category": "guidance",
+      "direction": 0,
+      "magnitude": 48,
+      "duration": "long",
+      "title": "Vistra (NYSE:VST) Stock Forecast & Analyst Predictions - Simply Wall Street",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -12534,23 +12593,9 @@
       "age_days": 13,
       "priced_in": null,
       "effective": 0.0
-     },
-     {
-      "categories": [
-       "guidance"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "Vistra Energy Stock Price Forecast. Should You Buy VST? - StockInvest.us",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
      }
     ],
-    "news_count": 38,
+    "news_count": 39,
     "key_catalyst": "government_contract（+，已反映 38%）：VST Stock Adds 4%: US Department Of Energy Confirms $4.2B Nuclear Deal With Vistra - Stocktwits",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
@@ -12581,7 +12626,7 @@
     "nature": "temporary",
     "evidence": [
      "EPS 預估 90 天下修 -5%",
-     "最近一季 EPS 不如預期 -53%",
+     "最近一季 EPS 不如預期 -54%",
      "主因為大盤/產業/技術面，非公司本身"
     ],
     "point_in_time_news": true,
@@ -12590,12 +12635,12 @@
    "holding": null,
    "expected_excess_60d": -0.021599999999999998,
    "narrative": {
-    "why_now": "低檔分數 73、AI 曝險 60。大跌主因非公司基本面，屬潛在超跌。",
+    "why_now": "低檔分數 73、催化 60、AI 曝險 60。大跌主因非公司基本面，屬潛在超跌。",
     "why_not_chase": "未過熱、可在進場區分批。",
     "key_risk": "成長 8、財報加速 25、產業動能 26",
     "attractive_price": "145.77–150.31（MA20）起開始有吸引力",
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 131.59；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
-    "bull_thesis": "低檔分數 73、AI 曝險 60",
+    "bull_thesis": "低檔分數 73、催化 60、AI 曝險 60",
     "bear_thesis": "成長 8、財報加速 25、產業動能 26",
     "key_catalyst": "government_contract（+，已反映 38%）：VST Stock Adds 4%: US Department Of Energy Confirms $4.2B Nuclear Deal With Vistra - Stocktwits"
    },
@@ -12606,9 +12651,9 @@
      "NRG"
     ],
     "worse_than": [
-     "KLAC",
      "RMBS",
-     "6488.TWO"
+     "6488.TWO",
+     "GLW"
     ]
    },
    "target_weight": 0.0
@@ -12683,7 +12728,7 @@
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
-      "2 天後公布財報（事件風險）"
+      "1 天後公布財報（事件風險）"
      ],
      "speculative": false
     }
@@ -12704,7 +12749,7 @@
     "earnings_acceleration": 39.7,
     "valuation": 62.1,
     "positioning": 87.3,
-    "catalyst": 26.7,
+    "catalyst": 27.6,
     "low_entry": 93.2,
     "price_risk": 33.168475068424115,
     "fundamental_uncertainty": 10,
@@ -12735,16 +12780,16 @@
    "relative": {
     "vs_SPY_20d": -0.01959929459647869,
     "vs_SPY_60d": -0.012723368162421256,
-    "vs_SPY_120d": -0.30071885818286015,
-    "vs_SPY_252d": -0.5736876082570633,
+    "vs_SPY_120d": -0.3007187661766155,
+    "vs_SPY_252d": -0.5736875006843022,
     "vs_QQQ_20d": -0.0024283365944752777,
     "vs_QQQ_60d": -0.0030445985431033495,
     "vs_QQQ_120d": -0.29897847063363536,
     "vs_QQQ_252d": -0.5980339111503309,
     "vs_ind_20d": -0.01959929459647869,
     "vs_ind_60d": -0.012723368162421256,
-    "vs_ind_120d": -0.30071885818286015,
-    "vs_ind_252d": -0.5736876082570633,
+    "vs_ind_120d": -0.3007187661766155,
+    "vs_ind_252d": -0.5736875006843022,
     "vs_theme_20d": null,
     "vs_theme_60d": null,
     "vs_theme_120d": null,
@@ -12760,7 +12805,7 @@
     "breakout": false
    },
    "vol_63": 0.3288210736562995,
-   "beta": 0.3262131164077897,
+   "beta": 0.32621204529624176,
    "downside_risk": 0.43182827111168387,
    "coverage": 0.92,
    "entry": {
@@ -12790,7 +12835,7 @@
      124.86
     ],
     "notes": [
-     "2 天後公布財報：Zone 1 只建小部位，財報後再決定"
+     "1 天後公布財報：Zone 1 只建小部位，財報後再決定"
     ],
     "low_entry_line": 86.89,
     "condition": {
@@ -12801,7 +12846,7 @@
     }
    },
    "catalyst": {
-    "score": 26.7,
+    "score": 27.6,
     "events": [
      {
       "categories": [
@@ -12813,9 +12858,9 @@
       "duration": "medium",
       "title": "This Warning Signal Just Flashed Ahead of Netflix's Earnings -- Here's What It Means for the Stock - The Motley Fool",
       "published": "2026-10-15",
-      "age_days": 2,
+      "age_days": 3,
       "priced_in": 0,
-      "effective": -63.8
+      "effective": -60.9
      },
      {
       "categories": [
@@ -12854,9 +12899,9 @@
       "direction": 0,
       "magnitude": 42,
       "duration": "medium",
-      "title": "NFLX Stock Dips Overnight: Retail Turns Bearish Ahead Of Earnings As Netflix Reels Under Growth Pressure - TradingView",
-      "published": "2026-10-15",
-      "age_days": 3,
+      "title": "Netflix Stock Is Down 22% This Year. Is it a Buy Ahead of Earnings? - Morningstar",
+      "published": "2026-10-16",
+      "age_days": 2,
       "priced_in": null,
       "effective": 0.0
      },
@@ -12882,9 +12927,9 @@
       "direction": 0,
       "magnitude": 42,
       "duration": "medium",
-      "title": "Ahead of Netflix Earnings, Here's What Barchart Data Says Comes Next for NFLX Stock - Yahoo Finance",
-      "published": "2026-10-16",
-      "age_days": 1,
+      "title": "NFLX Stock Dips Overnight: Retail Turns Bearish Ahead Of Earnings As Netflix Reels Under Growth Pressure - TradingView",
+      "published": "2026-10-15",
+      "age_days": 3,
       "priced_in": null,
       "effective": 0.0
      },
@@ -12951,9 +12996,9 @@
      "NRG"
     ],
     "worse_than": [
-     "KLAC",
      "RMBS",
-     "6488.TWO"
+     "6488.TWO",
+     "GLW"
     ]
    },
    "target_weight": 0.0
@@ -13030,7 +13075,7 @@
     ]
    },
    "risk_detail": {
-    "price_risk": 43.932642563760545,
+    "price_risk": 43.93267511176257,
     "fundamental_uncertainty": {
      "score": 25,
      "evidence": [
@@ -13049,7 +13094,7 @@
     "technical": 23.903508771929822,
     "industry_momentum": 23.404255319148938,
     "risk": 36.4,
-    "overextension": 0.9438795581741904,
+    "overextension": 0.9438795581741902,
     "ai_exposure": 65.0,
     "quality": 20.3,
     "growth": 18.2,
@@ -13058,7 +13103,7 @@
     "positioning": 89.5,
     "catalyst": 75.5,
     "low_entry": 82.0,
-    "price_risk": 43.932642563760545,
+    "price_risk": 43.93267511176257,
     "fundamental_uncertainty": 25,
     "earnings": 40.3,
     "ai": 65.0,
@@ -13075,20 +13120,20 @@
     "60d": -0.013834756570921591,
     "120d": -0.13630921351876712,
     "252d": -0.3244535784294994,
-    "756d": 1.4041359049901168
+    "756d": 1.404136392482258
    },
    "low_entry": {
     "in_zone": true,
     "dd_52w": -0.3202127615658026,
-    "ret_3y": 1.4041359049901168,
+    "ret_3y": 1.404136392482258,
     "score": 82.0,
     "long_term_broken": false
    },
    "relative": {
     "vs_SPY_20d": 0.0633595972389156,
     "vs_SPY_60d": -0.05036418372853091,
-    "vs_SPY_120d": -0.20894441907128147,
-    "vs_SPY_252d": -0.48428415624551435,
+    "vs_SPY_120d": -0.20894432706503685,
+    "vs_SPY_252d": -0.4842840486727532,
     "vs_QQQ_20d": 0.08053055524091901,
     "vs_QQQ_60d": -0.040685414109213,
     "vs_QQQ_120d": -0.2072040315220567,
@@ -13100,19 +13145,19 @@
     "vs_theme_20d": 0.09544787511106921,
     "vs_theme_60d": 0.10821026511559756,
     "vs_theme_120d": 0.0390743502771394,
-    "vs_theme_252d": -0.3538948413941883
+    "vs_theme_252d": -0.3538948378306337
    },
    "technical_detail": {
     "dist_ma20": -0.008896824338006537,
     "dist_ma50": -0.015454263880753771,
     "dist_52w_high": -0.3202127615658026,
-    "rsi14": 47.091210865749616,
+    "rsi14": 47.091210865703566,
     "volume_spike": 0.9614608167345997,
     "up_volume_ratio": 0.5005843981195147,
     "breakout": false
    },
-   "vol_63": 0.46706973118904505,
-   "beta": 1.3788416929685352,
+   "vol_63": 0.46706973118904466,
+   "beta": 1.3788441666166908,
    "downside_risk": 0.3202127615658026,
    "coverage": 1.0,
    "entry": {
@@ -13217,20 +13262,6 @@
       "direction": 1,
       "magnitude": 80,
       "duration": "long",
-      "title": "CEG Stock Rises Overnight: Constellation Signs 20-Year Nuclear Power Deal With Amazon - TradingView",
-      "published": "2026-09-30",
-      "age_days": 18,
-      "priced_in": 11,
-      "effective": 54.1
-     },
-     {
-      "categories": [
-       "hyperscaler_contract"
-      ],
-      "category": "hyperscaler_contract",
-      "direction": 1,
-      "magnitude": 80,
-      "duration": "long",
       "title": "Constellation Energy Stock Climbs Following 20-Year Nuclear Power Deal With Amazon - TIKR.com",
       "published": "2026-10-02",
       "age_days": 16,
@@ -13253,6 +13284,20 @@
      },
      {
       "categories": [
+       "hyperscaler_contract"
+      ],
+      "category": "hyperscaler_contract",
+      "direction": 1,
+      "magnitude": 80,
+      "duration": "long",
+      "title": "CEG Stock Rises Overnight: Constellation Signs 20-Year Nuclear Power Deal With Amazon - TradingView",
+      "published": "2026-10-01",
+      "age_days": 17,
+      "priced_in": 27,
+      "effective": 44.9
+     },
+     {
+      "categories": [
        "guidance",
        "analyst_revision"
       ],
@@ -13267,7 +13312,7 @@
       "effective": 0.0
      }
     ],
-    "news_count": 37,
+    "news_count": 38,
     "key_catalyst": "hyperscaler_contract（+，已反映 0%）：Alphabet Partners with Constellation Energy in Massive New Nuclear Power Deal - TIKR.com",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
@@ -13430,7 +13475,7 @@
     "earnings_acceleration": 44.4,
     "valuation": 0.0,
     "positioning": 43.8,
-    "catalyst": 86.0,
+    "catalyst": 85.9,
     "low_entry": 100.0,
     "price_risk": 96.87515789863428,
     "fundamental_uncertainty": 80,
@@ -13461,8 +13506,8 @@
    "relative": {
     "vs_SPY_20d": -0.26599546058064705,
     "vs_SPY_60d": -0.4008476245813709,
-    "vs_SPY_120d": -0.704269616181538,
-    "vs_SPY_252d": -0.9967972383931594,
+    "vs_SPY_120d": -0.7042695241752934,
+    "vs_SPY_252d": -0.9967971308203982,
     "vs_QQQ_20d": -0.24882450257864364,
     "vs_QQQ_60d": -0.391168854962053,
     "vs_QQQ_120d": -0.7025292286323133,
@@ -13474,7 +13519,7 @@
     "vs_theme_20d": -0.2750765649359388,
     "vs_theme_60d": -0.28608360584384745,
     "vs_theme_120d": -0.5181664964718993,
-    "vs_theme_252d": -0.9304720588102889
+    "vs_theme_252d": -0.9304720552467344
    },
    "technical_detail": {
     "dist_ma20": -0.21283334473430293,
@@ -13486,7 +13531,7 @@
     "breakout": false
    },
    "vol_63": 0.8513913450898666,
-   "beta": 4.151964768656033,
+   "beta": 4.1519654237851675,
    "downside_risk": 0.8288144964940459,
    "coverage": 1.0,
    "entry": {
@@ -13527,7 +13572,7 @@
     }
    },
    "catalyst": {
-    "score": 86.0,
+    "score": 85.9,
     "events": [
      {
       "categories": [
@@ -13545,20 +13590,6 @@
      },
      {
       "categories": [
-       "hyperscaler_contract"
-      ],
-      "category": "hyperscaler_contract",
-      "direction": 1,
-      "magnitude": 80,
-      "duration": "long",
-      "title": "Nuclear Stocks Rally as Google’s Reactor Deal Lifts the Sector: NANO Nuclear Energy and Oklo Jump 8%, NuScale Power Gains 7% - Yahoo Finance",
-      "published": "2026-10-06",
-      "age_days": 12,
-      "priced_in": 0,
-      "effective": 66.5
-     },
-     {
-      "categories": [
        "capacity_expansion"
       ],
       "category": "capacity_expansion",
@@ -13567,9 +13598,9 @@
       "duration": "long",
       "title": "OKLO Builds on Groves Progress to Expand Isotope Business - Yahoo Finance",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": 0,
-      "effective": 42.3
+      "effective": 41.7
      },
      {
       "categories": [
@@ -13587,29 +13618,15 @@
      },
      {
       "categories": [
-       "demand_increase"
+       "analyst_revision"
       ],
-      "category": "demand_increase",
+      "category": "analyst_revision",
       "direction": 0,
-      "magnitude": 33,
-      "duration": "medium",
-      "title": "NuScale vs. Oklo vs. GE Vernova: Ranking 3 Nuclear Stocks By Backlog, Not Hype. - Yahoo Finance",
-      "published": "2026-10-03",
-      "age_days": 15,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "m_and_a"
-      ],
-      "category": "m_and_a",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "long",
-      "title": "Oklo Stock Hits a New 52-Week Low: Time to Buy? - The Motley Fool",
-      "published": "2026-10-13",
-      "age_days": 4,
+      "magnitude": 21,
+      "duration": "short",
+      "title": "Oklo Price Target Slashed By UBS – But This Air Force Nuclear Project Offers A Key Catalyst - Stocktwits",
+      "published": "2026-09-25",
+      "age_days": 23,
       "priced_in": null,
       "effective": 0.0
      },
@@ -13623,21 +13640,49 @@
       "duration": "long",
       "title": "Oklo Stock Hits a New 52-Week Low: Time to Buy? - Yahoo Finance",
       "published": "2026-10-13",
-      "age_days": 4,
+      "age_days": 5,
       "priced_in": null,
       "effective": 0.0
      },
      {
       "categories": [
-       "analyst_revision"
+       "m_and_a"
       ],
-      "category": "analyst_revision",
+      "category": "m_and_a",
       "direction": 0,
-      "magnitude": 21,
-      "duration": "short",
-      "title": "Oklo Price Target Slashed By UBS – But This Air Force Nuclear Project Offers A Key Catalyst - Stocktwits",
-      "published": "2026-10-17",
-      "age_days": 0,
+      "magnitude": 42,
+      "duration": "long",
+      "title": "Oklo Stock Hits a New 52-Week Low: Time to Buy? - The Motley Fool",
+      "published": "2026-10-13",
+      "age_days": 5,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "government_contract"
+      ],
+      "category": "government_contract",
+      "direction": 0,
+      "magnitude": 36,
+      "duration": "long",
+      "title": "The Math Doesn't Lie: What Oklo's Stock Sales Actually Cost Investors - The Motley Fool",
+      "published": "2026-09-25",
+      "age_days": 23,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "product_launch"
+      ],
+      "category": "product_launch",
+      "direction": 0,
+      "magnitude": 24,
+      "duration": "medium",
+      "title": "Oklo Just Launched Another $1 Billion Stock Sale. Is This a Worrisome Trend or Business as Usual? - The Motley Fool",
+      "published": "2026-09-30",
+      "age_days": 18,
       "priced_in": null,
       "effective": 0.0
      }
@@ -13770,7 +13815,7 @@
     "confirmations": []
    },
    "risk_detail": {
-    "price_risk": 59.2946555775201,
+    "price_risk": 59.29468921954181,
     "fundamental_uncertainty": {
      "score": 10,
      "evidence": [
@@ -13797,7 +13842,7 @@
     "positioning": 91.5,
     "catalyst": 50.0,
     "low_entry": 93.2,
-    "price_risk": 59.2946555775201,
+    "price_risk": 59.29468921954181,
     "fundamental_uncertainty": 10,
     "earnings": 47.2,
     "ai": 45.0,
@@ -13813,7 +13858,7 @@
     "20d": 0.0008681876780940456,
     "60d": -0.2718492817455672,
     "120d": -0.34787929567403786,
-    "252d": -0.38696046767057135,
+    "252d": -0.3869604123980894,
     "756d": 1.65689540488694
    },
    "low_entry": {
@@ -13826,32 +13871,32 @@
    "relative": {
     "vs_SPY_20d": -0.0011798864118817143,
     "vs_SPY_60d": -0.30837870890317653,
-    "vs_SPY_120d": -0.4205145012265522,
-    "vs_SPY_252d": -0.5467910454865863,
+    "vs_SPY_120d": -0.4205144092203076,
+    "vs_SPY_252d": -0.5467908826413432,
     "vs_QQQ_20d": 0.015991071590121697,
     "vs_QQQ_60d": -0.29869993928385863,
     "vs_QQQ_120d": -0.4187741136773274,
-    "vs_QQQ_252d": -0.5711373483798539,
+    "vs_QQQ_252d": -0.5711372931073719,
     "vs_ind_20d": -0.03369063275765094,
     "vs_ind_60d": -0.19240276701006154,
     "vs_ind_120d": -0.27431105124624733,
-    "vs_ind_252d": -0.32159736508534553,
+    "vs_ind_252d": -0.3215973098128636,
     "vs_theme_20d": 0.022840956003922233,
     "vs_theme_60d": -0.18205607570587878,
     "vs_theme_120d": -0.19894199214754016,
-    "vs_theme_252d": -0.42421509179039424
+    "vs_theme_252d": -0.4242150260452975
    },
    "technical_detail": {
     "dist_ma20": 0.02153342753959997,
     "dist_ma50": -0.05029283401179907,
     "dist_52w_high": -0.43249937944643113,
-    "rsi14": 47.96030060995348,
+    "rsi14": 47.960300609951794,
     "volume_spike": 0.7977561060886069,
     "up_volume_ratio": 0.49510578185134924,
     "breakout": false
    },
-   "vol_63": 0.5798587414370181,
-   "beta": 1.355266081454582,
+   "vol_63": 0.5798587414370184,
+   "beta": 1.35526863824823,
    "downside_risk": 0.43249937944643113,
    "coverage": 1.0,
    "entry": {
@@ -13894,30 +13939,15 @@
     "events": [
      {
       "categories": [
-       "guidance"
+       "earnings"
       ],
-      "category": "guidance",
+      "category": "earnings",
       "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "NRG Stock Quote Price and Forecast - CNN",
-      "published": "2026-10-16",
-      "age_days": 1,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "guidance",
-       "analyst_revision"
-      ],
-      "category": "guidance",
-      "direction": 0,
-      "magnitude": 48,
-      "duration": "long",
-      "title": "NRG Energy (NRG) Stock Forecast and Price Target 2026 $NRG - MarketBeat",
-      "published": "2026-10-16",
-      "age_days": 2,
+      "magnitude": 42,
+      "duration": "medium",
+      "title": "NRG Energy (NRG) Stock May Be Cheap Relative To Earnings - Yahoo Finance",
+      "published": "2026-09-27",
+      "age_days": 21,
       "priced_in": null,
       "effective": 0.0
      },
@@ -13943,23 +13973,9 @@
       "direction": 0,
       "magnitude": 42,
       "duration": "medium",
-      "title": "NRG Energy (NRG) Stock May Be Cheap Relative To Earnings - Yahoo Finance",
-      "published": "2026-09-27",
-      "age_days": 21,
-      "priced_in": null,
-      "effective": 0.0
-     },
-     {
-      "categories": [
-       "earnings"
-      ],
-      "category": "earnings",
-      "direction": 0,
-      "magnitude": 42,
-      "duration": "medium",
       "title": "NRG Energy (NRG) Stock Looks Reasonably Priced For Its Current Earnings - Yahoo Finance",
       "published": "2026-10-16",
-      "age_days": 2,
+      "age_days": 3,
       "priced_in": null,
       "effective": 0.0
      },
@@ -13985,9 +14001,9 @@
       "direction": 0,
       "magnitude": 48,
       "duration": "long",
-      "title": "What NRG Energy (NRG)'s Data Center Outlook Means For Shareholders - Yahoo Finance",
-      "published": "2026-10-16",
-      "age_days": 1,
+      "title": "NRG Energy (NYSE:NRG) Stock Forecast & Analyst Predictions - Simply Wall Street",
+      "published": "2026-10-12",
+      "age_days": 6,
       "priced_in": null,
       "effective": 0.0
      },
@@ -13999,15 +14015,29 @@
       "direction": 0,
       "magnitude": 48,
       "duration": "long",
-      "title": "NRG Energy (NYSE:NRG) Stock Forecast & Analyst Predictions - Simply Wall Street",
-      "published": "2026-10-12",
-      "age_days": 6,
+      "title": "What NRG Energy (NRG)'s Data Center Outlook Means For Shareholders - Yahoo Finance",
+      "published": "2026-10-16",
+      "age_days": 2,
+      "priced_in": null,
+      "effective": 0.0
+     },
+     {
+      "categories": [
+       "earnings"
+      ],
+      "category": "earnings",
+      "direction": 0,
+      "magnitude": 42,
+      "duration": "medium",
+      "title": "Is Expected EPS Growth Altering The Investment Case For NRG Energy Stock? - Simply Wall Street",
+      "published": "2026-09-28",
+      "age_days": 20,
       "priced_in": null,
       "effective": 0.0
      }
     ],
-    "news_count": 39,
-    "key_catalyst": "guidance（0，已反映 ?%）：NRG Stock Quote Price and Forecast - CNN",
+    "news_count": 38,
+    "key_catalyst": "earnings（0，已反映 ?%）：NRG Energy (NRG) Stock May Be Cheap Relative To Earnings - Yahoo Finance",
     "method": "keyword rules（確定性）；LLM 只做解讀不改分數"
    },
    "positioning": {
@@ -14053,7 +14083,7 @@
     "thesis_invalidation": "收盤跌破 Zone 3 下緣 92.64；相對強度跌破 30（跑輸同業與大盤）；營收成長由加速轉為減速且 EPS 預估下修 >5%",
     "bull_thesis": "低檔分數 93",
     "bear_thesis": "技術 2、動能排名 4、成長 23",
-    "key_catalyst": "guidance（0，已反映 ?%）：NRG Stock Quote Price and Forecast - CNN"
+    "key_catalyst": "earnings（0，已反映 ?%）：NRG Energy (NRG) Stock May Be Cheap Relative To Earnings - Yahoo Finance"
    },
    "batch_rank": 45,
    "rotation_view": {
@@ -14069,38 +14099,38 @@
  ],
  "rotations": [],
  "target_weights": {
-  "FTNT": 0.0994,
-  "2059.TW": 0.0834,
-  "NTAP": 0.0742,
-  "2395.TW": 0.0686,
-  "3443.TW": 0.0637,
-  "HPE": 0.063,
-  "AVGO": 0.0593,
-  "6274.TWO": 0.055,
-  "3406.TW": 0.0452,
-  "STX": 0.0433,
-  "CRDO": 0.0413,
-  "SNOW": 0.0389,
-  "PANW": 0.0373,
-  "2327.TW": 0.0369,
-  "2377.TW": 0.0349,
-  "CRWD": 0.0316,
-  "BE": 0.029,
-  "2337.TW": 0.0272,
-  "LITE": 0.0224,
-  "ARM": 0.0215,
-  "AMAT": 0.0123,
+  "FTNT": 0.0923,
+  "2059.TW": 0.0826,
+  "NTAP": 0.076,
+  "2395.TW": 0.068,
+  "3443.TW": 0.0632,
+  "HPE": 0.0624,
+  "AVGO": 0.0587,
+  "6274.TWO": 0.0545,
+  "STX": 0.0471,
+  "3406.TW": 0.0448,
+  "CRDO": 0.041,
+  "SNOW": 0.0386,
+  "PANW": 0.037,
+  "2327.TW": 0.0366,
+  "CRWD": 0.0351,
+  "2377.TW": 0.0346,
+  "BE": 0.0288,
+  "2337.TW": 0.027,
+  "LITE": 0.0222,
+  "ARM": 0.0213,
+  "AMAT": 0.0159,
   "8299.TWO": 0.0062
  },
  "theme_exposure": {
-  "Software / AI Platform": 0.1925,
-  "Other": 0.1925,
-  "AI Servers / Hardware": 0.1813,
-  "AI Semiconductors": 0.2026,
-  "Memory / Storage": 0.1237,
-  "AI Networking / Optical": 0.1187,
-  "AI Data Center Power": 0.029,
-  "Semiconductor Equipment": 0.0123
+  "Software / AI Platform": 0.1897,
+  "Other": 0.1897,
+  "AI Servers / Hardware": 0.1796,
+  "AI Semiconductors": 0.2018,
+  "Memory / Storage": 0.1293,
+  "AI Networking / Optical": 0.1177,
+  "AI Data Center Power": 0.0288,
+  "Semiconductor Equipment": 0.0159
  },
  "theme_cap": 0.35,
  "weights_used": {

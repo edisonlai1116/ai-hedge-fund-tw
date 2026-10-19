@@ -1150,5 +1150,14 @@
     "top_score": 76,
     "strong_buy": 5,
     "pick_count": 50
+  },
+  {
+    "date": "2026-10-19",
+    "generated_at": "2026-10-19T08:20:20+08:00",
+    "macro_score": 57,
+    "top_ticker": "VST",
+    "top_score": 75,
+    "strong_buy": 5,
+    "pick_count": 50
   }
 ]
