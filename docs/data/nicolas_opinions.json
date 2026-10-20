@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:E6EGSBXC3qg",
+  "last_episode_id": "yt:Kx1w0mLNweA",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "納指暴跌真相！AI算力二房東遭斷頭？CPI反彈逼出大選前黑天鵝，Anthropic暴賺為何救不了美股",
-    "published": "2026-10-15T11:00:22+00:00",
-    "url": "https://www.youtube.com/watch?v=E6EGSBXC3qg",
-    "id": "yt:E6EGSBXC3qg",
-    "checked_at": "2026-10-20T09:07:58+08:00"
+    "title": "半導體閃崩真的是無差別錯殺！高盛與美銀報告揭秘：美光、輝達被嚴重低估，川普11月大選後迎年底大行情！",
+    "published": "2026-10-20T11:26:03+00:00",
+    "url": "https://www.youtube.com/watch?v=Kx1w0mLNweA",
+    "id": "yt:Kx1w0mLNweA",
+    "checked_at": "2026-10-20T22:03:09+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
