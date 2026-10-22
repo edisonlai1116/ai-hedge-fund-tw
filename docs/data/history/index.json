@@ -1180,11 +1180,11 @@
   },
   {
     "date": "2026-10-22",
-    "generated_at": "2026-10-22T08:48:09+08:00",
-    "macro_score": 66,
-    "top_ticker": "VST",
-    "top_score": 77,
-    "strong_buy": 7,
+    "generated_at": "2026-10-22T22:20:11+08:00",
+    "macro_score": 50,
+    "top_ticker": "KSS",
+    "top_score": 74,
+    "strong_buy": 5,
     "pick_count": 50
   }
 ]
