@@ -1216,11 +1216,11 @@
   },
   {
     "date": "2026-10-26",
-    "generated_at": "2026-10-26T08:32:33+08:00",
-    "macro_score": 38,
-    "top_ticker": "GMAB",
+    "generated_at": "2026-10-26T23:49:26+08:00",
+    "macro_score": 47,
+    "top_ticker": "SGRY",
     "top_score": 77,
-    "strong_buy": 10,
+    "strong_buy": 4,
     "pick_count": 50
   }
 ]
