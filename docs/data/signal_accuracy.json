@@ -1,19 +1,19 @@
 {
- "generated_at": "2026-10-28T01:32:50",
- "n_signals": 1051,
+ "generated_at": "2026-10-28T15:44:08",
+ "n_signals": 1054,
  "n_with_outcomes": 0,
  "rolling_days": 252,
  "min_sample": 30,
  "signal_accuracy": {
   "BUY_NOW": {
    "5d": {
-    "n": 100,
-    "hit_rate_pct": 23.0,
+    "n": 108,
+    "hit_rate_pct": 27.8,
     "ci95": [
-     15.8,
-     32.2
+     20.2,
+     36.9
     ],
-    "mean_excess_pct": -6.01,
+    "mean_excess_pct": -5.53,
     "conclusive": true,
     "note": ""
    },
@@ -39,18 +39,18 @@
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
-   "avg_mfe_60d_pct": 2.8,
-   "avg_mae_60d_pct": -7.4
+   "avg_mfe_60d_pct": 3.5,
+   "avg_mae_60d_pct": -7.2
   },
   "BUY_ON_PULLBACK": {
    "5d": {
-    "n": 256,
-    "hit_rate_pct": 29.7,
+    "n": 266,
+    "hit_rate_pct": 32.7,
     "ci95": [
-     24.4,
-     35.6
+     27.3,
+     38.6
     ],
-    "mean_excess_pct": -4.49,
+    "mean_excess_pct": -4.1,
     "conclusive": true,
     "note": ""
    },
@@ -76,18 +76,18 @@
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
-   "avg_mfe_60d_pct": 3.6,
-   "avg_mae_60d_pct": -6.3
+   "avg_mfe_60d_pct": 4.6,
+   "avg_mae_60d_pct": -6.4
   },
   "WAIT": {
    "5d": {
-    "n": 295,
-    "hit_rate_pct": 84.1,
+    "n": 308,
+    "hit_rate_pct": 83.4,
     "ci95": [
-     79.5,
-     87.8
+     78.9,
+     87.2
     ],
-    "mean_excess_pct": -6.37,
+    "mean_excess_pct": -6.19,
     "conclusive": true,
     "note": ""
    },
@@ -113,8 +113,8 @@
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
-   "avg_mfe_60d_pct": 1.8,
-   "avg_mae_60d_pct": -8.0
+   "avg_mfe_60d_pct": 2.5,
+   "avg_mae_60d_pct": -7.6
   }
  },
  "analyst_accuracy": {
