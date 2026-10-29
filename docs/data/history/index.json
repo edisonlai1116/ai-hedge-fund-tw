@@ -1243,11 +1243,11 @@
   },
   {
     "date": "2026-10-29",
-    "generated_at": "2026-10-29T09:55:24+08:00",
-    "macro_score": 64,
-    "top_ticker": "WING",
-    "top_score": 79,
-    "strong_buy": 17,
+    "generated_at": "2026-10-29T23:50:00+08:00",
+    "macro_score": 60,
+    "top_ticker": "BHC",
+    "top_score": 78,
+    "strong_buy": 15,
     "pick_count": 50
   }
 ]
