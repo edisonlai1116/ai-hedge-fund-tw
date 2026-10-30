@@ -1252,11 +1252,11 @@
   },
   {
     "date": "2026-10-30",
-    "generated_at": "2026-10-30T10:05:30+08:00",
-    "macro_score": 51,
-    "top_ticker": "GKOS",
-    "top_score": 78,
-    "strong_buy": 21,
+    "generated_at": "2026-10-30T23:30:58+08:00",
+    "macro_score": 39,
+    "top_ticker": "CPRI",
+    "top_score": 76,
+    "strong_buy": 15,
     "pick_count": 50
   }
 ]
