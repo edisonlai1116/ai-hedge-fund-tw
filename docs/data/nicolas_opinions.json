@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:ThLA11kHLBo",
+  "last_episode_id": "yt:bMKX8guM6BI",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "可以抄底了？不打仗了？Anthropic上市，半導體又好了？深入解讀！機會來了！",
-    "published": "2026-10-27T12:11:11+00:00",
-    "url": "https://www.youtube.com/watch?v=ThLA11kHLBo",
-    "id": "yt:ThLA11kHLBo",
-    "checked_at": "2026-10-30T23:29:17+08:00"
+    "title": "中期選舉暴跌真的來了！暴跌復刻1998年崩盤劇本！下週太關鍵！",
+    "published": "2026-10-31T11:20:38+00:00",
+    "url": "https://www.youtube.com/watch?v=bMKX8guM6BI",
+    "id": "yt:bMKX8guM6BI",
+    "checked_at": "2026-10-31T22:58:09+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true

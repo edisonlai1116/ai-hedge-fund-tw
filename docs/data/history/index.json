@@ -1261,11 +1261,11 @@
   },
   {
     "date": "2026-10-31",
-    "generated_at": "2026-10-31T09:44:13+08:00",
-    "macro_score": 39,
+    "generated_at": "2026-10-31T22:59:58+08:00",
+    "macro_score": 32,
     "top_ticker": "GDDY",
-    "top_score": 79,
-    "strong_buy": 20,
+    "top_score": 78,
+    "strong_buy": 19,
     "pick_count": 50
   }
 ]
