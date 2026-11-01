@@ -1,14 +1,14 @@
 {
- "generated_at": "2026-10-31T23:00:37+08:00",
- "date": "2026-10-31",
+ "generated_at": "2026-11-01T09:21:09+08:00",
+ "date": "2026-11-01",
  "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 18（極度恐懼）、VIX 19.4",
  "panic_no_sell": true,
  "in_rebalance_window": false,
- "next_rebalance": "2026-11-02",
+ "next_rebalance": "2026-12-01",
  "rebalance": {
   "us": {
    "every": "每 4 週",
-   "next": "2026-11-02",
+   "next": "2026-12-01",
    "in_window": false,
    "max_swaps": 2
   },
@@ -362,7 +362,7 @@
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -49%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+     "reason": "價格跌深（距高點 -49%）、排名第 97 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "NFLX",
