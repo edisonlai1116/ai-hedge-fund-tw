@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-01T09:21:09+08:00",
+ "generated_at": "2026-11-01T23:44:58+08:00",
  "date": "2026-11-01",
  "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 18（極度恐懼）、VIX 19.4",
  "panic_no_sell": true,
@@ -899,8 +899,8 @@
      "drawdown_type": "UNKNOWN",
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
-     "action": "高風險反轉觀察（不買）",
-     "reason": "價格跌深（距高點 -49%）、排名第 54 名（Tier D）：深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
+     "action": "反轉候選：等確認後小量",
+     "reason": "價格跌深（距高點 -49%）、排名第 54 名（Tier D）：排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "2308.TW",
