@@ -1285,5 +1285,14 @@
     "top_score": 79,
     "strong_buy": 19,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-03",
+    "generated_at": "2026-11-03T03:07:09+08:00",
+    "macro_score": 47,
+    "top_ticker": "CPRI",
+    "top_score": 77,
+    "strong_buy": 13,
+    "pick_count": 50
   }
 ]
