@@ -1276,5 +1276,14 @@
     "top_score": 78,
     "strong_buy": 19,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-02",
+    "generated_at": "2026-11-02T09:41:43+08:00",
+    "macro_score": 44,
+    "top_ticker": "GDDY",
+    "top_score": 79,
+    "strong_buy": 19,
+    "pick_count": 50
   }
 ]
