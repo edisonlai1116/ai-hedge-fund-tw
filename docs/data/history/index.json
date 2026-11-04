@@ -1297,11 +1297,11 @@
   },
   {
     "date": "2026-11-04",
-    "generated_at": "2026-11-04T00:49:37+08:00",
-    "macro_score": 44,
-    "top_ticker": "SRAD",
+    "generated_at": "2026-11-04T10:32:16+08:00",
+    "macro_score": 46,
+    "top_ticker": "GPK",
     "top_score": 75,
-    "strong_buy": 7,
+    "strong_buy": 6,
     "pick_count": 50
   }
 ]
