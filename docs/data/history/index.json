@@ -1303,5 +1303,14 @@
     "top_score": 75,
     "strong_buy": 6,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-05",
+    "generated_at": "2026-11-05T00:49:33+08:00",
+    "macro_score": 59,
+    "top_ticker": "SWK",
+    "top_score": 78,
+    "strong_buy": 19,
+    "pick_count": 50
   }
 ]
