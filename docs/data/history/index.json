@@ -1312,5 +1312,14 @@
     "top_score": 80,
     "strong_buy": 22,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-06",
+    "generated_at": "2026-11-06T01:05:44+08:00",
+    "macro_score": 42,
+    "top_ticker": "BSY",
+    "top_score": 77,
+    "strong_buy": 11,
+    "pick_count": 50
   }
 ]
