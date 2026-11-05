@@ -1,19 +1,19 @@
 {
- "generated_at": "2026-11-04T16:50:16",
- "n_signals": 1423,
+ "generated_at": "2026-11-05T02:39:57",
+ "n_signals": 1473,
  "n_with_outcomes": 31,
  "rolling_days": 252,
  "min_sample": 30,
  "signal_accuracy": {
   "BUY_NOW": {
    "5d": {
-    "n": 164,
-    "hit_rate_pct": 30.5,
+    "n": 167,
+    "hit_rate_pct": 29.9,
     "ci95": [
-     24.0,
-     37.9
+     23.5,
+     37.3
     ],
-    "mean_excess_pct": -6.15,
+    "mean_excess_pct": -6.28,
     "conclusive": true,
     "note": ""
    },
@@ -24,81 +24,7 @@
      4.7,
      44.8
     ],
-    "mean_excess_pct": -16.17,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "60d": {
-    "n": 0,
-    "hit_rate_pct": null,
-    "ci95": [
-     null,
-     null
-    ],
-    "mean_excess_pct": null,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "avg_mfe_60d_pct": 2.4,
-   "avg_mae_60d_pct": -15.9
-  },
-  "BUY_ON_PULLBACK": {
-   "5d": {
-    "n": 403,
-    "hit_rate_pct": 31.3,
-    "ci95": [
-     26.9,
-     36.0
-    ],
-    "mean_excess_pct": -3.88,
-    "conclusive": true,
-    "note": ""
-   },
-   "20d": {
-    "n": 6,
-    "hit_rate_pct": 33.3,
-    "ci95": [
-     9.7,
-     70.0
-    ],
-    "mean_excess_pct": -8.28,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "60d": {
-    "n": 0,
-    "hit_rate_pct": null,
-    "ci95": [
-     null,
-     null
-    ],
-    "mean_excess_pct": null,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "avg_mfe_60d_pct": 3.5,
-   "avg_mae_60d_pct": -13.4
-  },
-  "WAIT": {
-   "5d": {
-    "n": 470,
-    "hit_rate_pct": 73.0,
-    "ci95": [
-     68.8,
-     76.8
-    ],
-    "mean_excess_pct": -4.54,
-    "conclusive": true,
-    "note": ""
-   },
-   "20d": {
-    "n": 13,
-    "hit_rate_pct": 100.0,
-    "ci95": [
-     77.2,
-     100.0
-    ],
-    "mean_excess_pct": -28.14,
+    "mean_excess_pct": -16.95,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -114,7 +40,81 @@
     "note": "樣本 < 30，不下結論"
    },
    "avg_mfe_60d_pct": 2.2,
-   "avg_mae_60d_pct": -13.8
+   "avg_mae_60d_pct": -17.7
+  },
+  "BUY_ON_PULLBACK": {
+   "5d": {
+    "n": 410,
+    "hit_rate_pct": 30.7,
+    "ci95": [
+     26.5,
+     35.4
+    ],
+    "mean_excess_pct": -4.01,
+    "conclusive": true,
+    "note": ""
+   },
+   "20d": {
+    "n": 6,
+    "hit_rate_pct": 33.3,
+    "ci95": [
+     9.7,
+     70.0
+    ],
+    "mean_excess_pct": -8.37,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "60d": {
+    "n": 0,
+    "hit_rate_pct": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "mean_excess_pct": null,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "avg_mfe_60d_pct": 3.3,
+   "avg_mae_60d_pct": -14.6
+  },
+  "WAIT": {
+   "5d": {
+    "n": 477,
+    "hit_rate_pct": 73.4,
+    "ci95": [
+     69.2,
+     77.1
+    ],
+    "mean_excess_pct": -4.76,
+    "conclusive": true,
+    "note": ""
+   },
+   "20d": {
+    "n": 13,
+    "hit_rate_pct": 100.0,
+    "ci95": [
+     77.2,
+     100.0
+    ],
+    "mean_excess_pct": -27.68,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "60d": {
+    "n": 0,
+    "hit_rate_pct": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "mean_excess_pct": null,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "avg_mfe_60d_pct": 2.0,
+   "avg_mae_60d_pct": -14.8
   }
  },
  "analyst_accuracy": {
@@ -126,7 +126,7 @@
      0.0,
      25.9
     ],
-    "mean_excess_pct": -27.53,
+    "mean_excess_pct": -27.17,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -148,7 +148,7 @@
      54.8,
      93.0
     ],
-    "mean_excess_pct": -14.54,
+    "mean_excess_pct": -15.16,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -161,7 +161,7 @@
      2.9,
      31.4
     ],
-    "mean_excess_pct": -22.88,
+    "mean_excess_pct": -23.18,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -183,7 +183,7 @@
      30.1,
      95.4
     ],
-    "mean_excess_pct": -9.77,
+    "mean_excess_pct": -9.83,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -196,7 +196,7 @@
      13.7,
      69.4
     ],
-    "mean_excess_pct": -1.42,
+    "mean_excess_pct": -2.52,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -218,7 +218,7 @@
      78.5,
      100.0
     ],
-    "mean_excess_pct": -27.76,
+    "mean_excess_pct": -27.8,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -231,7 +231,7 @@
      5.8,
      39.2
     ],
-    "mean_excess_pct": -15.21,
+    "mean_excess_pct": -15.6,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -253,7 +253,7 @@
      56.6,
      100.0
     ],
-    "mean_excess_pct": -31.12,
+    "mean_excess_pct": -30.64,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -266,7 +266,7 @@
      0.0,
      22.8
     ],
-    "mean_excess_pct": -29.26,
+    "mean_excess_pct": -29.21,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -288,7 +288,7 @@
      46.8,
      91.1
     ],
-    "mean_excess_pct": -10.16,
+    "mean_excess_pct": -10.4,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -301,7 +301,7 @@
      1.2,
      29.8
     ],
-    "mean_excess_pct": -21.83,
+    "mean_excess_pct": -21.84,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -323,7 +323,7 @@
      9.5,
      90.5
     ],
-    "mean_excess_pct": -6.12,
+    "mean_excess_pct": -8.59,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -336,7 +336,7 @@
      0.0,
      24.3
     ],
-    "mean_excess_pct": -26.2,
+    "mean_excess_pct": -25.91,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -358,7 +358,7 @@
      43.8,
      100.0
     ],
-    "mean_excess_pct": -32.17,
+    "mean_excess_pct": -31.74,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -371,7 +371,7 @@
      0.0,
      29.9
     ],
-    "mean_excess_pct": -28.31,
+    "mean_excess_pct": -28.27,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -393,7 +393,7 @@
      70.1,
      100.0
     ],
-    "mean_excess_pct": -30.4,
+    "mean_excess_pct": -29.97,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -406,7 +406,7 @@
      -0.0,
      27.8
     ],
-    "mean_excess_pct": -28.53,
+    "mean_excess_pct": -27.9,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -428,7 +428,7 @@
      42.4,
      87.3
     ],
-    "mean_excess_pct": -7.07,
+    "mean_excess_pct": -7.83,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
@@ -441,7 +441,7 @@
      0.0,
      21.5
     ],
-    "mean_excess_pct": -29.47,
+    "mean_excess_pct": -29.04,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
@@ -463,7 +463,7 @@
      35.4,
      84.8
     ],
-    "mean_excess_pct": -6.9,
+    "mean_excess_pct": -7.87,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }

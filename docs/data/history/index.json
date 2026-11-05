@@ -1306,11 +1306,11 @@
   },
   {
     "date": "2026-11-05",
-    "generated_at": "2026-11-05T00:49:33+08:00",
-    "macro_score": 59,
-    "top_ticker": "SWK",
-    "top_score": 78,
-    "strong_buy": 19,
+    "generated_at": "2026-11-05T10:39:31+08:00",
+    "macro_score": 49,
+    "top_ticker": "CDW",
+    "top_score": 80,
+    "strong_buy": 22,
     "pick_count": 50
   }
 ]
