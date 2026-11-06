@@ -1315,11 +1315,11 @@
   },
   {
     "date": "2026-11-06",
-    "generated_at": "2026-11-06T01:05:44+08:00",
-    "macro_score": 42,
-    "top_ticker": "BSY",
-    "top_score": 77,
-    "strong_buy": 11,
+    "generated_at": "2026-11-06T10:40:55+08:00",
+    "macro_score": 41,
+    "top_ticker": "APPN",
+    "top_score": 79,
+    "strong_buy": 9,
     "pick_count": 50
   }
 ]
