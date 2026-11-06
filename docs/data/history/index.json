@@ -1321,5 +1321,14 @@
     "top_score": 79,
     "strong_buy": 9,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-07",
+    "generated_at": "2026-11-07T00:35:45+08:00",
+    "macro_score": 30,
+    "top_ticker": "HD",
+    "top_score": 68,
+    "strong_buy": 0,
+    "pick_count": 50
   }
 ]

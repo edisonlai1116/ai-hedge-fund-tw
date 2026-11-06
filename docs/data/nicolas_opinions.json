@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:ylNhwqlR7vo",
+  "last_episode_id": "yt:zIxpd8rspDE",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "民主黨大勝！AI資料中心全線叫停，一夜變天！只能去掉槓桿，風暴要來！",
-    "published": "2026-11-05T12:42:25+00:00",
-    "url": "https://www.youtube.com/watch?v=ylNhwqlR7vo",
-    "id": "yt:ylNhwqlR7vo",
-    "checked_at": "2026-11-06T01:03:42+08:00"
+    "title": "全球AI崩盤了！滿地流血的時候來了！小心還要跌！抄底還是接飛刀？不要著急！看明白在出手！",
+    "published": "2026-11-06T13:44:52+00:00",
+    "url": "https://www.youtube.com/watch?v=zIxpd8rspDE",
+    "id": "yt:zIxpd8rspDE",
+    "checked_at": "2026-11-07T00:33:45+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
