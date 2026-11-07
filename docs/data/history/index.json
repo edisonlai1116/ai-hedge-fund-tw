@@ -1324,11 +1324,11 @@
   },
   {
     "date": "2026-11-07",
-    "generated_at": "2026-11-07T10:07:30+08:00",
-    "macro_score": 33,
-    "top_ticker": "DKNG",
-    "top_score": 69,
-    "strong_buy": 0,
+    "generated_at": "2026-11-07T23:24:09+08:00",
+    "macro_score": 29,
+    "top_ticker": "XERS",
+    "top_score": 70,
+    "strong_buy": 1,
     "pick_count": 50
   }
 ]
