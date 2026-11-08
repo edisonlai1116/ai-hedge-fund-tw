@@ -5,8 +5,8 @@
    "score": 9.2,
    "label": "極度恐懼",
    "prev_1d": 9.1,
-   "prev_1w": 18.1,
-   "prev_1m": 39.1,
+   "prev_1w": 18.2,
+   "prev_1m": 37.6,
    "components": [
     {
      "key": "momentum",
@@ -47,7 +47,7 @@
    "history": [
     {
      "date": "2025-10-27",
-     "fg": 65.6
+     "fg": 65.5
     },
     {
      "date": "2025-10-28",
@@ -979,91 +979,91 @@
     },
     {
      "date": "2026-10-01",
-     "fg": 34.5
+     "fg": 31.5
     },
     {
      "date": "2026-10-02",
-     "fg": 43.8
+     "fg": 40.5
     },
     {
      "date": "2026-10-05",
-     "fg": 45.8
+     "fg": 43.8
     },
     {
      "date": "2026-10-06",
-     "fg": 51.5
+     "fg": 49.3
     },
     {
      "date": "2026-10-07",
-     "fg": 47.9
+     "fg": 45.6
     },
     {
      "date": "2026-10-08",
-     "fg": 39.1
+     "fg": 37.6
     },
     {
      "date": "2026-10-09",
-     "fg": 44.6
+     "fg": 43.0
     },
     {
      "date": "2026-10-12",
-     "fg": 43.4
+     "fg": 41.6
     },
     {
      "date": "2026-10-13",
-     "fg": 41.3
+     "fg": 40.2
     },
     {
      "date": "2026-10-14",
-     "fg": 27.7
+     "fg": 27.2
     },
     {
      "date": "2026-10-15",
-     "fg": 30.4
+     "fg": 30.1
     },
     {
      "date": "2026-10-16",
-     "fg": 17.5
+     "fg": 16.8
     },
     {
      "date": "2026-10-19",
-     "fg": 19.8
+     "fg": 19.5
     },
     {
      "date": "2026-10-20",
-     "fg": 24.3
+     "fg": 23.9
     },
     {
      "date": "2026-10-21",
-     "fg": 26.7
-    },
-    {
-     "date": "2026-10-22",
-     "fg": 15.3
-    },
-    {
-     "date": "2026-10-23",
-     "fg": 12.2
-    },
-    {
-     "date": "2026-10-26",
-     "fg": 17.2
-    },
-    {
-     "date": "2026-10-27",
-     "fg": 21.7
-    },
-    {
-     "date": "2026-10-28",
      "fg": 26.2
     },
     {
+     "date": "2026-10-22",
+     "fg": 15.1
+    },
+    {
+     "date": "2026-10-23",
+     "fg": 12.1
+    },
+    {
+     "date": "2026-10-26",
+     "fg": 17.1
+    },
+    {
+     "date": "2026-10-27",
+     "fg": 21.3
+    },
+    {
+     "date": "2026-10-28",
+     "fg": 25.8
+    },
+    {
      "date": "2026-10-29",
-     "fg": 26.5
+     "fg": 26.6
     },
     {
      "date": "2026-10-30",
-     "fg": 18.1
+     "fg": 18.2
     },
     {
      "date": "2026-11-02",
@@ -1097,7 +1097,7 @@
    "previous_1_month": 47.0
   },
   "cnn_validation": {
-   "n_days": 250,
+   "n_days": 249,
    "corr": 0.82,
    "mean_abs_diff": 9.6
   },
@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-11-07T23:24:09+08:00",
+ "generated_at": "2026-11-08T09:39:41+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -5088,8 +5088,7 @@
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
-       "FUNDAMENTAL_RECOVERY",
-       "CATALYST"
+       "FUNDAMENTAL_RECOVERY"
       ]
      }
     },
@@ -5141,10 +5140,10 @@
      "day_change_pct": 6.25,
      "dd_52w_pct": -31.1,
      "ret_3y_pct": 240.0,
-     "high_52w": 785.12,
+     "high_52w": 784.99,
      "low_entry": true,
      "low_entry_watch": false,
-     "low_entry_price": 549.58,
+     "low_entry_price": 549.49,
      "long_term_broken": false,
      "ret_1y_pct": 19.4,
      "long_uptrend": false,
@@ -8727,6 +8726,16 @@
     "CATALYST"
    ]
   },
+  "SNOW": {
+   "type": "SPECULATIVE_DE_RATING",
+   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -17%（虧損））",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
   "LITE": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
@@ -8746,22 +8755,12 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "ROP": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "CATALYST",
-    "POSITIVE_REVERSAL"
-   ]
-  },
-  "SNOW": {
-   "type": "SPECULATIVE_DE_RATING",
-   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -17%（虧損））",
+  "OKTA": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY",
     "CATALYST"
    ]
   },
@@ -8772,14 +8771,6 @@
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "OKTA": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION"
    ]
   },
   "2379.TW": {
@@ -8802,6 +8793,14 @@
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
    "confirmations": []
+  },
+  "ROP": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "POSITIVE_REVERSAL"
+   ]
   },
   "2303.TW": {
    "type": "TEMPORARY_SHOCK",
@@ -8957,15 +8956,6 @@
     "CATALYST"
    ]
   },
-  "TER": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": [
-    "FUNDAMENTAL_RECOVERY",
-    "CATALYST"
-   ]
-  },
   "RMBS": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
@@ -8980,6 +8970,14 @@
    "why": "基本面受損：大跌伴隨基本面確認（預估下修／財報、成長轉弱）或極強的負面證據",
    "status": "WAIT",
    "confirmations": []
+  },
+  "TER": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": [
+    "FUNDAMENTAL_RECOVERY"
+   ]
   },
   "LRCX": {
    "type": "TEMPORARY_SHOCK",
@@ -9050,15 +9048,15 @@
    "status": "WAIT",
    "confirmations": []
   },
-  "6488.TWO": {
-   "type": "FUNDAMENTAL_DAMAGE",
-   "why": "基本面受損：大跌伴隨基本面確認（預估下修／財報、成長轉弱）或極強的負面證據",
-   "status": "WAIT",
-   "confirmations": []
-  },
   "CEG": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": []
+  },
+  "6488.TWO": {
+   "type": "FUNDAMENTAL_DAMAGE",
+   "why": "基本面受損：大跌伴隨基本面確認（預估下修／財報、成長轉弱）或極強的負面證據",
    "status": "WAIT",
    "confirmations": []
   },

@@ -1330,5 +1330,14 @@
     "top_score": 70,
     "strong_buy": 1,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-08",
+    "generated_at": "2026-11-08T09:39:40+08:00",
+    "macro_score": 32,
+    "top_ticker": "XERS",
+    "top_score": 70,
+    "strong_buy": 1,
+    "pick_count": 50
   }
 ]
