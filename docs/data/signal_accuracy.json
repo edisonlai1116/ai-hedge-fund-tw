@@ -1,30 +1,30 @@
 {
- "generated_at": "2026-11-10T04:16:21",
- "n_signals": 1733,
- "n_with_outcomes": 269,
+ "generated_at": "2026-11-10T16:47:34",
+ "n_signals": 1739,
+ "n_with_outcomes": 288,
  "rolling_days": 252,
  "min_sample": 30,
  "signal_accuracy": {
   "BUY_NOW": {
    "5d": {
-    "n": 201,
-    "hit_rate_pct": 24.9,
+    "n": 207,
+    "hit_rate_pct": 24.2,
     "ci95": [
-     19.4,
-     31.3
+     18.8,
+     30.4
     ],
-    "mean_excess_pct": -8.01,
+    "mean_excess_pct": -8.0,
     "conclusive": true,
     "note": ""
    },
    "20d": {
-    "n": 36,
-    "hit_rate_pct": 5.6,
+    "n": 37,
+    "hit_rate_pct": 5.4,
     "ci95": [
      1.5,
-     18.1
+     17.7
     ],
-    "mean_excess_pct": -24.4,
+    "mean_excess_pct": -24.45,
     "conclusive": true,
     "note": ""
    },
@@ -39,66 +39,29 @@
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    },
-   "avg_mfe_60d_pct": 3.0,
+   "avg_mfe_60d_pct": 2.7,
    "avg_mae_60d_pct": -22.8
   },
   "BUY_ON_PULLBACK": {
    "5d": {
-    "n": 504,
+    "n": 511,
     "hit_rate_pct": 25.4,
     "ci95": [
-     21.8,
+     21.9,
      29.4
     ],
-    "mean_excess_pct": -5.96,
+    "mean_excess_pct": -5.97,
     "conclusive": true,
     "note": ""
    },
    "20d": {
-    "n": 100,
+    "n": 108,
     "hit_rate_pct": 13.0,
     "ci95": [
-     7.8,
-     21.0
+     7.9,
+     20.6
     ],
-    "mean_excess_pct": -20.05,
-    "conclusive": true,
-    "note": ""
-   },
-   "60d": {
-    "n": 0,
-    "hit_rate_pct": null,
-    "ci95": [
-     null,
-     null
-    ],
-    "mean_excess_pct": null,
-    "conclusive": false,
-    "note": "樣本 < 30，不下結論"
-   },
-   "avg_mfe_60d_pct": 4.0,
-   "avg_mae_60d_pct": -17.8
-  },
-  "WAIT": {
-   "5d": {
-    "n": 608,
-    "hit_rate_pct": 76.8,
-    "ci95": [
-     73.3,
-     80.0
-    ],
-    "mean_excess_pct": -6.18,
-    "conclusive": true,
-    "note": ""
-   },
-   "20d": {
-    "n": 133,
-    "hit_rate_pct": 92.5,
-    "ci95": [
-     86.7,
-     95.9
-    ],
-    "mean_excess_pct": -20.32,
+    "mean_excess_pct": -20.16,
     "conclusive": true,
     "note": ""
    },
@@ -114,19 +77,56 @@
     "note": "樣本 < 30，不下結論"
    },
    "avg_mfe_60d_pct": 3.6,
-   "avg_mae_60d_pct": -18.8
+   "avg_mae_60d_pct": -17.9
+  },
+  "WAIT": {
+   "5d": {
+    "n": 627,
+    "hit_rate_pct": 76.9,
+    "ci95": [
+     73.4,
+     80.0
+    ],
+    "mean_excess_pct": -6.18,
+    "conclusive": true,
+    "note": ""
+   },
+   "20d": {
+    "n": 143,
+    "hit_rate_pct": 93.0,
+    "ci95": [
+     87.6,
+     96.2
+    ],
+    "mean_excess_pct": -20.18,
+    "conclusive": true,
+    "note": ""
+   },
+   "60d": {
+    "n": 0,
+    "hit_rate_pct": null,
+    "ci95": [
+     null,
+     null
+    ],
+    "mean_excess_pct": null,
+    "conclusive": false,
+    "note": "樣本 < 30，不下結論"
+   },
+   "avg_mfe_60d_pct": 3.3,
+   "avg_mae_60d_pct": -18.9
   }
  },
  "analyst_accuracy": {
   "momentum_rank": {
    "bullish_20d": {
-    "n": 120,
+    "n": 125,
     "hit_rate_pct": 0.0,
     "ci95": [
-     -0.0,
-     3.1
+     0.0,
+     3.0
     ],
-    "mean_excess_pct": -27.63,
+    "mean_excess_pct": -27.76,
     "conclusive": true,
     "note": ""
    },
@@ -142,26 +142,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 120,
-    "hit_rate_pct": 80.8,
+    "n": 132,
+    "hit_rate_pct": 81.1,
     "ci95": [
-     72.9,
-     86.9
+     73.5,
+     86.8
     ],
-    "mean_excess_pct": -12.94,
+    "mean_excess_pct": -12.9,
     "conclusive": true,
     "note": ""
    }
   },
   "earnings_acceleration": {
    "bullish_20d": {
-    "n": 166,
-    "hit_rate_pct": 10.2,
+    "n": 180,
+    "hit_rate_pct": 10.6,
     "ci95": [
-     6.5,
-     15.8
+     6.9,
+     15.9
     ],
-    "mean_excess_pct": -23.18,
+    "mean_excess_pct": -23.08,
     "conclusive": true,
     "note": ""
    },
@@ -177,26 +177,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 36,
-    "hit_rate_pct": 83.3,
+    "n": 39,
+    "hit_rate_pct": 84.6,
     "ci95": [
-     68.1,
-     92.1
+     70.3,
+     92.8
     ],
-    "mean_excess_pct": -8.91,
+    "mean_excess_pct": -9.24,
     "conclusive": true,
     "note": ""
    }
   },
   "valuation": {
    "bullish_20d": {
-    "n": 77,
-    "hit_rate_pct": 18.2,
+    "n": 81,
+    "hit_rate_pct": 19.8,
     "ci95": [
-     11.2,
-     28.2
+     12.5,
+     29.7
     ],
-    "mean_excess_pct": -13.69,
+    "mean_excess_pct": -12.87,
     "conclusive": true,
     "note": ""
    },
@@ -212,11 +212,11 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 124,
-    "hit_rate_pct": 96.8,
+    "n": 134,
+    "hit_rate_pct": 97.0,
     "ci95": [
-     92.0,
-     98.7
+     92.6,
+     98.8
     ],
     "mean_excess_pct": -26.14,
     "conclusive": true,
@@ -225,13 +225,13 @@
   },
   "quality": {
    "bullish_20d": {
-    "n": 120,
-    "hit_rate_pct": 15.0,
+    "n": 134,
+    "hit_rate_pct": 14.9,
     "ci95": [
-     9.7,
-     22.5
+     9.9,
+     21.9
     ],
-    "mean_excess_pct": -18.26,
+    "mean_excess_pct": -18.0,
     "conclusive": true,
     "note": ""
    },
@@ -247,26 +247,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 51,
-    "hit_rate_pct": 92.2,
+    "n": 56,
+    "hit_rate_pct": 92.9,
     "ci95": [
-     81.5,
-     96.9
+     83.0,
+     97.2
     ],
-    "mean_excess_pct": -22.52,
+    "mean_excess_pct": -22.9,
     "conclusive": true,
     "note": ""
    }
   },
   "growth": {
    "bullish_20d": {
-    "n": 117,
-    "hit_rate_pct": 0.9,
+    "n": 124,
+    "hit_rate_pct": 0.0,
     "ci95": [
-     0.2,
-     4.7
+     -0.0,
+     3.0
     ],
-    "mean_excess_pct": -27.7,
+    "mean_excess_pct": -27.65,
     "conclusive": true,
     "note": ""
    },
@@ -282,26 +282,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 78,
-    "hit_rate_pct": 83.3,
+    "n": 87,
+    "hit_rate_pct": 83.9,
     "ci95": [
-     73.5,
-     90.0
+     74.8,
+     90.2
     ],
-    "mean_excess_pct": -12.64,
+    "mean_excess_pct": -12.77,
     "conclusive": true,
     "note": ""
    }
   },
   "catalyst": {
    "bullish_20d": {
-    "n": 89,
-    "hit_rate_pct": 10.1,
+    "n": 101,
+    "hit_rate_pct": 8.9,
     "ci95": [
-     5.4,
-     18.1
+     4.8,
+     16.1
     ],
-    "mean_excess_pct": -21.09,
+    "mean_excess_pct": -20.95,
     "conclusive": true,
     "note": ""
    },
@@ -317,26 +317,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 25,
-    "hit_rate_pct": 76.0,
+    "n": 27,
+    "hit_rate_pct": 74.1,
     "ci95": [
-     56.6,
-     88.5
+     55.3,
+     86.8
     ],
-    "mean_excess_pct": -13.11,
+    "mean_excess_pct": -12.93,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
   },
   "ai_exposure": {
    "bullish_20d": {
-    "n": 84,
+    "n": 94,
     "hit_rate_pct": 0.0,
     "ci95": [
      0.0,
-     4.4
+     3.9
     ],
-    "mean_excess_pct": -24.88,
+    "mean_excess_pct": -24.16,
     "conclusive": true,
     "note": ""
    },
@@ -352,26 +352,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 25,
+    "n": 27,
     "hit_rate_pct": 100.0,
     "ci95": [
-     86.7,
+     87.5,
      100.0
     ],
-    "mean_excess_pct": -32.15,
+    "mean_excess_pct": -31.59,
     "conclusive": false,
     "note": "樣本 < 30，不下結論"
    }
   },
   "industry_momentum": {
    "bullish_20d": {
-    "n": 59,
-    "hit_rate_pct": 6.8,
+    "n": 67,
+    "hit_rate_pct": 6.0,
     "ci95": [
-     2.7,
-     16.2
+     2.3,
+     14.4
     ],
-    "mean_excess_pct": -25.86,
+    "mean_excess_pct": -26.27,
     "conclusive": true,
     "note": ""
    },
@@ -387,26 +387,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 80,
+    "n": 84,
     "hit_rate_pct": 100.0,
     "ci95": [
-     95.4,
+     95.6,
      100.0
     ],
-    "mean_excess_pct": -26.77,
+    "mean_excess_pct": -26.16,
     "conclusive": true,
     "note": ""
    }
   },
   "relative_strength": {
    "bullish_20d": {
-    "n": 90,
+    "n": 95,
     "hit_rate_pct": 0.0,
     "ci95": [
      0.0,
-     4.1
+     3.9
     ],
-    "mean_excess_pct": -27.64,
+    "mean_excess_pct": -27.73,
     "conclusive": true,
     "note": ""
    },
@@ -422,26 +422,26 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 107,
-    "hit_rate_pct": 76.6,
+    "n": 115,
+    "hit_rate_pct": 77.4,
     "ci95": [
-     67.8,
-     83.6
+     68.9,
+     84.1
     ],
-    "mean_excess_pct": -10.58,
+    "mean_excess_pct": -10.67,
     "conclusive": true,
     "note": ""
    }
   },
   "technical": {
    "bullish_20d": {
-    "n": 140,
+    "n": 146,
     "hit_rate_pct": 0.0,
     "ci95": [
-     0.0,
-     2.7
+     -0.0,
+     2.6
     ],
-    "mean_excess_pct": -28.66,
+    "mean_excess_pct": -28.72,
     "conclusive": true,
     "note": ""
    },
@@ -457,13 +457,13 @@
     "note": "樣本 < 30，不下結論"
    },
    "bearish_20d": {
-    "n": 93,
-    "hit_rate_pct": 74.2,
+    "n": 104,
+    "hit_rate_pct": 75.0,
     "ci95": [
-     64.5,
-     82.0
+     65.9,
+     82.3
     ],
-    "mean_excess_pct": -9.65,
+    "mean_excess_pct": -9.95,
     "conclusive": true,
     "note": ""
    }
