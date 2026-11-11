@@ -1360,11 +1360,11 @@
   },
   {
     "date": "2026-11-11",
-    "generated_at": "2026-11-11T00:46:53+08:00",
-    "macro_score": 37,
+    "generated_at": "2026-11-11T10:03:19+08:00",
+    "macro_score": 28,
     "top_ticker": "TRAX",
-    "top_score": 74,
-    "strong_buy": 5,
+    "top_score": 76,
+    "strong_buy": 7,
     "pick_count": 50
   }
 ]
