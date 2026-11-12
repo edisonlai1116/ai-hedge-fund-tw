@@ -1369,11 +1369,11 @@
   },
   {
     "date": "2026-11-12",
-    "generated_at": "2026-11-12T00:52:54+08:00",
-    "macro_score": 37,
+    "generated_at": "2026-11-12T11:12:36+08:00",
+    "macro_score": 46,
     "top_ticker": "AZTA",
-    "top_score": 76,
-    "strong_buy": 2,
+    "top_score": 77,
+    "strong_buy": 7,
     "pick_count": 50
   }
 ]
