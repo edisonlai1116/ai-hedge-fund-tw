@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-11-14T10:34:46+08:00",
+ "generated_at": "2026-11-14T23:31:28+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -4192,7 +4192,8 @@
       "drawdown_type": "FUNDAMENTAL_DISCOUNT",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -5630,12 +5631,13 @@
       "state": "LOW_PRICE_SPECULATIVE",
       "recommendation": "BUY_ON_CONFIRMATION",
       "label": "反轉候選：等確認後小量",
-      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
+      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
       "tier": "D",
       "drawdown_type": "FUNDAMENTAL_DISCOUNT",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -8489,9 +8491,7 @@
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
    "status": "BUY_NOW",
-   "confirmations": [
-    "CATALYST"
-   ]
+   "confirmations": []
   },
   "CRDO": {
    "type": "TEMPORARY_SHOCK",
@@ -8501,20 +8501,19 @@
     "CATALYST"
    ]
   },
-  "AVGO": {
-   "type": "FUNDAMENTAL_DISCOUNT",
-   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
-   "status": "BUY_NOW",
-   "confirmations": [
-    "CATALYST",
-    "POSITIVE_REVERSAL"
-   ]
-  },
   "3406.TW": {
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
    "status": "BUY_ON_PULLBACK",
    "confirmations": []
+  },
+  "AVGO": {
+   "type": "FUNDAMENTAL_DISCOUNT",
+   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
+   "status": "BUY_NOW",
+   "confirmations": [
+    "POSITIVE_REVERSAL"
+   ]
   },
   "2344.TW": {
    "type": "TEMPORARY_SHOCK",
@@ -8530,6 +8529,16 @@
     "EARNINGS_ACCELERATION"
    ]
   },
+  "BE": {
+   "type": "FUNDAMENTAL_DISCOUNT",
+   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
+   "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
   "CDW": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -8539,15 +8548,6 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "BE": {
-   "type": "FUNDAMENTAL_DISCOUNT",
-   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
-   "status": "WAIT",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
   "ROP": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -8555,6 +8555,12 @@
    "confirmations": [
     "POSITIVE_REVERSAL"
    ]
+  },
+  "2379.TW": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": []
   },
   "LITE": {
    "type": "UNKNOWN",
@@ -8583,12 +8589,6 @@
     "EARNINGS_ACCELERATION"
    ]
   },
-  "2379.TW": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": []
-  },
   "5274.TWO": {
    "type": "FUNDAMENTAL_DISCOUNT",
    "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
@@ -8599,20 +8599,20 @@
     "CATALYST"
    ]
   },
-  "VST": {
-   "type": "FUNDAMENTAL_DISCOUNT",
-   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "CATALYST"
-   ]
-  },
   "2303.TW": {
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION"
+   ]
+  },
+  "VST": {
+   "type": "FUNDAMENTAL_DISCOUNT",
+   "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "CATALYST"
    ]
   },
   "STX": {
@@ -8640,6 +8640,7 @@
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
+    "CATALYST",
     "POSITIVE_REVERSAL"
    ]
   },
@@ -8660,6 +8661,15 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
+  "CEG": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "CATALYST"
+   ]
+  },
   "VRT": {
    "type": "FUNDAMENTAL_DISCOUNT",
    "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
@@ -8667,15 +8677,6 @@
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
-    "CATALYST"
-   ]
-  },
-  "CEG": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
     "CATALYST"
    ]
   },
@@ -8698,6 +8699,12 @@
     "CATALYST"
    ]
   },
+  "2337.TW": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": []
+  },
   "TER": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
@@ -8706,12 +8713,6 @@
     "FUNDAMENTAL_RECOVERY",
     "CATALYST"
    ]
-  },
-  "2337.TW": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": []
   },
   "AMAT": {
    "type": "FUNDAMENTAL_DISCOUNT",
@@ -8760,21 +8761,22 @@
     "CATALYST"
    ]
   },
-  "2345.TW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "CATALYST"
-   ]
-  },
   "CIEN": {
    "type": "FUNDAMENTAL_DISCOUNT",
    "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "2345.TW": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "CATALYST"
    ]
   },
   "8299.TWO": {
@@ -8802,20 +8804,20 @@
     "CATALYST"
    ]
   },
-  "3529.TWO": {
-   "type": "VALUATION_RESET",
-   "why": "跌深後估值分數仍僅 28：是昂貴估值的修正，尚未便宜",
-   "status": "WAIT",
-   "confirmations": [
-    "CATALYST"
-   ]
-  },
   "FLEX": {
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "3529.TWO": {
+   "type": "VALUATION_RESET",
+   "why": "跌深後估值分數仍僅 28：是昂貴估值的修正，尚未便宜",
+   "status": "WAIT",
+   "confirmations": [
     "CATALYST"
    ]
   },
