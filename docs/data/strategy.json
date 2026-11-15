@@ -1097,7 +1097,7 @@
    "previous_1_month": 45.6
   },
   "cnn_validation": {
-   "n_days": 250,
+   "n_days": 249,
    "corr": 0.83,
    "mean_abs_diff": 9.2
   },
@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-11-14T23:31:28+08:00",
+ "generated_at": "2026-11-15T10:01:56+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -5028,9 +5028,7 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "UNKNOWN",
-      "confirmations": [
-       "CATALYST"
-      ]
+      "confirmations": []
      }
     },
     {
@@ -5221,14 +5219,12 @@
      "name": "",
      "low_view": {
       "state": "LOW_PRICE_SPECULATIVE",
-      "recommendation": "BUY_ON_CONFIRMATION",
-      "label": "反轉候選：等確認後小量",
-      "why": "排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
+      "recommendation": "SPECULATIVE_WATCH",
+      "label": "高風險反轉觀察（不買）",
+      "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
       "tier": "D",
       "drawdown_type": "UNKNOWN",
-      "confirmations": [
-       "CATALYST"
-      ]
+      "confirmations": []
      }
     },
     {
@@ -8539,6 +8535,14 @@
     "CATALYST"
    ]
   },
+  "ROP": {
+   "type": "NONE",
+   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "POSITIVE_REVERSAL"
+   ]
+  },
   "CDW": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
@@ -8548,19 +8552,20 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "ROP": {
-   "type": "NONE",
-   "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "POSITIVE_REVERSAL"
-   ]
-  },
   "2379.TW": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
    "status": "BUY_ON_PULLBACK",
    "confirmations": []
+  },
+  "SNOW": {
+   "type": "SPECULATIVE_DE_RATING",
+   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -22%（虧損））",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY"
+   ]
   },
   "LITE": {
    "type": "UNKNOWN",
@@ -8570,15 +8575,6 @@
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY",
     "CATALYST"
-   ]
-  },
-  "SNOW": {
-   "type": "SPECULATIVE_DE_RATING",
-   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -22%（虧損））",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
    ]
   },
   "OKTA": {
@@ -8661,15 +8657,6 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
-  "CEG": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "CATALYST"
-   ]
-  },
   "VRT": {
    "type": "FUNDAMENTAL_DISCOUNT",
    "why": "品質與財報動能仍在、估值不貴：價格下跌造成的折價",
@@ -8704,6 +8691,14 @@
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
    "confirmations": []
+  },
+  "CEG": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION"
+   ]
   },
   "TER": {
    "type": "TEMPORARY_SHOCK",
@@ -8796,14 +8791,6 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
-  "GLW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "CATALYST"
-   ]
-  },
   "FLEX": {
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
@@ -8812,6 +8799,12 @@
     "FUNDAMENTAL_RECOVERY",
     "CATALYST"
    ]
+  },
+  "GLW": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "WAIT",
+   "confirmations": []
   },
   "3529.TWO": {
    "type": "VALUATION_RESET",
@@ -8825,9 +8818,7 @@
    "type": "UNKNOWN",
    "why": "基本面證據不足以判定為折價或受損",
    "status": "WAIT",
-   "confirmations": [
-    "CATALYST"
-   ]
+   "confirmations": []
   },
   "2308.TW": {
    "type": "UNKNOWN",
