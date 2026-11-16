@@ -2,7 +2,7 @@
   "_source": "尼可拉斯楊Live",
   "_analyst": "Nicholas Yang",
   "_note": "全自動：由其 YouTube 頻道(@nicolasyounglive)抓最新一集→讀自動字幕→關鍵字擷取他點名的個股(無需人工、無需 Whisper)。每日 pipeline 與每 2h 背景更新；opinions 反映他最新一集的實際點名。",
-  "last_episode_id": "yt:izrGbtW7MeQ",
+  "last_episode_id": "yt:SkGq_c-Nj5w",
   "opinions": [
     {
       "target_ticker": "MU",
@@ -123,11 +123,11 @@
     }
   ],
   "latest_episode": {
-    "title": "黃仁勳辞职好惨！找机会抄底輝達！機器人週期開始啟動！科技泡沫破裂，膽小的人十年不敢買股票！",
-    "published": "2026-11-10T10:32:22+00:00",
-    "url": "https://www.youtube.com/watch?v=izrGbtW7MeQ",
-    "id": "yt:izrGbtW7MeQ",
-    "checked_at": "2026-11-16T00:01:37+08:00"
+    "title": "現在急需心裡按摩！摩根士丹利80頁報告曝光，原標題【逢低買入，美國中期選舉後的 AI 投資機會】，希望可以撐過之一段黃仁勳不在的日子。誰會想到，一下就辭職呢？",
+    "published": "2026-11-16T10:57:58+00:00",
+    "url": "https://www.youtube.com/watch?v=SkGq_c-Nj5w",
+    "id": "yt:SkGq_c-Nj5w",
+    "checked_at": "2026-11-17T03:12:34+08:00"
   },
   "_episode_for_opinions": "yt:awVvGmwheLk",
   "_auto_extracted": true
