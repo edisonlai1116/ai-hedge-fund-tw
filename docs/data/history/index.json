@@ -1447,5 +1447,14 @@
     "top_score": 77,
     "strong_buy": 3,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-21",
+    "generated_at": "2026-11-21T01:31:19+08:00",
+    "macro_score": 26,
+    "top_ticker": "PLBL",
+    "top_score": 74,
+    "strong_buy": 2,
+    "pick_count": 50
   }
 ]
