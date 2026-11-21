@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-11-21T11:43:21+08:00",
- "date": "2026-11-21",
+ "generated_at": "2026-11-22T00:36:12+08:00",
+ "date": "2026-11-22",
  "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 2（極度恐懼）、VIX 35.9",
  "panic_no_sell": true,
  "in_rebalance_window": false,
@@ -136,7 +136,7 @@
       "stat_arb": null
      },
      "type": "low_entry_not_buyable",
-     "drawdown_type": "TEMPORARY_SHOCK",
+     "drawdown_type": "VALUATION_RESET",
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "高風險反轉觀察（不買）",
@@ -448,7 +448,7 @@
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -56%）、排名第 92 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+     "reason": "價格跌深（距高點 -56%）、排名第 92 名（Tier D）：排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     }
    ],
    "virattt": {
@@ -984,11 +984,11 @@
       "stat_arb": null
      },
      "type": "low_entry_not_buyable",
-     "drawdown_type": "FUNDAMENTAL_DAMAGE",
-     "low_state": "LOW_PRICE",
+     "drawdown_type": "TEMPORARY_SHOCK",
+     "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
-     "action": "跌深但基本面受損：不買",
-     "reason": "價格跌深（距高點 -64%）、排名第 55 名（Tier D）：價格跌深，但回撤分類為基本面受損：跌深不是便宜。"
+     "action": "高風險反轉觀察（不買）",
+     "reason": "價格跌深（距高點 -64%）、排名第 55 名（Tier D）：深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。"
     },
     {
      "symbol": "2059.TW",
@@ -1011,12 +1011,12 @@
       "volatility": 55.0,
       "stat_arb": null
      },
-     "type": "low_entry_not_buyable",
-     "drawdown_type": "UNKNOWN",
-     "low_state": "LOW_PRICE",
+     "type": "low_entry_holding",
+     "action": "低檔分批（中等排名的跌深機會）（已在低檔區）",
+     "drawdown_type": "TEMPORARY_SHOCK",
+     "low_state": "LOW_PRICE_OPPORTUNITY",
      "quality_tier": "B",
-     "action": "低檔觀察（不直接買）",
-     "reason": "價格跌深（距高點 -63%）、排名第 21 名（Tier B）：價格跌深、排名中等（Tier B），但回撤分類為 UNKNOWN：基本面證據不足，只列觀察。"
+     "reason": "在低檔區 17 天（距高點 -63%，尚未反彈（距 20 日低點 +0%））；低檔＋排名中等（Tier B）＋基本面未明顯破壞（TEMPORARY_SHOCK）：可分批、降低部位，不是因為跌很多而買。還沒買、且低檔槽位未滿可分批（優先買還沒反彈的）；已買者續抱。"
     },
     {
      "symbol": "5274.TWO",
@@ -1208,7 +1208,7 @@
       "stat_arb": null
      },
      "type": "low_entry_not_buyable",
-     "drawdown_type": "UNKNOWN",
+     "drawdown_type": "TEMPORARY_SHOCK",
      "low_state": "LOW_PRICE",
      "quality_tier": "C",
      "action": "低檔觀察（不直接買）",

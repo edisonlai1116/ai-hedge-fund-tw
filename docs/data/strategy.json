@@ -171,7 +171,7 @@
     },
     {
      "date": "2025-12-24",
-     "fg": 81.4
+     "fg": 81.5
     },
     {
      "date": "2025-12-26",
@@ -1526,7 +1526,7 @@
    }
   ]
  },
- "generated_at": "2026-11-21T11:37:56+08:00",
+ "generated_at": "2026-11-22T00:35:40+08:00",
  "strategy": {
   "name": "長線低檔布局 30% ＋ 動能輪動 70%",
   "lookback_days": 126,
@@ -1880,12 +1880,13 @@
       "state": "LOW_PRICE_SPECULATIVE",
       "recommendation": "BUY_ON_CONFIRMATION",
       "label": "高風險反轉候選：小量、等確認",
-      "why": "投機股預期修正（虧損/營收極小），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：只能小量、分批。",
+      "why": "投機股預期修正（虧損/營收極小），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：只能小量、分批。",
       "tier": "A",
       "drawdown_type": "SPECULATIVE_DE_RATING",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -3628,7 +3629,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -3873,7 +3875,9 @@
       "why": "低檔＋排名中等（Tier B）＋基本面未明顯破壞（TEMPORARY_SHOCK）：可分批、降低部位，不是因為跌很多而買。",
       "tier": "B",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -4140,7 +4144,8 @@
       "tier": "B",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
-       "EARNINGS_ACCELERATION"
+       "EARNINGS_ACCELERATION",
+       "CATALYST"
       ]
      }
     },
@@ -4189,7 +4194,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -4372,7 +4379,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -4470,7 +4478,8 @@
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -4567,7 +4576,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -4761,7 +4772,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -4812,7 +4824,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -4937,7 +4950,8 @@
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -5071,7 +5085,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -5278,7 +5294,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -5406,12 +5424,14 @@
      "name": "",
      "low_view": {
       "state": "LOW_PRICE_SPECULATIVE",
-      "recommendation": "SPECULATIVE_WATCH",
-      "label": "高風險反轉觀察（不買）",
-      "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
+      "recommendation": "BUY_ON_CONFIRMATION",
+      "label": "反轉候選：等確認後小量",
+      "why": "排名偏低（Tier D），但有獨立證據（CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
       "tier": "D",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -5530,12 +5550,13 @@
       "state": "LOW_PRICE_SPECULATIVE",
       "recommendation": "BUY_ON_CONFIRMATION",
       "label": "反轉候選：等確認後小量",
-      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
+      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
       "tier": "D",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -5670,7 +5691,7 @@
       "label": "高風險反轉觀察（不買）",
       "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
       "tier": "D",
-      "drawdown_type": "TEMPORARY_SHOCK",
+      "drawdown_type": "VALUATION_RESET",
       "confirmations": []
      }
     },
@@ -5838,12 +5859,13 @@
       "state": "LOW_PRICE_SPECULATIVE",
       "recommendation": "BUY_ON_CONFIRMATION",
       "label": "反轉候選：等確認後小量",
-      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
+      "why": "排名偏低（Tier D），但有獨立證據（EARNINGS_ACCELERATION、FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。",
       "tier": "D",
       "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -6027,7 +6049,8 @@
       "drawdown_type": "SPECULATIVE_DE_RATING",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -6261,7 +6284,8 @@
       "drawdown_type": "UNKNOWN",
       "confirmations": [
        "EARNINGS_ACCELERATION",
-       "FUNDAMENTAL_RECOVERY"
+       "FUNDAMENTAL_RECOVERY",
+       "CATALYST"
       ]
      }
     },
@@ -7043,12 +7067,12 @@
      "price_location": "DEEPLY_DISCOUNTED",
      "name": "川湖",
      "low_view": {
-      "state": "LOW_PRICE",
-      "recommendation": "WATCH",
-      "label": "低檔觀察（不直接買）",
-      "why": "價格跌深、排名中等（Tier B），但回撤分類為 UNKNOWN：基本面證據不足，只列觀察。",
+      "state": "LOW_PRICE_OPPORTUNITY",
+      "recommendation": "BUY_STAGED",
+      "label": "低檔分批（中等排名的跌深機會）",
+      "why": "低檔＋排名中等（Tier B）＋基本面未明顯破壞（TEMPORARY_SHOCK）：可分批、降低部位，不是因為跌很多而買。",
       "tier": "B",
-      "drawdown_type": "UNKNOWN",
+      "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": []
      }
     },
@@ -7846,7 +7870,7 @@
       "label": "低檔觀察（不直接買）",
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
-      "drawdown_type": "UNKNOWN",
+      "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": [
        "EARNINGS_ACCELERATION"
       ]
@@ -7947,7 +7971,9 @@
       "why": "價格跌深，但排名偏後（Tier C）：只列低檔觀察，等排名或基本面改善再考慮。",
       "tier": "C",
       "drawdown_type": "TEMPORARY_SHOCK",
-      "confirmations": []
+      "confirmations": [
+       "CATALYST"
+      ]
      }
     },
     {
@@ -8619,12 +8645,12 @@
      "price_location": "DEEPLY_DISCOUNTED",
      "name": "台達電",
      "low_view": {
-      "state": "LOW_PRICE",
-      "recommendation": "NO_BUY",
-      "label": "跌深但基本面受損：不買",
-      "why": "價格跌深，但回撤分類為基本面受損：跌深不是便宜。",
+      "state": "LOW_PRICE_SPECULATIVE",
+      "recommendation": "SPECULATIVE_WATCH",
+      "label": "高風險反轉觀察（不買）",
+      "why": "深度回撤，但目前排名偏低，屬高風險反轉候選；跌深本身不足以構成買進理由。",
       "tier": "D",
-      "drawdown_type": "FUNDAMENTAL_DAMAGE",
+      "drawdown_type": "TEMPORARY_SHOCK",
       "confirmations": []
      }
     }
@@ -8635,9 +8661,9 @@
  "disclaimer": "規則化訊號，回測有倖存者偏差，非投資建議。",
  "drawdown_types": {
   "2059.TW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "WAIT",
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_NOW",
    "confirmations": []
   },
   "3443.TW": {
@@ -8646,14 +8672,17 @@
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "AVGO": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
-   "confirmations": []
+   "confirmations": [
+    "CATALYST"
+   ]
   },
   "MRVL": {
    "type": "TEMPORARY_SHOCK",
@@ -8661,7 +8690,8 @@
    "status": "BUY_NOW",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "2344.TW": {
@@ -8681,29 +8711,8 @@
   },
   "6531.TW": {
    "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "CRDO": {
-   "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": []
-  },
-  "2379.TW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_NOW",
-   "confirmations": []
-  },
-  "2357.TW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
-   "status": "BUY_NOW",
+   "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
@@ -8715,7 +8724,8 @@
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "BE": {
@@ -8724,7 +8734,8 @@
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "VRT": {
@@ -8733,13 +8744,55 @@
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
+  },
+  "CRDO": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": []
+  },
+  "LITE": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "STX": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "2379.TW": {
+   "type": "UNKNOWN",
+   "why": "基本面證據不足以判定為折價或受損",
+   "status": "BUY_NOW",
+   "confirmations": []
   },
   "2383.TW": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY"
+   ]
+  },
+  "2357.TW": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
@@ -8753,24 +8806,6 @@
     "EARNINGS_ACCELERATION"
    ]
   },
-  "LITE": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "STX": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
   "2337.TW": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
@@ -8779,11 +8814,21 @@
   },
   "6274.TWO": {
    "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
     "FUNDAMENTAL_RECOVERY"
+   ]
+  },
+  "SNOW": {
+   "type": "SPECULATIVE_DE_RATING",
+   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -22%（虧損））",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "CDW": {
@@ -8806,13 +8851,21 @@
    "status": "BUY_ON_PULLBACK",
    "confirmations": []
   },
-  "SNOW": {
-   "type": "SPECULATIVE_DE_RATING",
-   "why": "虧損或尚無營收：股價反映的是未來預期，下跌是預期修正，不代表便宜（營業利益率 -22%（虧損））",
-   "status": "BUY_ON_PULLBACK",
+  "TER": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
    "confirmations": [
-    "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "AMAT": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_NOW",
+   "confirmations": [
+    "CATALYST"
    ]
   },
   "3406.TW": {
@@ -8822,26 +8875,12 @@
    "confirmations": []
   },
   "2303.TW": {
-   "type": "UNKNOWN",
-   "why": "基本面證據不足以判定為折價或受損",
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION"
    ]
-  },
-  "TER": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": [
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "AMAT": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "BUY_NOW",
-   "confirmations": []
   },
   "OKTA": {
    "type": "NONE",
@@ -8855,6 +8894,32 @@
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
+   "confirmations": [
+    "CATALYST"
+   ]
+  },
+  "RMBS": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "CATALYST"
+   ]
+  },
+  "CEG": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_NOW",
+   "confirmations": [
+    "EARNINGS_ACCELERATION",
+    "CATALYST"
+   ]
+  },
+  "VST": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
    "confirmations": []
   },
   "MSI": {
@@ -8865,45 +8930,9 @@
     "POSITIVE_REVERSAL"
    ]
   },
-  "VST": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": []
-  },
-  "RMBS": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "EARNINGS_ACCELERATION"
-   ]
-  },
   "TYL": {
    "type": "NONE",
    "why": "距 52 週高點跌幅 < 20%，不做回撤分類",
-   "status": "WAIT",
-   "confirmations": []
-  },
-  "2360.TW": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "BUY_ON_PULLBACK",
-   "confirmations": [
-    "FUNDAMENTAL_RECOVERY"
-   ]
-  },
-  "CEG": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "BUY_NOW",
-   "confirmations": [
-    "EARNINGS_ACCELERATION"
-   ]
-  },
-  "2345.TW": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
    "confirmations": []
   },
@@ -8913,12 +8942,37 @@
    "status": "BUY_ON_PULLBACK",
    "confirmations": [
     "EARNINGS_ACCELERATION",
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
+   ]
+  },
+  "2360.TW": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
     "FUNDAMENTAL_RECOVERY"
+   ]
+  },
+  "2345.TW": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": [
+    "CATALYST"
+   ]
+  },
+  "GLW": {
+   "type": "TEMPORARY_SHOCK",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "status": "WAIT",
+   "confirmations": [
+    "CATALYST"
    ]
   },
   "8299.TWO": {
    "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌為公司特有，但財報動能與預估未轉差：基本面未受損",
+   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
    "confirmations": [
     "FUNDAMENTAL_RECOVERY"
@@ -8940,15 +8994,9 @@
     "FUNDAMENTAL_RECOVERY"
    ]
   },
-  "GLW": {
+  "2308.TW": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": []
-  },
-  "2308.TW": {
-   "type": "FUNDAMENTAL_DAMAGE",
-   "why": "基本面受損：大跌伴隨基本面確認（預估下修／財報、成長轉弱）或極強的負面證據",
    "status": "WAIT",
    "confirmations": []
   },
@@ -8956,13 +9004,17 @@
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
    "status": "WAIT",
-   "confirmations": []
+   "confirmations": [
+    "CATALYST"
+   ]
   },
   "NRG": {
    "type": "TEMPORARY_SHOCK",
    "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
-   "status": "WAIT",
-   "confirmations": []
+   "status": "BUY_ON_PULLBACK",
+   "confirmations": [
+    "CATALYST"
+   ]
   },
   "2474.TW": {
    "type": "VALUATION_RESET",
@@ -8982,12 +9034,13 @@
    "status": "WAIT",
    "confirmations": [
     "EARNINGS_ACCELERATION",
-    "FUNDAMENTAL_RECOVERY"
+    "FUNDAMENTAL_RECOVERY",
+    "CATALYST"
    ]
   },
   "INTC": {
-   "type": "TEMPORARY_SHOCK",
-   "why": "近期大跌主因為大盤/產業/技術面：基本面未受損",
+   "type": "VALUATION_RESET",
+   "why": "跌深後估值分數仍僅 16：是昂貴估值的修正，尚未便宜",
    "status": "WAIT",
    "confirmations": []
   }
