@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-22T10:27:28+08:00",
-  "generated_date": "2026-11-22",
+  "generated_at": "2026-11-23T00:52:48+08:00",
+  "generated_date": "2026-11-23",
   "mode": "免 Key（台美股 Top 50：美股熱門榜 + 台灣50 + 股癌共識 + Yahoo 技術面 + 籌碼面/法人 + 新聞輿情 + 催化/風險警報）",
   "universe": {
     "us_movers": 40,
@@ -14,18 +14,18 @@
     "ignition_radar": 5
   },
   "macro": {
-    "score": 19,
+    "score": 18,
     "label": "偏空",
     "headline_count": 50,
     "sample_headlines": [
-      "Markets in 2027: Stocks Take the Lead - Morgan Stanley",
+      "Stock market correction? Whatever — Wall Street is bullish on 2027, and one chief investment officer sees the S&P 500 soaring 45% to 10,000 - Yahoo Finance",
       "Is the bull market cracking? What to watch for next week after the AI washout - CNBC",
-      "US Stocks Are Predicted to Extend Their Historic Rally as Gains Moderate - Goldman Sachs",
       "Prediction: A Stock Market Crash Is Coming. Here's What Investors Should Do Based on Warren Buffett's Proven Advice. - The Motley Fool",
       "Prediction markets outlook for stocks in 2026 dims amid AI sell-off - CNBC",
+      "Markets in 2027: Stocks Take the Lead - Morgan Stanley",
       "Dow drops more than 500 points; S&P 500 falls for fifth day as Nvidia sells off - CNBC",
       "Dow drops 1,800 points; Nasdaq tumbles into correction territory on AI tech wreck: Live updates - CNBC",
-      "Stock Market Week Ahead: A Matter Of Pressure And Time - Investor's Business Daily"
+      "Stock market correction? This chief investment officer sees the S&P 500 soaring 45% to 10,000 - Fortune"
     ]
   },
   "gooaye_status": {
@@ -58,8 +58,8 @@
         "relative_strength": 35,
         "chip_flow": 0,
         "gooaye": 50,
-        "ticker_news": 72,
-        "macro": 19
+        "ticker_news": 63,
+        "macro": 18
       },
       "technical": {
         "composite_score": 18,
@@ -115,8 +115,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 72,
-        "label": "偏多"
+        "score": 63,
+        "label": "中性"
       },
       "ignition_reason": "爆量長紅點火（今天 +11.44%、量 4.06 倍）",
       "detail": {
@@ -321,7 +321,7 @@
         "chip_flow": 32,
         "gooaye": 50,
         "ticker_news": 72,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 69,
@@ -352,12 +352,7 @@
         "source": "CMF"
       },
       "events": {
-        "catalysts": [
-          {
-            "tag": "分割/股息",
-            "headline": "Global Payments (GPN) – Among Billionaire Larry Robbins’ 10 Dividend Stock Picks - Yahoo Finance"
-          }
-        ],
+        "catalysts": [],
         "risks": [
           {
             "tag": "法規/關稅風險",
@@ -579,7 +574,7 @@
         "chip_flow": 0,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 46,
@@ -614,6 +609,10 @@
           {
             "tag": "財報優於預期",
             "headline": "Why Is Buckle Stock Rising Friday? Women's Apparel Strength Helps Retailer Beat Q3 Estimates - Benzinga"
+          },
+          {
+            "tag": "法說會/投資人日",
+            "headline": "Buckle (BKE) Q3 2026 Earnings Call Transcript - The Motley Fool"
           }
         ],
         "risks": []
@@ -832,7 +831,7 @@
         "chip_flow": 100,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 56,
@@ -1084,8 +1083,8 @@
         "relative_strength": 89,
         "chip_flow": 100,
         "gooaye": 50,
-        "ticker_news": 30,
-        "macro": 19
+        "ticker_news": 25,
+        "macro": 18
       },
       "technical": {
         "composite_score": 51,
@@ -1119,12 +1118,12 @@
         "catalysts": [],
         "risks": [
           {
-            "tag": "淨利衰退",
-            "headline": "Cal-Maine Foods (CALM) Stock Faces Margin Crunch After Quarterly Loss - Simply Wall St"
-          },
-          {
             "tag": "法規/關稅風險",
             "headline": "Stocks slide as Anthropic IPO fails to calm AI fears - Bangkok Post"
+          },
+          {
+            "tag": "淨利衰退",
+            "headline": "Cal-Maine Foods (CALM) Stock Faces Margin Crunch After Quarterly Loss - Simply Wall St"
           },
           {
             "tag": "解禁/大股東減持",
@@ -1140,7 +1139,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 30,
+        "score": 25,
         "label": "偏空"
       },
       "ignition_reason": "爆量長紅點火（2 天前 +7.96%、量 2.08 倍）",
@@ -1340,15 +1339,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 37,
+      "buy_score": 36,
       "recommendation": "偏空減碼",
       "components": {
         "technical": 38,
         "relative_strength": 45,
         "chip_flow": 16,
         "gooaye": 50,
-        "ticker_news": 54,
-        "macro": 19
+        "ticker_news": 33,
+        "macro": 18
       },
       "technical": {
         "composite_score": 38,
@@ -1400,8 +1399,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 54,
-        "label": "中性"
+        "score": 33,
+        "label": "偏空"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
       "dip_reason": "距 60 日高點 -67%、RSI 29 超賣",
@@ -1606,8 +1605,8 @@
         "relative_strength": 45,
         "chip_flow": 66,
         "gooaye": 50,
-        "ticker_news": 41,
-        "macro": 19
+        "ticker_news": 42,
+        "macro": 18
       },
       "technical": {
         "composite_score": 44,
@@ -1654,7 +1653,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 41,
+        "score": 42,
         "label": "偏空"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
@@ -1853,15 +1852,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 35,
-      "recommendation": "偏空減碼",
+      "buy_score": 33,
+      "recommendation": "避險／賣出",
       "components": {
         "technical": 43,
         "relative_strength": 45,
         "chip_flow": 0,
         "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 18,
+        "macro": 18
       },
       "technical": {
         "composite_score": 43,
@@ -1908,8 +1907,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 50,
-        "label": "中性"
+        "score": 18,
+        "label": "偏空"
       },
       "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
       "dip_reason": "距 60 日高點 -60%、RSI 29 超賣",
@@ -2115,7 +2114,7 @@
         "chip_flow": 10,
         "gooaye": 78,
         "ticker_news": 50,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 48,
@@ -2366,15 +2365,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 36,
+      "buy_score": 35,
       "recommendation": "偏空減碼",
       "components": {
         "technical": 41,
         "relative_strength": 45,
         "chip_flow": 0,
         "gooaye": 50,
-        "ticker_news": 75,
-        "macro": 19
+        "ticker_news": 65,
+        "macro": 18
       },
       "technical": {
         "composite_score": 41,
@@ -2406,7 +2405,12 @@
       },
       "events": {
         "catalysts": [],
-        "risks": []
+        "risks": [
+          {
+            "tag": "降評",
+            "headline": "MRVL Stock Price Target Slashed In Half: ‘Material Headwinds’ After Lumentum Deal, TD Cowen Says In Downgrade - Yahoo Finance"
+          }
+        ]
       },
       "gooaye": {
         "score": 50,
@@ -2416,7 +2420,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 75,
+        "score": 65,
         "label": "偏多"
       },
       "ai_chain_layer": "🌐 網路互聯 Networking",
@@ -2623,7 +2627,7 @@
         "chip_flow": 21,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 38,
@@ -2876,8 +2880,8 @@
         "relative_strength": 45,
         "chip_flow": 25,
         "gooaye": 50,
-        "ticker_news": 42,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 41,
@@ -2924,8 +2928,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 42,
-        "label": "偏空"
+        "score": 50,
+        "label": "中性"
       },
       "ai_chain_layer": "💡 IP & 軟體 IP & Software",
       "dip_reason": "距 60 日高點 -54%、RSI 32 超賣",
@@ -3123,15 +3127,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 40,
+      "buy_score": 41,
       "recommendation": "偏空減碼",
       "components": {
         "technical": 44,
         "relative_strength": 45,
         "chip_flow": 22,
         "gooaye": 50,
-        "ticker_news": 54,
-        "macro": 19
+        "ticker_news": 70,
+        "macro": 18
       },
       "technical": {
         "composite_score": 44,
@@ -3178,8 +3182,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 54,
-        "label": "中性"
+        "score": 70,
+        "label": "偏多"
       },
       "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
       "dip_reason": "距 60 日高點 -52%、RSI 32 超賣",
@@ -3377,15 +3381,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 53,
+      "buy_score": 56,
       "recommendation": "中性觀望",
       "components": {
         "technical": 42,
         "relative_strength": 45,
         "chip_flow": 79,
         "gooaye": 68,
-        "ticker_news": 35,
-        "macro": 19
+        "ticker_news": 95,
+        "macro": 18
       },
       "technical": {
         "composite_score": 42,
@@ -3422,12 +3426,7 @@
             "headline": "Marriott International (NASDAQ:MAR) Stock: Insider Benjamin Breland Sells 2,408 Shares - MarketBeat"
           }
         ],
-        "risks": [
-          {
-            "tag": "法規/關稅風險",
-            "headline": "Nanya Technology falls 9.88% in Friday's session - Global Banking & Finance Review"
-          }
-        ]
+        "risks": []
       },
       "gooaye": {
         "score": 68,
@@ -3437,8 +3436,8 @@
         "top_quote": "可以进入了 第三梯队就是台湾的 2344 华邦电 2408 南亚科 我看很多朋友都留言 什么华邦电南亚科涨了这么多 吓得都卖了 现在后悔了 这两个台股就是跟着一线的三星 海力士美光 只要"
       },
       "news": {
-        "score": 35,
-        "label": "偏空"
+        "score": 95,
+        "label": "偏多"
       },
       "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
       "dip_reason": "距 60 日高點 -51%、RSI 24 超賣",
@@ -3636,15 +3635,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 50,
+      "buy_score": 52,
       "recommendation": "中性觀望",
       "components": {
         "technical": 41,
         "relative_strength": 45,
         "chip_flow": 79,
         "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 95,
+        "macro": 18
       },
       "technical": {
         "composite_score": 41,
@@ -3686,8 +3685,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 50,
-        "label": "中性"
+        "score": 95,
+        "label": "偏多"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
       "dip_reason": "距 60 日高點 -49%、RSI 26 超賣",
@@ -3895,7 +3894,7 @@
         "chip_flow": 100,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 64,
@@ -4143,7 +4142,7 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 77,
+      "buy_score": 76,
       "recommendation": "強力買進",
       "components": {
         "technical": 64,
@@ -4151,7 +4150,7 @@
         "chip_flow": 98,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 64,
@@ -4185,19 +4184,14 @@
         "catalysts": [
           {
             "tag": "財報優於預期",
-            "headline": "Interparfums (NASDAQ:IPAR) Shares Climb 3.4% - Still a Buy? - MarketBeat"
+            "headline": "Canaccord Genuity Group Forecasts Strong Price Appreciation for Interparfums (NASDAQ:IPAR) Stock - MarketBeat"
           },
           {
             "tag": "分割/股息",
             "headline": "Is Interparfums (NASDAQ:IPAR) Building A Stronger Dividend Story? - Kalkine Media"
           }
         ],
-        "risks": [
-          {
-            "tag": "調查/訴訟",
-            "headline": "Jefferies Financial Group Issues Positive Forecast for Interparfums (NASDAQ:IPAR) Stock Price - MarketBeat"
-          }
-        ]
+        "risks": []
       },
       "gooaye": {
         "score": 50,
@@ -4412,7 +4406,7 @@
         "chip_flow": 100,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 56,
@@ -4650,6 +4644,260 @@
       }
     },
     {
+      "ticker": "2408",
+      "symbol": "2408.TW",
+      "name": "南亞科",
+      "market": "tw",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": false,
+      "buy_score": 56,
+      "recommendation": "中性觀望",
+      "components": {
+        "technical": 42,
+        "relative_strength": 45,
+        "chip_flow": 79,
+        "gooaye": 68,
+        "ticker_news": 95,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 42,
+        "mom_20d": -36.111111111111114,
+        "cmf_score": null,
+        "bias": "偏空",
+        "rsi14": 23.98,
+        "drawdown_from_high_pct": -51.29,
+        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（💾 儲存與記憶體 Memory & Storage），但短線被市場恐慌錯殺至超跌（RSI 24、自近期高點回落約 51%、近 3 日急跌 20%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.9%。務必嚴設停損於 223.85 - 233.69，若真跌破再停損出場。",
+        "today_action": "今天可小量買",
+        "buy_zone": "245.99 - 259.21",
+        "sell_zone": "277.73 - 290.95",
+        "stop_loss": "223.85 - 233.69",
+        "latest_close": 264.5,
+        "day_change_pct": -9.88,
+        "volume_ratio": 1.24,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 79,
+        "label": "法人偏多",
+        "foreign_net": 6074985,
+        "trust_net": -685743,
+        "total_net": 5873583,
+        "net_trend": "買超",
+        "net_summary": "外資+6,074張 投信-686張",
+        "source": "TWSE T86"
+      },
+      "events": {
+        "catalysts": [
+          {
+            "tag": "財報優於預期",
+            "headline": "Marriott International (NASDAQ:MAR) Stock: Insider Benjamin Breland Sells 2,408 Shares - MarketBeat"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 68,
+        "label": "中性偏多共識",
+        "opinion_count": 1,
+        "top_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。",
+        "top_quote": "可以进入了 第三梯队就是台湾的 2344 华邦电 2408 南亚科 我看很多朋友都留言 什么华邦电南亚科涨了这么多 吓得都卖了 现在后悔了 这两个台股就是跟着一线的三星 海力士美光 只要"
+      },
+      "news": {
+        "score": 95,
+        "label": "偏多"
+      },
+      "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
+      "dip_reason": "距 60 日高點 -51%、RSI 24 超賣",
+      "detail": {
+        "latest_close": 264.5,
+        "bias": "偏空",
+        "today_action": "今天可小量買",
+        "buy_zone": "245.99 - 259.21",
+        "sell_zone": "277.73 - 290.95",
+        "stop_loss": "223.85 - 233.69",
+        "expected_return_pct": 8.863279604885355,
+        "risk_reward_ratio": 0.7140653917334994,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "股價距離 20 日高點不遠，量比 1.20 倍，布林頻寬呈 波動擴張 (61.4%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "偏空",
+            "confidence": 90,
+            "summary": "ATR 波動率 13.04%，風險評估為 偏高。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Bullish",
+            "confidence": 90,
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (💾 儲存與記憶體 Memory & Storage)，具備爆發性長線增長潛力。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "偏多",
+            "confidence": 36,
+            "summary": "尼可拉斯楊共識 68 分：本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "中性",
+            "entry_zone": "265.82 - 282.33",
+            "take_profit_zone": "311.69 - 324.28",
+            "stop_zone": "272.45 - 278.10",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "中性",
+            "entry_zone": "260.53 - 271.17",
+            "take_profit_zone": "332.81 - 349.61",
+            "stop_zone": "254.90 - 263.03",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "中性",
+            "entry_zone": "251.27 - 264.50",
+            "take_profit_zone": "369.78 - 403.40",
+            "stop_zone": "238.63 - 249.47",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": -22.0,
+          "annualized_volatility_pct": 82.6,
+          "verdict": "中長線偏空·建議減碼",
+          "verdict_reason": "趨勢與中長期預測同向偏空，宜降低部位或避開。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 250.35,
+              "low": 165.67,
+              "high": 378.29,
+              "expected_return_pct": -5.4,
+              "stance": "偏空"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 239.04,
+              "low": 133.33,
+              "high": 428.57,
+              "expected_return_pct": -9.6,
+              "stance": "偏空"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 229.89,
+              "low": 112.46,
+              "high": 469.95,
+              "expected_return_pct": -13.1,
+              "stance": "偏空"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 221.81,
+              "low": 97.14,
+              "high": 506.48,
+              "expected_return_pct": -16.1,
+              "stance": "看空"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "2376",
       "symbol": "2376.TW",
       "name": "技嘉",
@@ -4657,7 +4905,7 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 53,
+      "buy_score": 52,
       "recommendation": "中性觀望",
       "components": {
         "technical": 41,
@@ -4665,7 +4913,7 @@
         "chip_flow": 79,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 41,
@@ -4899,87 +5147,77 @@
       }
     },
     {
-      "ticker": "2408",
-      "symbol": "2408.TW",
-      "name": "南亞科",
+      "ticker": "6669",
+      "symbol": "6669.TW",
+      "name": "緯穎",
       "market": "tw",
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 53,
+      "buy_score": 52,
       "recommendation": "中性觀望",
       "components": {
-        "technical": 42,
+        "technical": 41,
         "relative_strength": 45,
         "chip_flow": 79,
-        "gooaye": 68,
-        "ticker_news": 35,
-        "macro": 19
+        "gooaye": 50,
+        "ticker_news": 95,
+        "macro": 18
       },
       "technical": {
-        "composite_score": 42,
-        "mom_20d": -36.111111111111114,
+        "composite_score": 41,
+        "mom_20d": -27.989130434782606,
         "cmf_score": null,
         "bias": "偏空",
-        "rsi14": 23.98,
-        "drawdown_from_high_pct": -51.29,
-        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（💾 儲存與記憶體 Memory & Storage），但短線被市場恐慌錯殺至超跌（RSI 24、自近期高點回落約 51%、近 3 日急跌 20%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.9%。務必嚴設停損於 223.85 - 233.69，若真跌破再停損出場。",
+        "rsi14": 26.4,
+        "drawdown_from_high_pct": -49.33,
+        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（⚡ 資料中心基礎設施 DC Infra），但短線被市場恐慌錯殺至超跌（RSI 26、自近期高點回落約 49%、近 3 日急跌 9%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 7.1%。務必嚴設停損於 1121.35 - 1170.64，若真跌破再停損出場。",
         "today_action": "今天可小量買",
-        "buy_zone": "245.99 - 259.21",
-        "sell_zone": "277.73 - 290.95",
-        "stop_loss": "223.85 - 233.69",
-        "latest_close": 264.5,
-        "day_change_pct": -9.88,
-        "volume_ratio": 1.24,
+        "buy_zone": "1232.25 - 1264.20",
+        "sell_zone": "1391.25 - 1457.50",
+        "stop_loss": "1121.35 - 1170.64",
+        "latest_close": 1325.0,
+        "day_change_pct": -6.03,
+        "volume_ratio": 1.44,
         "ignition_days_ago": null,
         "ignition_note": ""
       },
       "chip": {
         "score": 79,
         "label": "法人偏多",
-        "foreign_net": 6074985,
-        "trust_net": -685743,
-        "total_net": 5873583,
+        "foreign_net": 399649,
+        "trust_net": 278108,
+        "total_net": 649254,
         "net_trend": "買超",
-        "net_summary": "外資+6,074張 投信-686張",
+        "net_summary": "外資+399張 投信+278張",
         "source": "TWSE T86"
       },
       "events": {
-        "catalysts": [
-          {
-            "tag": "財報優於預期",
-            "headline": "Marriott International (NASDAQ:MAR) Stock: Insider Benjamin Breland Sells 2,408 Shares - MarketBeat"
-          }
-        ],
-        "risks": [
-          {
-            "tag": "法規/關稅風險",
-            "headline": "Nanya Technology falls 9.88% in Friday's session - Global Banking & Finance Review"
-          }
-        ]
+        "catalysts": [],
+        "risks": []
       },
       "gooaye": {
-        "score": 68,
-        "label": "中性偏多共識",
-        "opinion_count": 1,
-        "top_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。",
-        "top_quote": "可以进入了 第三梯队就是台湾的 2344 华邦电 2408 南亚科 我看很多朋友都留言 什么华邦电南亚科涨了这么多 吓得都卖了 现在后悔了 这两个台股就是跟着一线的三星 海力士美光 只要"
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
       },
       "news": {
-        "score": 35,
-        "label": "偏空"
+        "score": 95,
+        "label": "偏多"
       },
-      "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
-      "dip_reason": "距 60 日高點 -51%、RSI 24 超賣",
+      "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
+      "dip_reason": "距 60 日高點 -49%、RSI 26 超賣",
       "detail": {
-        "latest_close": 264.5,
+        "latest_close": 1325.0,
         "bias": "偏空",
         "today_action": "今天可小量買",
-        "buy_zone": "245.99 - 259.21",
-        "sell_zone": "277.73 - 290.95",
-        "stop_loss": "223.85 - 233.69",
-        "expected_return_pct": 8.863279604885355,
-        "risk_reward_ratio": 0.7140653917334994,
+        "buy_zone": "1232.25 - 1264.20",
+        "sell_zone": "1391.25 - 1457.50",
+        "stop_loss": "1121.35 - 1170.64",
+        "expected_return_pct": 8.860967491698112,
+        "risk_reward_ratio": 0.7137404580152681,
         "agents": [
           {
             "name": "趨勢代理",
@@ -4995,9 +5233,9 @@
           },
           {
             "name": "突破代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "股價距離 20 日高點不遠，量比 1.20 倍，布林頻寬呈 波動擴張 (61.4%)。"
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "股價距離 20 日高點不遠，量比 1.42 倍，布林頻寬呈 波動擴張 (43.3%)。"
           },
           {
             "name": "回檔承接代理",
@@ -5009,7 +5247,7 @@
             "name": "風險代理",
             "signal": "偏空",
             "confidence": 90,
-            "summary": "ATR 波動率 13.04%，風險評估為 偏高。"
+            "summary": "ATR 波動率 8.76%，風險評估為 偏高。"
           },
           {
             "name": "Warren Buffett (巴菲特)",
@@ -5039,7 +5277,7 @@
             "name": "Cathie Wood (凱薩琳伍德)",
             "signal": "Bullish",
             "confidence": 90,
-            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (💾 儲存與記憶體 Memory & Storage)，具備爆發性長線增長潛力。"
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (⚡ 資料中心基礎設施 DC Infra)，具備爆發性長線增長潛力。"
           },
           {
             "name": "Nassim Taleb (塔雷伯)",
@@ -5079,79 +5317,79 @@
           },
           {
             "name": "尼可拉斯楊Live",
-            "signal": "偏多",
-            "confidence": 36,
-            "summary": "尼可拉斯楊共識 68 分：本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。"
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
           }
         ],
         "horizons": [
           {
             "horizon": "短線",
             "bias": "中性",
-            "entry_zone": "265.82 - 282.33",
-            "take_profit_zone": "311.69 - 324.28",
-            "stop_zone": "272.45 - 278.10",
+            "entry_zone": "1331.62 - 1363.33",
+            "take_profit_zone": "1458.60 - 1517.53",
+            "stop_zone": "1315.62 - 1342.88",
             "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
           },
           {
             "horizon": "中線",
             "bias": "中性",
-            "entry_zone": "260.53 - 271.17",
-            "take_profit_zone": "332.81 - 349.61",
-            "stop_zone": "254.90 - 263.03",
+            "entry_zone": "1305.12 - 1316.67",
+            "take_profit_zone": "1521.30 - 1598.13",
+            "stop_zone": "1237.67 - 1277.17",
             "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
           },
           {
             "horizon": "長線",
             "bias": "中性",
-            "entry_zone": "251.27 - 264.50",
-            "take_profit_zone": "369.78 - 403.40",
-            "stop_zone": "238.63 - 249.47",
+            "entry_zone": "1258.75 - 1290.00",
+            "take_profit_zone": "1690.33 - 1844.00",
+            "stop_zone": "1158.67 - 1211.33",
             "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
           }
         ],
         "price_forecast": {
           "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": -22.0,
-          "annualized_volatility_pct": 82.6,
-          "verdict": "中長線偏空·建議減碼",
-          "verdict_reason": "趨勢與中長期預測同向偏空，宜降低部位或避開。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "annualized_drift_pct": 5.0,
+          "annualized_volatility_pct": 56.2,
+          "verdict": "中長線偏弱·暫不進場",
+          "verdict_reason": "預測或趨勢偏弱，新倉宜保守，持股者注意保護停損。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
           "horizons": [
             {
               "label": "3個月",
               "days": 63,
-              "base": 250.35,
-              "low": 165.67,
-              "high": 378.29,
-              "expected_return_pct": -5.4,
-              "stance": "偏空"
+              "base": 1341.67,
+              "low": 1012.81,
+              "high": 1777.31,
+              "expected_return_pct": 1.3,
+              "stance": "中性"
             },
             {
               "label": "6個月",
               "days": 126,
-              "base": 239.04,
-              "low": 133.33,
-              "high": 428.57,
-              "expected_return_pct": -9.6,
-              "stance": "偏空"
+              "base": 1355.83,
+              "low": 910.97,
+              "high": 2017.93,
+              "expected_return_pct": 2.3,
+              "stance": "中性"
             },
             {
               "label": "9個月",
               "days": 189,
-              "base": 229.89,
-              "low": 112.46,
-              "high": 469.95,
-              "expected_return_pct": -13.1,
-              "stance": "偏空"
+              "base": 1367.91,
+              "low": 840.51,
+              "high": 2226.25,
+              "expected_return_pct": 3.2,
+              "stance": "中性"
             },
             {
               "label": "12個月",
               "days": 252,
-              "base": 221.81,
-              "low": 97.14,
-              "high": 506.48,
-              "expected_return_pct": -16.1,
-              "stance": "看空"
+              "base": 1379.07,
+              "low": 785.87,
+              "high": 2420.05,
+              "expected_return_pct": 4.1,
+              "stance": "中性"
             }
           ]
         }
@@ -5173,7 +5411,7 @@
         "chip_flow": 21,
         "gooaye": 85,
         "ticker_news": 77,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 61,
@@ -5426,8 +5664,8 @@
         "relative_strength": 45,
         "chip_flow": 54,
         "gooaye": 50,
-        "ticker_news": 65,
-        "macro": 19
+        "ticker_news": 68,
+        "macro": 18
       },
       "technical": {
         "composite_score": 54,
@@ -5469,7 +5707,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 65,
+        "score": 68,
         "label": "偏多"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
@@ -5661,255 +5899,6 @@
       }
     },
     {
-      "ticker": "6669",
-      "symbol": "6669.TW",
-      "name": "緯穎",
-      "market": "tw",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 50,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 41,
-        "relative_strength": 45,
-        "chip_flow": 79,
-        "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 41,
-        "mom_20d": -27.989130434782606,
-        "cmf_score": null,
-        "bias": "偏空",
-        "rsi14": 26.4,
-        "drawdown_from_high_pct": -49.33,
-        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（⚡ 資料中心基礎設施 DC Infra），但短線被市場恐慌錯殺至超跌（RSI 26、自近期高點回落約 49%、近 3 日急跌 9%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 7.1%。務必嚴設停損於 1121.35 - 1170.64，若真跌破再停損出場。",
-        "today_action": "今天可小量買",
-        "buy_zone": "1232.25 - 1264.20",
-        "sell_zone": "1391.25 - 1457.50",
-        "stop_loss": "1121.35 - 1170.64",
-        "latest_close": 1325.0,
-        "day_change_pct": -6.03,
-        "volume_ratio": 1.44,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 79,
-        "label": "法人偏多",
-        "foreign_net": 399649,
-        "trust_net": 278108,
-        "total_net": 649254,
-        "net_trend": "買超",
-        "net_summary": "外資+399張 投信+278張",
-        "source": "TWSE T86"
-      },
-      "events": {
-        "catalysts": [],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 50,
-        "label": "中性"
-      },
-      "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
-      "dip_reason": "距 60 日高點 -49%、RSI 26 超賣",
-      "detail": {
-        "latest_close": 1325.0,
-        "bias": "偏空",
-        "today_action": "今天可小量買",
-        "buy_zone": "1232.25 - 1264.20",
-        "sell_zone": "1391.25 - 1457.50",
-        "stop_loss": "1121.35 - 1170.64",
-        "expected_return_pct": 8.860967491698112,
-        "risk_reward_ratio": 0.7137404580152681,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "股價距離 20 日高點不遠，量比 1.42 倍，布林頻寬呈 波動擴張 (43.3%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "偏空",
-            "confidence": 90,
-            "summary": "ATR 波動率 8.76%，風險評估為 偏高。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Bullish",
-            "confidence": 90,
-            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (⚡ 資料中心基礎設施 DC Infra)，具備爆發性長線增長潛力。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "中性",
-            "entry_zone": "1331.62 - 1363.33",
-            "take_profit_zone": "1458.60 - 1517.53",
-            "stop_zone": "1315.62 - 1342.88",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "中性",
-            "entry_zone": "1305.12 - 1316.67",
-            "take_profit_zone": "1521.30 - 1598.13",
-            "stop_zone": "1237.67 - 1277.17",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "中性",
-            "entry_zone": "1258.75 - 1290.00",
-            "take_profit_zone": "1690.33 - 1844.00",
-            "stop_zone": "1158.67 - 1211.33",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 5.0,
-          "annualized_volatility_pct": 56.2,
-          "verdict": "中長線偏弱·暫不進場",
-          "verdict_reason": "預測或趨勢偏弱，新倉宜保守，持股者注意保護停損。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 1341.67,
-              "low": 1012.81,
-              "high": 1777.31,
-              "expected_return_pct": 1.3,
-              "stance": "中性"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 1355.83,
-              "low": 910.97,
-              "high": 2017.93,
-              "expected_return_pct": 2.3,
-              "stance": "中性"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 1367.91,
-              "low": 840.51,
-              "high": 2226.25,
-              "expected_return_pct": 3.2,
-              "stance": "中性"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 1379.07,
-              "low": 785.87,
-              "high": 2420.05,
-              "expected_return_pct": 4.1,
-              "stance": "中性"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "MU",
       "symbol": "MU",
       "name": "MU",
@@ -5917,15 +5906,15 @@
       "held": false,
       "gooaye_named": true,
       "market_mover": false,
-      "buy_score": 48,
+      "buy_score": 47,
       "recommendation": "中性觀望",
       "components": {
         "technical": 65,
         "relative_strength": 45,
         "chip_flow": 0,
         "gooaye": 91,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 32,
+        "macro": 18
       },
       "technical": {
         "composite_score": 65,
@@ -5956,12 +5945,7 @@
         "source": "CMF"
       },
       "events": {
-        "catalysts": [
-          {
-            "tag": "調升財測/上修",
-            "headline": "Nvidia Just Raised Its Supply Commitments to $390 Billion, Mostly for Memory. Micron Is the Memory Stock I'd Buy. - Yahoo Finance"
-          }
-        ],
+        "catalysts": [],
         "risks": []
       },
       "gooaye": {
@@ -5972,8 +5956,8 @@
         "top_quote": "普通人慢慢变富的核心，在于在好公司被低估、技术面拉回超跌时，保持纪律性地持续买进。"
       },
       "news": {
-        "score": 50,
-        "label": "中性"
+        "score": 32,
+        "label": "偏空"
       },
       "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
       "dip_reason": "距 60 日高點 -46%、RSI 30 超賣",
@@ -6179,7 +6163,7 @@
         "chip_flow": 62,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 29,
@@ -6413,270 +6397,6 @@
       }
     },
     {
-      "ticker": "BIP",
-      "symbol": "BIP",
-      "name": "BIP",
-      "market": "us",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": true,
-      "buy_score": 72,
-      "recommendation": "強力買進",
-      "components": {
-        "technical": 54,
-        "relative_strength": 89,
-        "chip_flow": 100,
-        "gooaye": 50,
-        "ticker_news": 95,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 54,
-        "mom_20d": 15.577754630521245,
-        "cmf_score": 100,
-        "bias": "偏多",
-        "rsi14": 73.98,
-        "drawdown_from_high_pct": 0.0,
-        "today_note": "目前離理想買點有點遠，更適合等回檔再接。",
-        "today_action": "今天等回檔",
-        "buy_zone": "39.04 - 40.67",
-        "sell_zone": "49.66 - 53.94",
-        "stop_loss": "36.30 - 37.47",
-        "latest_close": 42.81,
-        "day_change_pct": 4.24,
-        "volume_ratio": 3.09,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 100,
-        "label": "法人偏多",
-        "foreign_net": null,
-        "trust_net": null,
-        "total_net": null,
-        "net_trend": "CMF=+0.211",
-        "net_summary": "Chaikin Money Flow(20)=+0.211",
-        "source": "CMF"
-      },
-      "events": {
-        "catalysts": [
-          {
-            "tag": "購併/合作",
-            "headline": "Brookfield Infrastructure Partners L.P. (BIP) Stock Price, News, Quote & History - Yahoo! Finance Canada"
-          },
-          {
-            "tag": "財報優於預期",
-            "headline": "Brookfield Infrastructure Partners (NYSE:BIP) Upgraded at Wall Street Zen - MarketBeat"
-          },
-          {
-            "tag": "調升財測/上修",
-            "headline": "Brookfield Infrastructure Partners (NYSE:BIP) Upgraded at Wall Street Zen - MarketBeat"
-          },
-          {
-            "tag": "分割/股息",
-            "headline": "Why Brookfield Infrastructure Partners (BIP) is a Great Dividend Stock Right Now - Yahoo Finance"
-          }
-        ],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 95,
-        "label": "偏多"
-      },
-      "detail": {
-        "latest_close": 42.81,
-        "bias": "偏多",
-        "today_action": "今天等回檔",
-        "buy_zone": "39.04 - 40.67",
-        "sell_zone": "49.66 - 53.94",
-        "stop_loss": "36.30 - 37.47",
-        "expected_return_pct": 24.924635234535142,
-        "risk_reward_ratio": 2.256550218340608,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏多",
-            "confidence": 90,
-            "summary": "價格與均線排列顯示 偏多，MACD呈 黃金交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏多",
-            "confidence": 90,
-            "summary": "RSI 與最近價格動能偏 偏多，MACD柱狀圖動能偏 增強。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "股價距離 20 日高點不遠，量比 2.72 倍，布林頻寬呈 波動擴張 (17.6%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "偏空",
-            "confidence": 70,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏空。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "ATR 波動率 2.87%，風險評估為 可控。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Neutral",
-            "confidence": 60,
-            "summary": "未見顯著的顛覆性創新或硬核科技增長主線，暫不列為核心追蹤目標。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "市場情緒極度亢奮且估值溢價嚴重 (PE: 0.0)，防範泡沫破裂與高位套牢風險。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "價格站上均線且呈多頭排列，技術動能強勁且資金持續流入，順勢做多。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "偏多",
-            "entry_zone": "41.50 - 42.17",
-            "take_profit_zone": "41.51 - 43.19",
-            "stop_zone": "39.21 - 40.02",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "偏多",
-            "entry_zone": "40.63 - 41.06",
-            "take_profit_zone": "42.37 - 44.51",
-            "stop_zone": "37.78 - 38.99",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "偏多",
-            "entry_zone": "38.53 - 40.20",
-            "take_profit_zone": "47.08 - 51.36",
-            "stop_zone": "35.37 - 36.98",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 28.0,
-          "annualized_volatility_pct": 21.5,
-          "verdict": "中長線偏多·可分批布局",
-          "verdict_reason": "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 45.91,
-              "low": 41.24,
-              "high": 51.11,
-              "expected_return_pct": 7.2,
-              "stance": "偏多"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 48.69,
-              "low": 41.83,
-              "high": 56.67,
-              "expected_return_pct": 13.7,
-              "stance": "偏多"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 51.16,
-              "low": 42.48,
-              "high": 61.62,
-              "expected_return_pct": 19.5,
-              "stance": "看多"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 53.54,
-              "low": 43.2,
-              "high": 66.36,
-              "expected_return_pct": 25.1,
-              "stance": "看多"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "RKT",
       "symbol": "RKT",
       "name": "RKT",
@@ -6684,15 +6404,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 71,
+      "buy_score": 72,
       "recommendation": "強力買進",
       "components": {
         "technical": 57,
         "relative_strength": 93,
         "chip_flow": 100,
         "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 72,
+        "macro": 18
       },
       "technical": {
         "composite_score": 57,
@@ -6734,8 +6454,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 50,
-        "label": "中性"
+        "score": 72,
+        "label": "偏多"
       },
       "detail": {
         "latest_close": 13.75,
@@ -6931,15 +6651,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 69,
-      "recommendation": "偏多分批",
+      "buy_score": 70,
+      "recommendation": "強力買進",
       "components": {
         "technical": 52,
         "relative_strength": 100,
         "chip_flow": 100,
         "gooaye": 50,
-        "ticker_news": 5,
-        "macro": 19
+        "ticker_news": 16,
+        "macro": 18
       },
       "technical": {
         "composite_score": 52,
@@ -6990,7 +6710,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 5,
+        "score": 16,
         "label": "偏空"
       },
       "detail": {
@@ -7180,6 +6900,262 @@
       }
     },
     {
+      "ticker": "BIP",
+      "symbol": "BIP",
+      "name": "BIP",
+      "market": "us",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": true,
+      "buy_score": 69,
+      "recommendation": "偏多分批",
+      "components": {
+        "technical": 54,
+        "relative_strength": 89,
+        "chip_flow": 100,
+        "gooaye": 50,
+        "ticker_news": 50,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 54,
+        "mom_20d": 15.577754630521245,
+        "cmf_score": 100,
+        "bias": "偏多",
+        "rsi14": 73.98,
+        "drawdown_from_high_pct": 0.0,
+        "today_note": "目前離理想買點有點遠，更適合等回檔再接。",
+        "today_action": "今天等回檔",
+        "buy_zone": "39.04 - 40.67",
+        "sell_zone": "49.66 - 53.94",
+        "stop_loss": "36.30 - 37.47",
+        "latest_close": 42.81,
+        "day_change_pct": 4.24,
+        "volume_ratio": 3.09,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 100,
+        "label": "法人偏多",
+        "foreign_net": null,
+        "trust_net": null,
+        "total_net": null,
+        "net_trend": "CMF=+0.211",
+        "net_summary": "Chaikin Money Flow(20)=+0.211",
+        "source": "CMF"
+      },
+      "events": {
+        "catalysts": [
+          {
+            "tag": "購併/合作",
+            "headline": "Brookfield Infrastructure Partners L.P. (BIP) Stock Price, News, Quote & History - Yahoo! Finance Canada"
+          },
+          {
+            "tag": "分割/股息",
+            "headline": "Why Brookfield Infrastructure Partners (BIP) is a Great Dividend Stock Right Now - Yahoo Finance"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
+      },
+      "news": {
+        "score": 50,
+        "label": "中性"
+      },
+      "detail": {
+        "latest_close": 42.81,
+        "bias": "偏多",
+        "today_action": "今天等回檔",
+        "buy_zone": "39.04 - 40.67",
+        "sell_zone": "49.66 - 53.94",
+        "stop_loss": "36.30 - 37.47",
+        "expected_return_pct": 24.924635234535142,
+        "risk_reward_ratio": 2.256550218340608,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏多",
+            "confidence": 90,
+            "summary": "價格與均線排列顯示 偏多，MACD呈 黃金交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏多",
+            "confidence": 90,
+            "summary": "RSI 與最近價格動能偏 偏多，MACD柱狀圖動能偏 增強。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "股價距離 20 日高點不遠，量比 2.72 倍，布林頻寬呈 波動擴張 (17.6%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏空",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏空。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "ATR 波動率 2.87%，風險評估為 可控。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Neutral",
+            "confidence": 60,
+            "summary": "未見顯著的顛覆性創新或硬核科技增長主線，暫不列為核心追蹤目標。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "市場情緒極度亢奮且估值溢價嚴重 (PE: 0.0)，防範泡沫破裂與高位套牢風險。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "價格站上均線且呈多頭排列，技術動能強勁且資金持續流入，順勢做多。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "偏多",
+            "entry_zone": "41.50 - 42.17",
+            "take_profit_zone": "41.51 - 43.19",
+            "stop_zone": "39.21 - 40.02",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "偏多",
+            "entry_zone": "40.63 - 41.06",
+            "take_profit_zone": "42.37 - 44.51",
+            "stop_zone": "37.78 - 38.99",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "偏多",
+            "entry_zone": "38.53 - 40.20",
+            "take_profit_zone": "47.08 - 51.36",
+            "stop_zone": "35.37 - 36.98",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": 28.0,
+          "annualized_volatility_pct": 21.5,
+          "verdict": "中長線偏多·可分批布局",
+          "verdict_reason": "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 45.91,
+              "low": 41.24,
+              "high": 51.11,
+              "expected_return_pct": 7.2,
+              "stance": "偏多"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 48.69,
+              "low": 41.83,
+              "high": 56.67,
+              "expected_return_pct": 13.7,
+              "stance": "偏多"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 51.16,
+              "low": 42.48,
+              "high": 61.62,
+              "expected_return_pct": 19.5,
+              "stance": "看多"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 53.54,
+              "low": 43.2,
+              "high": 66.36,
+              "expected_return_pct": 25.1,
+              "stance": "看多"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "PLMR",
       "symbol": "PLMR",
       "name": "PLMR",
@@ -7195,7 +7171,7 @@
         "chip_flow": 79,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 57,
@@ -7240,6 +7216,10 @@
           {
             "tag": "解禁/大股東減持",
             "headline": "Insider Selling: Palomar (NASDAQ:PLMR) CFO Sells 781 Shares of Company Stock - MarketBeat"
+          },
+          {
+            "tag": "調查/訴訟",
+            "headline": "Piper Sandler Issues Positive Forecast for Palomar (NASDAQ:PLMR) Stock Price - MarketBeat"
           }
         ]
       },
@@ -7455,8 +7435,8 @@
         "relative_strength": 87,
         "chip_flow": 91,
         "gooaye": 50,
-        "ticker_news": 68,
-        "macro": 19
+        "ticker_news": 70,
+        "macro": 18
       },
       "technical": {
         "composite_score": 54,
@@ -7489,16 +7469,20 @@
       "events": {
         "catalysts": [
           {
+            "tag": "購併/合作",
+            "headline": "Is Brookfield Infrastructure Partners (BIPC) Still Attractive After Recent Share Price Rebound? - Yahoo Finance"
+          },
+          {
             "tag": "財報優於預期",
             "headline": "Brookfield Infrastructure (NYSE:BIPC) Stock Price Breaks Above Two Hundred Day Moving Average - Time to Sell? - MarketBeat"
           },
           {
-            "tag": "購併/合作",
-            "headline": "Brookfield Infrastructure completes its merger into one corporation, with BIP shares due to trade on Nov. 23 - MLQ.ai"
-          },
-          {
             "tag": "分割/股息",
             "headline": "Does Brookfield Infrastructure (BIPC) Dividends Still Reflect Strength After First-Quarter Loss And Lower Sales? - Yahoo Finance"
+          },
+          {
+            "tag": "調升財測/上修",
+            "headline": "Brookfield Infrastructure Co. $BIPC Stock: Private Management Group Inc. Raises Holdings - MarketBeat"
           }
         ],
         "risks": [
@@ -7516,7 +7500,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 68,
+        "score": 70,
         "label": "偏多"
       },
       "detail": {
@@ -7720,8 +7704,8 @@
         "relative_strength": 89,
         "chip_flow": 100,
         "gooaye": 50,
-        "ticker_news": 30,
-        "macro": 19
+        "ticker_news": 25,
+        "macro": 18
       },
       "technical": {
         "composite_score": 51,
@@ -7755,12 +7739,12 @@
         "catalysts": [],
         "risks": [
           {
-            "tag": "淨利衰退",
-            "headline": "Cal-Maine Foods (CALM) Stock Faces Margin Crunch After Quarterly Loss - Simply Wall St"
-          },
-          {
             "tag": "法規/關稅風險",
             "headline": "Stocks slide as Anthropic IPO fails to calm AI fears - Bangkok Post"
+          },
+          {
+            "tag": "淨利衰退",
+            "headline": "Cal-Maine Foods (CALM) Stock Faces Margin Crunch After Quarterly Loss - Simply Wall St"
           },
           {
             "tag": "解禁/大股東減持",
@@ -7776,7 +7760,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 30,
+        "score": 25,
         "label": "偏空"
       },
       "ignition_reason": "爆量長紅點火（2 天前 +7.96%、量 2.08 倍）",
@@ -7974,15 +7958,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 62,
+      "buy_score": 61,
       "recommendation": "偏多分批",
       "components": {
         "technical": 46,
         "relative_strength": 74,
         "chip_flow": 91,
         "gooaye": 50,
-        "ticker_news": 65,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 46,
@@ -8015,6 +7999,10 @@
       "events": {
         "catalysts": [
           {
+            "tag": "財報優於預期",
+            "headline": "Rogers Communication, Inc. (RCI) - What Are Brokerages Saying About This Stock? - MarketBeat"
+          },
+          {
             "tag": "分割/股息",
             "headline": "Rogers Communications (TSX:RCI.B) Stock Sees Modest Fair Value Cut As Analysts Split On Asset Value - Yahoo Finance"
           }
@@ -8029,8 +8017,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 65,
-        "label": "偏多"
+        "score": 50,
+        "label": "中性"
       },
       "detail": {
         "latest_close": 35.45,
@@ -8219,6 +8207,266 @@
       }
     },
     {
+      "ticker": "WMT",
+      "symbol": "WMT",
+      "name": "WMT",
+      "market": "us",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": false,
+      "buy_score": 59,
+      "recommendation": "偏多分批",
+      "components": {
+        "technical": 61,
+        "relative_strength": 67,
+        "chip_flow": 62,
+        "gooaye": 50,
+        "ticker_news": 65,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 61,
+        "mom_20d": 6.722827258008701,
+        "cmf_score": 62,
+        "bias": "偏多",
+        "rsi14": 63.98,
+        "drawdown_from_high_pct": -0.94,
+        "today_note": "現價仍在可執行承接區附近，建議直接分批掛單，凱利公式建議倉位 23.3%。 (偵測到K線訊號: 射擊之星(看空))",
+        "today_action": "今天可買",
+        "buy_zone": "126.16 - 127.32",
+        "sell_zone": "150.98 - 163.78",
+        "stop_loss": "118.59 - 122.37",
+        "latest_close": 127.95,
+        "day_change_pct": 1.52,
+        "volume_ratio": 1.9,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 62,
+        "label": "法人中性",
+        "foreign_net": null,
+        "trust_net": null,
+        "total_net": null,
+        "net_trend": "CMF=+0.049",
+        "net_summary": "Chaikin Money Flow(20)=+0.049",
+        "source": "CMF"
+      },
+      "events": {
+        "catalysts": [
+          {
+            "tag": "調升財測/上修",
+            "headline": "TD Cowen Raises Its Walmart Target to $147. Is It Still Too Low? - Yahoo Finance"
+          },
+          {
+            "tag": "財報優於預期",
+            "headline": "Why Walmart (WMT) is Poised to Beat Earnings Estimates Again - Yahoo Finance"
+          },
+          {
+            "tag": "分割/股息",
+            "headline": "Here’s How Many Shares of Walmart You Need for $250 in Yearly Dividends - Yahoo Finance"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
+      },
+      "news": {
+        "score": 65,
+        "label": "偏多"
+      },
+      "detail": {
+        "latest_close": 127.95,
+        "bias": "偏多",
+        "today_action": "今天可買",
+        "buy_zone": "126.16 - 127.32",
+        "sell_zone": "150.98 - 163.78",
+        "stop_loss": "118.59 - 122.37",
+        "expected_return_pct": 23.99448493204648,
+        "risk_reward_ratio": 4.725368502715287,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏多",
+            "confidence": 75,
+            "summary": "價格與均線排列顯示 偏多，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏多",
+            "confidence": 90,
+            "summary": "RSI 與最近價格動能偏 偏多，MACD柱狀圖動能偏 增強。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "股價距離 20 日高點不遠，量比 1.80 倍，布林頻寬呈 波動收縮 (10.0%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "中性",
+            "confidence": 50,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 中性。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "ATR 波動率 2.46%，風險評估為 可控。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Neutral",
+            "confidence": 60,
+            "summary": "未見顯著的顛覆性創新或硬核科技增長主線，暫不列為核心追蹤目標。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Neutral",
+            "confidence": 65,
+            "summary": "市場情緒與多空力量均衡，未見極端的非對稱套利機會。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "價格站上均線且呈多頭排列，技術動能強勁且資金持續流入，順勢做多。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "偏多",
+            "entry_zone": "125.42 - 126.03",
+            "take_profit_zone": "126.29 - 131.40",
+            "stop_zone": "119.55 - 122.03",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "偏多",
+            "entry_zone": "121.74 - 123.89",
+            "take_profit_zone": "127.81 - 134.26",
+            "stop_zone": "114.44 - 118.09",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "偏多",
+            "entry_zone": "115.15 - 121.55",
+            "take_profit_zone": "142.01 - 154.92",
+            "stop_zone": "107.13 - 112.00",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": 41.1,
+          "annualized_volatility_pct": 24.4,
+          "verdict": "中長線偏多·可分批布局",
+          "verdict_reason": "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 141.81,
+              "low": 125.52,
+              "high": 160.22,
+              "expected_return_pct": 10.8,
+              "stance": "偏多"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 154.61,
+              "low": 130.1,
+              "high": 183.74,
+              "expected_return_pct": 20.8,
+              "stance": "看多"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 166.33,
+              "low": 134.64,
+              "high": 205.48,
+              "expected_return_pct": 30.0,
+              "stance": "看多"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 177.83,
+              "low": 139.32,
+              "high": 227.0,
+              "expected_return_pct": 39.0,
+              "stance": "看多"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "GPN",
       "symbol": "GPN",
       "name": "GPN",
@@ -8234,7 +8482,7 @@
         "chip_flow": 32,
         "gooaye": 50,
         "ticker_news": 72,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 69,
@@ -8265,12 +8513,7 @@
         "source": "CMF"
       },
       "events": {
-        "catalysts": [
-          {
-            "tag": "分割/股息",
-            "headline": "Global Payments (GPN) – Among Billionaire Larry Robbins’ 10 Dividend Stock Picks - Yahoo Finance"
-          }
-        ],
+        "catalysts": [],
         "risks": [
           {
             "tag": "法規/關稅風險",
@@ -8477,258 +8720,6 @@
       }
     },
     {
-      "ticker": "WMT",
-      "symbol": "WMT",
-      "name": "WMT",
-      "market": "us",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 58,
-      "recommendation": "偏多分批",
-      "components": {
-        "technical": 61,
-        "relative_strength": 67,
-        "chip_flow": 62,
-        "gooaye": 50,
-        "ticker_news": 41,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 61,
-        "mom_20d": 6.722827258008701,
-        "cmf_score": 62,
-        "bias": "偏多",
-        "rsi14": 63.98,
-        "drawdown_from_high_pct": -0.94,
-        "today_note": "現價仍在可執行承接區附近，建議直接分批掛單，凱利公式建議倉位 23.3%。 (偵測到K線訊號: 射擊之星(看空))",
-        "today_action": "今天可買",
-        "buy_zone": "126.16 - 127.32",
-        "sell_zone": "150.98 - 163.78",
-        "stop_loss": "118.59 - 122.37",
-        "latest_close": 127.95,
-        "day_change_pct": 1.52,
-        "volume_ratio": 1.9,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 62,
-        "label": "法人中性",
-        "foreign_net": null,
-        "trust_net": null,
-        "total_net": null,
-        "net_trend": "CMF=+0.049",
-        "net_summary": "Chaikin Money Flow(20)=+0.049",
-        "source": "CMF"
-      },
-      "events": {
-        "catalysts": [
-          {
-            "tag": "分割/股息",
-            "headline": "Here’s How Many Shares of Walmart You Need for $250 in Yearly Dividends - The Motley Fool"
-          }
-        ],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 41,
-        "label": "偏空"
-      },
-      "detail": {
-        "latest_close": 127.95,
-        "bias": "偏多",
-        "today_action": "今天可買",
-        "buy_zone": "126.16 - 127.32",
-        "sell_zone": "150.98 - 163.78",
-        "stop_loss": "118.59 - 122.37",
-        "expected_return_pct": 23.99448493204648,
-        "risk_reward_ratio": 4.725368502715287,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏多",
-            "confidence": 75,
-            "summary": "價格與均線排列顯示 偏多，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏多",
-            "confidence": 90,
-            "summary": "RSI 與最近價格動能偏 偏多，MACD柱狀圖動能偏 增強。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "股價距離 20 日高點不遠，量比 1.80 倍，布林頻寬呈 波動收縮 (10.0%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "中性",
-            "confidence": 50,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 中性。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "ATR 波動率 2.46%，風險評估為 可控。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Neutral",
-            "confidence": 60,
-            "summary": "未見顯著的顛覆性創新或硬核科技增長主線，暫不列為核心追蹤目標。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Neutral",
-            "confidence": 65,
-            "summary": "市場情緒與多空力量均衡，未見極端的非對稱套利機會。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "價格站上均線且呈多頭排列，技術動能強勁且資金持續流入，順勢做多。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "偏多",
-            "entry_zone": "125.42 - 126.03",
-            "take_profit_zone": "126.29 - 131.40",
-            "stop_zone": "119.55 - 122.03",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "偏多",
-            "entry_zone": "121.74 - 123.89",
-            "take_profit_zone": "127.81 - 134.26",
-            "stop_zone": "114.44 - 118.09",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "偏多",
-            "entry_zone": "115.15 - 121.55",
-            "take_profit_zone": "142.01 - 154.92",
-            "stop_zone": "107.13 - 112.00",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 41.1,
-          "annualized_volatility_pct": 24.4,
-          "verdict": "中長線偏多·可分批布局",
-          "verdict_reason": "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 141.81,
-              "low": 125.52,
-              "high": 160.22,
-              "expected_return_pct": 10.8,
-              "stance": "偏多"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 154.61,
-              "low": 130.1,
-              "high": 183.74,
-              "expected_return_pct": 20.8,
-              "stance": "看多"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 166.33,
-              "low": 134.64,
-              "high": 205.48,
-              "expected_return_pct": 30.0,
-              "stance": "看多"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 177.83,
-              "low": 139.32,
-              "high": 227.0,
-              "expected_return_pct": 39.0,
-              "stance": "看多"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "KVYO",
       "symbol": "KVYO",
       "name": "KVYO",
@@ -8743,8 +8734,8 @@
         "relative_strength": 63,
         "chip_flow": 77,
         "gooaye": 50,
-        "ticker_news": 59,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 46,
@@ -8777,12 +8768,12 @@
       "events": {
         "catalysts": [
           {
-            "tag": "調升財測/上修",
-            "headline": "Why Are Klaviyo (NYSE:KVYO) Shares Up 7% as TD Cowen Raises Its Price Target? - kalkine.ca"
+            "tag": "庫藏股/回購",
+            "headline": "Should Buyback Expansion Require Action From Klaviyo (KVYO) Investors? - Simply Wall St"
           },
           {
             "tag": "財報優於預期",
-            "headline": "TD Cowen Forecasts Strong Price Appreciation for Klaviyo (NYSE:KVYO) Stock - MarketBeat"
+            "headline": "Klaviyo, Inc. (KVYO) Q3 Earnings and Revenues Beat Estimates - Yahoo Finance"
           }
         ],
         "risks": []
@@ -8795,7 +8786,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 59,
+        "score": 50,
         "label": "中性"
       },
       "detail": {
@@ -8999,8 +8990,8 @@
         "relative_strength": 75,
         "chip_flow": 36,
         "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 55,
+        "macro": 18
       },
       "technical": {
         "composite_score": 64,
@@ -9033,10 +9024,6 @@
       "events": {
         "catalysts": [
           {
-            "tag": "調升財測/上修",
-            "headline": "C4 Therapeutics, Inc. Stock 12‑Month Price Target Raised to $12.57, Implies 407% Upside - TradingView"
-          },
-          {
             "tag": "分割/股息",
             "headline": "Costco (COST) Stock Could Be Above Fair Value Despite Its Record $30 Dividend - Yahoo Finance"
           }
@@ -9060,7 +9047,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 50,
+        "score": 55,
         "label": "中性"
       },
       "detail": {
@@ -9265,7 +9252,7 @@
         "chip_flow": 79,
         "gooaye": 50,
         "ticker_news": 50,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 49,
@@ -9513,15 +9500,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": true,
-      "buy_score": 55,
+      "buy_score": 54,
       "recommendation": "中性觀望",
       "components": {
         "technical": 55,
         "relative_strength": 60,
         "chip_flow": 62,
         "gooaye": 50,
-        "ticker_news": 50,
-        "macro": 19
+        "ticker_news": 35,
+        "macro": 18
       },
       "technical": {
         "composite_score": 55,
@@ -9554,16 +9541,12 @@
       "events": {
         "catalysts": [
           {
-            "tag": "新產品/量產",
-            "headline": "General Mills (GIS) Launches EPIC Sticks, Is The Stock Still Cheap? - Yahoo Finance"
-          },
-          {
             "tag": "分割/股息",
             "headline": "General Mills (GIS) Stock Faces Dividend And Earnings Strain Is The Undervaluation Story Still Intact - Yahoo Finance"
           },
           {
-            "tag": "法說會/投資人日",
-            "headline": "GIS Q1 Earnings Call Highlights Innovation and Inflation - Yahoo Finance"
+            "tag": "新產品/量產",
+            "headline": "General Mills (GIS) Launches EPIC Sticks, Is The Stock Still Cheap? - Yahoo Finance"
           }
         ],
         "risks": [
@@ -9581,8 +9564,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 50,
-        "label": "中性"
+        "score": 35,
+        "label": "偏空"
       },
       "detail": {
         "latest_close": 35.74,
@@ -9786,7 +9769,7 @@
         "chip_flow": 45,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 49,
@@ -10038,7 +10021,7 @@
         "chip_flow": 69,
         "gooaye": 50,
         "ticker_news": 35,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 49,
@@ -10072,7 +10055,7 @@
         "catalysts": [
           {
             "tag": "分割/股息",
-            "headline": "Warren Buffett Paid $1.3 Billion for Coca-Cola. Here's What It Now Pays Berkshire Hathaway in Yearly Dividends. - Yahoo Finance"
+            "headline": "Here’s How Many Shares of Coca-Cola You’d Need for $10,000 in Yearly Dividends. - The Globe and Mail"
           }
         ],
         "risks": []
@@ -10290,7 +10273,7 @@
         "chip_flow": 4,
         "gooaye": 50,
         "ticker_news": 50,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 54,
@@ -10545,8 +10528,8 @@
         "relative_strength": 63,
         "chip_flow": 49,
         "gooaye": 50,
-        "ticker_news": 77,
-        "macro": 19
+        "ticker_news": 68,
+        "macro": 18
       },
       "technical": {
         "composite_score": 52,
@@ -10580,14 +10563,19 @@
         "catalysts": [
           {
             "tag": "庫藏股/回購",
-            "headline": "Greg Abel Just Approved a Record $9.6 Billion in Stock Buybacks for Berkshire Hathaway Last Quarter, More Than Double the Pace Set in the Second Quarter. Is Berkshire Still a Buy as Shares Sit Near All-Time Highs? - The Motley Fool"
+            "headline": "Berkshire Hathaway (BRK.A) Stock May Be 25% Undervalued Following $9.6 Billion Buybacks - Yahoo Finance"
           },
           {
             "tag": "獲利創高",
-            "headline": "Greg Abel Just Approved a Record $9.6 Billion in Stock Buybacks for Berkshire Hathaway Last Quarter, More Than Double the Pace Set in the Second Quarter. Is Berkshire Still a Buy as Shares Sit Near All-Time Highs? - The Motley Fool"
+            "headline": "Greg Abel Just Approved a Record $9.6 Billion in Stock Buybacks for Berkshire Hathaway Last Quarter, More Than Double the Pace Set in the Second Quarter. Is Berkshire Still a Buy as Shares Sit Near All-Time Highs? - Yahoo Finance"
           }
         ],
-        "risks": []
+        "risks": [
+          {
+            "tag": "降評",
+            "headline": "Berkshire Hathaway Stock Jumps 14% in 2026 as Wall Street Downgrades - Coinpaper"
+          }
+        ]
       },
       "gooaye": {
         "score": 50,
@@ -10597,7 +10585,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 77,
+        "score": 68,
         "label": "偏多"
       },
       "detail": {
@@ -10802,7 +10790,7 @@
         "chip_flow": 74,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 36,
@@ -10841,12 +10829,12 @@
         ],
         "risks": [
           {
-            "tag": "調查/訴訟",
-            "headline": "PPC Stock Alert: Halper Sadeh LLC is Investigating Whether Pilgrim’s Pride Corporation is Obtaining a Fair Price for its Shareholders - Business Wire"
+            "tag": "法規/關稅風險",
+            "headline": "Pilgrim's Pride (PPC) Stock May Trade At A Premium On Tariff Scrutiny - Yahoo Finance"
           },
           {
-            "tag": "法規/關稅風險",
-            "headline": "PPC says it won’t panic at price war, sees Moz tariffs landing soon - News24"
+            "tag": "調查/訴訟",
+            "headline": "PPC Stock Alert: Halper Sadeh LLC is Investigating Whether Pilgrim’s Pride Corporation is Obtaining a Fair Price for its Shareholders - Business Wire"
           }
         ]
       },
@@ -11055,15 +11043,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 51,
+      "buy_score": 52,
       "recommendation": "中性觀望",
       "components": {
         "technical": 37,
         "relative_strength": 65,
         "chip_flow": 65,
         "gooaye": 50,
-        "ticker_news": 35,
-        "macro": 19
+        "ticker_news": 65,
+        "macro": 18
       },
       "technical": {
         "composite_score": 37,
@@ -11096,6 +11084,10 @@
       "events": {
         "catalysts": [
           {
+            "tag": "財報優於預期",
+            "headline": "Will Home Depot (HD) Beat Estimates Again in Its Next Earnings Report? - Yahoo Finance"
+          },
+          {
             "tag": "法說會/投資人日",
             "headline": "What Home Depot (HD) Said on Its Q3 Earnings Call - Yahoo Finance"
           }
@@ -11110,8 +11102,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 35,
-        "label": "偏空"
+        "score": 65,
+        "label": "偏多"
       },
       "detail": {
         "latest_close": 339.04,
@@ -11314,8 +11306,8 @@
         "relative_strength": 59,
         "chip_flow": 42,
         "gooaye": 50,
-        "ticker_news": 56,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 49,
@@ -11348,24 +11340,11 @@
       "events": {
         "catalysts": [
           {
-            "tag": "購併/合作",
-            "headline": "PepsiCo (PEP) Stock May Be 50% Undervalued Following Partnership Renewal - Simply Wall St"
-          },
-          {
-            "tag": "調升財測/上修",
-            "headline": "Wall Street Wrap: ASTS, BE, MDB Stocks Win Bullish Calls As PEP, USAR, SMMT Face Downgrades - Yahoo Finance"
+            "tag": "分割/股息",
+            "headline": "Coca-Cola vs. PepsiCo: Which Dividend King Deserves a Premium Valuation Right Now? - The Motley Fool"
           }
         ],
-        "risks": [
-          {
-            "tag": "淨利衰退",
-            "headline": "How KFC Partnership Loss Will Impact PepsiCo (PEP) Investors - Yahoo Finance"
-          },
-          {
-            "tag": "降評",
-            "headline": "Wall Street Wrap: ASTS, BE, MDB Stocks Win Bullish Calls As PEP, USAR, SMMT Face Downgrades - Yahoo Finance"
-          }
-        ]
+        "risks": []
       },
       "gooaye": {
         "score": 50,
@@ -11375,7 +11354,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 56,
+        "score": 50,
         "label": "中性"
       },
       "detail": {
@@ -11579,18 +11558,13 @@
         "relative_strength": 50,
         "chip_flow": 50,
         "gooaye": 50,
-        "ticker_news": 41,
-        "macro": 19
+        "ticker_news": 35,
+        "macro": 18
       },
       "technical": null,
       "chip": null,
       "events": {
-        "catalysts": [
-          {
-            "tag": "調升財測/上修",
-            "headline": "Anthropic IPO live: Anthropic stock begins trading in record $81B raise with $1.5T valuation - Yahoo Finance"
-          }
-        ],
+        "catalysts": [],
         "risks": []
       },
       "gooaye": {
@@ -11601,57 +11575,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 41,
-        "label": "偏空"
-      },
-      "detail": null
-    },
-    {
-      "ticker": "SPCX",
-      "symbol": "SPCX",
-      "name": "SPCX",
-      "market": "us",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": true,
-      "buy_score": 48,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 50,
-        "relative_strength": 50,
-        "chip_flow": 50,
-        "gooaye": 50,
-        "ticker_news": 44,
-        "macro": 19
-      },
-      "technical": null,
-      "chip": null,
-      "events": {
-        "catalysts": [
-          {
-            "tag": "購併/合作",
-            "headline": "Gary Black Warns SpaceX-Tesla Merger Could Wipe Out 24% Premium in Weeks: 'Massive Dilution' Could Crush - Benzinga"
-          },
-          {
-            "tag": "新產品/量產",
-            "headline": "SPCX Stock In Focus: SpaceX To Reportedly Launch $4B Bond Sale This Week - Yahoo Finance"
-          },
-          {
-            "tag": "調升財測/上修",
-            "headline": "SpaceX Sells $32 Bil Of Debt For AI Chips. But Yields, Orbital Deployment Raise Concerns. - Investor's Business Daily"
-          }
-        ],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 44,
+        "score": 35,
         "label": "偏空"
       },
       "detail": null
@@ -11671,8 +11595,8 @@
         "relative_strength": 45,
         "chip_flow": 66,
         "gooaye": 50,
-        "ticker_news": 41,
-        "macro": 19
+        "ticker_news": 42,
+        "macro": 18
       },
       "technical": {
         "composite_score": 44,
@@ -11719,7 +11643,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 41,
+        "score": 42,
         "label": "偏空"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
@@ -11926,7 +11850,7 @@
         "chip_flow": 40,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 37,
@@ -11959,8 +11883,16 @@
       "events": {
         "catalysts": [
           {
+            "tag": "法說會/投資人日",
+            "headline": "Procter & Gamble (PG) Stock Sees Modest Fair Value Lift After Investor Day Updates - Yahoo Finance"
+          },
+          {
             "tag": "財報優於預期",
             "headline": "Procter & Gamble (PG) Stock May Be 23% Undervalued As Q1 Beat Lifts Outlook - Yahoo Finance"
+          },
+          {
+            "tag": "分割/股息",
+            "headline": "Procter & Gamble (PG) Stock May Be 21% Undervalued Following Its 70th Dividend Increase - Yahoo Finance"
           }
         ],
         "risks": []
@@ -12178,7 +12110,7 @@
         "chip_flow": 72,
         "gooaye": 50,
         "ticker_news": 50,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 38,
@@ -12412,255 +12344,6 @@
       }
     },
     {
-      "ticker": "3231",
-      "symbol": "3231.TW",
-      "name": "緯創",
-      "market": "tw",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 48,
-      "recommendation": "中性觀望",
-      "components": {
-        "technical": 41,
-        "relative_strength": 45,
-        "chip_flow": 72,
-        "gooaye": 50,
-        "ticker_news": 23,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 41,
-        "mom_20d": -22.631578947368425,
-        "cmf_score": null,
-        "bias": "偏空",
-        "rsi14": 30.67,
-        "drawdown_from_high_pct": -25.76,
-        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（⚡ 資料中心基礎設施 DC Infra），但短線被市場恐慌錯殺至超跌（RSI 31、自近期高點回落約 26%、近 3 日急跌 6%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.0%。務必嚴設停損於 124.41 - 129.87，若真跌破再停損出場。",
-        "today_action": "今天可小量買",
-        "buy_zone": "136.71 - 142.10",
-        "sell_zone": "154.35 - 161.70",
-        "stop_loss": "124.41 - 129.87",
-        "latest_close": 147.0,
-        "day_change_pct": -5.77,
-        "volume_ratio": 1.24,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 72,
-        "label": "法人偏多",
-        "foreign_net": 1722733,
-        "trust_net": 439573,
-        "total_net": 3030552,
-        "net_trend": "買超",
-        "net_summary": "外資+1,722張 投信+439張",
-        "source": "TWSE T86"
-      },
-      "events": {
-        "catalysts": [],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 23,
-        "label": "偏空"
-      },
-      "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
-      "dip_reason": "距 60 日高點 -26%、RSI 31 超賣",
-      "detail": {
-        "latest_close": 147.0,
-        "bias": "偏空",
-        "today_action": "今天可小量買",
-        "buy_zone": "136.71 - 142.10",
-        "sell_zone": "154.35 - 161.70",
-        "stop_loss": "124.41 - 129.87",
-        "expected_return_pct": 8.862634334527408,
-        "risk_reward_ratio": 0.7139289678135399,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "股價距離 20 日高點不遠，量比 1.24 倍，布林頻寬呈 波動擴張 (30.4%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "偏空",
-            "confidence": 90,
-            "summary": "ATR 波動率 6.66%，風險評估為 偏高。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Bullish",
-            "confidence": 90,
-            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (⚡ 資料中心基礎設施 DC Infra)，具備爆發性長線增長潛力。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "中性",
-            "entry_zone": "147.73 - 152.67",
-            "take_profit_zone": "160.05 - 166.52",
-            "stop_zone": "147.32 - 150.38",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "中性",
-            "entry_zone": "144.79 - 149.33",
-            "take_profit_zone": "165.66 - 174.03",
-            "stop_zone": "140.37 - 144.85",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "中性",
-            "entry_zone": "139.65 - 145.00",
-            "take_profit_zone": "184.07 - 200.80",
-            "stop_zone": "131.41 - 137.39",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 5.0,
-          "annualized_volatility_pct": 42.8,
-          "verdict": "中長線中性·觀望",
-          "verdict_reason": "多空訊號互見，等趨勢或預測更明確再動作。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 148.85,
-              "low": 120.19,
-              "high": 184.34,
-              "expected_return_pct": 1.3,
-              "stance": "中性"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 150.42,
-              "low": 111.16,
-              "high": 203.54,
-              "expected_return_pct": 2.3,
-              "stance": "中性"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 151.76,
-              "low": 104.79,
-              "high": 219.8,
-              "expected_return_pct": 3.2,
-              "stance": "中性"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 153.0,
-              "low": 99.76,
-              "high": 234.66,
-              "expected_return_pct": 4.1,
-              "stance": "中性"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "3017",
       "symbol": "3017.TW",
       "name": "奇鋐",
@@ -12675,8 +12358,8 @@
         "relative_strength": 45,
         "chip_flow": 42,
         "gooaye": 68,
-        "ticker_news": 35,
-        "macro": 19
+        "ticker_news": 32,
+        "macro": 18
       },
       "technical": {
         "composite_score": 51,
@@ -12707,8 +12390,18 @@
         "source": "TWSE T86"
       },
       "events": {
-        "catalysts": [],
-        "risks": []
+        "catalysts": [
+          {
+            "tag": "財報優於預期",
+            "headline": "Axon shares rise as new deployments and upbeat software commentary support the stock - Quiver Quantitative"
+          }
+        ],
+        "risks": [
+          {
+            "tag": "法規/關稅風險",
+            "headline": "Asia Vital Components Co falls 9.82% in Friday's session - Global Banking & Finance Review"
+          }
+        ]
       },
       "gooaye": {
         "score": 68,
@@ -12718,7 +12411,7 @@
         "top_quote": "散熱大廠前陣子股價衝高後短線回檔，但 AI 伺服器長線成長趨勢未變，拉回均線附近是良性修正，適合分批試單。"
       },
       "news": {
-        "score": 35,
+        "score": 32,
         "label": "偏空"
       },
       "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
@@ -12925,7 +12618,7 @@
         "chip_flow": 74,
         "gooaye": 90,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 25,
@@ -13167,6 +12860,306 @@
       }
     },
     {
+      "ticker": "SPCX",
+      "symbol": "SPCX",
+      "name": "SPCX",
+      "market": "us",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": true,
+      "buy_score": 47,
+      "recommendation": "中性觀望",
+      "components": {
+        "technical": 50,
+        "relative_strength": 50,
+        "chip_flow": 50,
+        "gooaye": 50,
+        "ticker_news": 14,
+        "macro": 18
+      },
+      "technical": null,
+      "chip": null,
+      "events": {
+        "catalysts": [
+          {
+            "tag": "新產品/量產",
+            "headline": "SPCX Stock In Focus: SpaceX To Reportedly Launch $4B Bond Sale This Week - Yahoo Finance"
+          },
+          {
+            "tag": "調升財測/上修",
+            "headline": "SpaceX Sells $32 Bil Of Debt For AI Chips. But Yields, Orbital Deployment Raise Concerns. - Investor's Business Daily"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
+      },
+      "news": {
+        "score": 14,
+        "label": "偏空"
+      },
+      "detail": null
+    },
+    {
+      "ticker": "3231",
+      "symbol": "3231.TW",
+      "name": "緯創",
+      "market": "tw",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": false,
+      "buy_score": 47,
+      "recommendation": "中性觀望",
+      "components": {
+        "technical": 41,
+        "relative_strength": 45,
+        "chip_flow": 72,
+        "gooaye": 50,
+        "ticker_news": 23,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 41,
+        "mom_20d": -22.631578947368425,
+        "cmf_score": null,
+        "bias": "偏空",
+        "rsi14": 30.67,
+        "drawdown_from_high_pct": -25.76,
+        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（⚡ 資料中心基礎設施 DC Infra），但短線被市場恐慌錯殺至超跌（RSI 31、自近期高點回落約 26%、近 3 日急跌 6%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.0%。務必嚴設停損於 124.41 - 129.87，若真跌破再停損出場。",
+        "today_action": "今天可小量買",
+        "buy_zone": "136.71 - 142.10",
+        "sell_zone": "154.35 - 161.70",
+        "stop_loss": "124.41 - 129.87",
+        "latest_close": 147.0,
+        "day_change_pct": -5.77,
+        "volume_ratio": 1.24,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 72,
+        "label": "法人偏多",
+        "foreign_net": 1722733,
+        "trust_net": 439573,
+        "total_net": 3030552,
+        "net_trend": "買超",
+        "net_summary": "外資+1,722張 投信+439張",
+        "source": "TWSE T86"
+      },
+      "events": {
+        "catalysts": [
+          {
+            "tag": "調升財測/上修",
+            "headline": "Taiwan's Wistron to raise up to $923 million in share sale - Reuters"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
+      },
+      "news": {
+        "score": 23,
+        "label": "偏空"
+      },
+      "ai_chain_layer": "⚡ 資料中心基礎設施 DC Infra",
+      "dip_reason": "距 60 日高點 -26%、RSI 31 超賣",
+      "detail": {
+        "latest_close": 147.0,
+        "bias": "偏空",
+        "today_action": "今天可小量買",
+        "buy_zone": "136.71 - 142.10",
+        "sell_zone": "154.35 - 161.70",
+        "stop_loss": "124.41 - 129.87",
+        "expected_return_pct": 8.862634334527408,
+        "risk_reward_ratio": 0.7139289678135399,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "股價距離 20 日高點不遠，量比 1.24 倍，布林頻寬呈 波動擴張 (30.4%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "偏空",
+            "confidence": 90,
+            "summary": "ATR 波動率 6.66%，風險評估為 偏高。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Bullish",
+            "confidence": 90,
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (⚡ 資料中心基礎設施 DC Infra)，具備爆發性長線增長潛力。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "中性",
+            "entry_zone": "147.73 - 152.67",
+            "take_profit_zone": "160.05 - 166.52",
+            "stop_zone": "147.32 - 150.38",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "中性",
+            "entry_zone": "144.79 - 149.33",
+            "take_profit_zone": "165.66 - 174.03",
+            "stop_zone": "140.37 - 144.85",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "中性",
+            "entry_zone": "139.65 - 145.00",
+            "take_profit_zone": "184.07 - 200.80",
+            "stop_zone": "131.41 - 137.39",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": 5.0,
+          "annualized_volatility_pct": 42.8,
+          "verdict": "中長線中性·觀望",
+          "verdict_reason": "多空訊號互見，等趨勢或預測更明確再動作。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 148.85,
+              "low": 120.19,
+              "high": 184.34,
+              "expected_return_pct": 1.3,
+              "stance": "中性"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 150.42,
+              "low": 111.16,
+              "high": 203.54,
+              "expected_return_pct": 2.3,
+              "stance": "中性"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 151.76,
+              "low": 104.79,
+              "high": 219.8,
+              "expected_return_pct": 3.2,
+              "stance": "中性"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 153.0,
+              "low": 99.76,
+              "high": 234.66,
+              "expected_return_pct": 4.1,
+              "stance": "中性"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "2207",
       "symbol": "2207.TW",
       "name": "和泰車",
@@ -13182,7 +13175,7 @@
         "chip_flow": 79,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 21,
@@ -13419,6 +13412,246 @@
       }
     },
     {
+      "ticker": "8299.TWO",
+      "symbol": "8299.TWO",
+      "name": "群聯",
+      "market": "tw",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": false,
+      "buy_score": 46,
+      "recommendation": "中性觀望",
+      "components": {
+        "technical": 38,
+        "relative_strength": 45,
+        "chip_flow": 50,
+        "gooaye": 50,
+        "ticker_news": 95,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 38,
+        "mom_20d": -29.78723404255319,
+        "cmf_score": null,
+        "bias": "偏空",
+        "rsi14": 27.58,
+        "drawdown_from_high_pct": -40.41,
+        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（💾 儲存與記憶體 Memory & Storage），但短線被市場恐慌錯殺至超跌（RSI 28、自近期高點回落約 40%、近 3 日急跌 14%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.1%。務必嚴設停損於 1117.12 - 1166.22，若真跌破再停損出場。",
+        "today_action": "今天可小量買",
+        "buy_zone": "1227.60 - 1283.80",
+        "sell_zone": "1386.00 - 1452.00",
+        "stop_loss": "1117.12 - 1166.22",
+        "latest_close": 1320.0,
+        "day_change_pct": -9.28,
+        "volume_ratio": 2.41,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": null,
+      "events": {
+        "catalysts": [],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 50,
+        "label": "中性觀察",
+        "opinion_count": 0,
+        "top_logic": "",
+        "top_quote": ""
+      },
+      "news": {
+        "score": 95,
+        "label": "偏多"
+      },
+      "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
+      "dip_reason": "距 60 日高點 -40%、RSI 28 超賣",
+      "detail": {
+        "latest_close": 1320.0,
+        "bias": "偏空",
+        "today_action": "今天可小量買",
+        "buy_zone": "1227.60 - 1283.80",
+        "sell_zone": "1386.00 - 1452.00",
+        "stop_loss": "1117.12 - 1166.22",
+        "expected_return_pct": 8.860759493670889,
+        "risk_reward_ratio": 0.7137119199159617,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "股價距離 20 日高點不遠，量比 2.20 倍，布林頻寬呈 波動擴張 (47.5%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "偏空",
+            "confidence": 90,
+            "summary": "ATR 波動率 10.50%，風險評估為 偏高。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Bullish",
+            "confidence": 90,
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (💾 儲存與記憶體 Memory & Storage)，具備爆發性長線增長潛力。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "中性",
+            "entry_zone": "1326.60 - 1415.00",
+            "take_profit_zone": "1489.95 - 1550.15",
+            "stop_zone": "1365.47 - 1393.78",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "中性",
+            "entry_zone": "1300.20 - 1375.00",
+            "take_profit_zone": "1539.45 - 1617.20",
+            "stop_zone": "1292.50 - 1333.75",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "中性",
+            "entry_zone": "1254.00 - 1310.00",
+            "take_profit_zone": "1710.50 - 1866.00",
+            "stop_zone": "1210.00 - 1265.00",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": -22.0,
+          "annualized_volatility_pct": 70.7,
+          "verdict": "中長線偏空·建議減碼",
+          "verdict_reason": "趨勢與中長期預測同向偏空，宜降低部位或避開。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 1249.36,
+              "low": 877.31,
+              "high": 1779.2,
+              "expected_return_pct": -5.4,
+              "stance": "偏空"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 1192.95,
+              "low": 723.58,
+              "high": 1966.79,
+              "expected_return_pct": -9.6,
+              "stance": "偏空"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 1147.27,
+              "low": 621.91,
+              "high": 2116.4,
+              "expected_return_pct": -13.1,
+              "stance": "偏空"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 1106.98,
+              "low": 545.84,
+              "high": 2244.98,
+              "expected_return_pct": -16.1,
+              "stance": "看空"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "MKC",
       "symbol": "MKC",
       "name": "MKC",
@@ -13433,8 +13666,8 @@
         "relative_strength": 46,
         "chip_flow": 42,
         "gooaye": 50,
-        "ticker_news": 80,
-        "macro": 19
+        "ticker_news": 65,
+        "macro": 18
       },
       "technical": {
         "composite_score": 43,
@@ -13467,12 +13700,16 @@
       "events": {
         "catalysts": [
           {
-            "tag": "分割/股息",
-            "headline": "McCormick: A Dividend Aristocrat On Sale With 4% Yield (NYSE:MKC) - Seeking Alpha"
+            "tag": "財報優於預期",
+            "headline": "MKC Stock Draws Investor Attention After Volatile Morning Following Upbeat Q3 -- Gross Profit Margin Expands By 190 Basis Points - Yahoo Finance"
           },
           {
-            "tag": "財報優於預期",
-            "headline": "McCormick & Company, Incorporated (NYSE:MKC) Stock Breaks Above 50 Day Moving Average - What's Next? - MarketBeat"
+            "tag": "調升財測/上修",
+            "headline": "What Does McCormick's (NYSE:MKC) Dividend Raise Signal Ahead of the Unilever Foods Deal? - Kalkine Media"
+          },
+          {
+            "tag": "分割/股息",
+            "headline": "What Does McCormick's (NYSE:MKC) Dividend Raise Signal Ahead of the Unilever Foods Deal? - Kalkine Media"
           }
         ],
         "risks": []
@@ -13485,7 +13722,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 80,
+        "score": 65,
         "label": "偏多"
       },
       "detail": {
@@ -13689,8 +13926,8 @@
         "relative_strength": 44,
         "chip_flow": 56,
         "gooaye": 50,
-        "ticker_news": 58,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 40,
@@ -13724,7 +13961,7 @@
         "catalysts": [
           {
             "tag": "財報優於預期",
-            "headline": "Infosys (NYSE:INFY) Shares Climb 4.7% - Time to Buy? - MarketBeat"
+            "headline": "Infosys Ltd. $INFY Stock: First Trust Advisors LP Grows Stake - MarketBeat"
           },
           {
             "tag": "分割/股息",
@@ -13741,7 +13978,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 58,
+        "score": 50,
         "label": "中性"
       },
       "detail": {
@@ -13931,6 +14168,268 @@
       }
     },
     {
+      "ticker": "TSM",
+      "symbol": "TSM",
+      "name": "TSM",
+      "market": "us",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": false,
+      "buy_score": 45,
+      "recommendation": "中性觀望",
+      "components": {
+        "technical": 62,
+        "relative_strength": 45,
+        "chip_flow": 0,
+        "gooaye": 74,
+        "ticker_news": 63,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 62,
+        "mom_20d": -23.846506889151144,
+        "cmf_score": 0,
+        "bias": "偏空",
+        "rsi14": 28.26,
+        "drawdown_from_high_pct": -34.39,
+        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（🏭 半導體製造 Foundry & Equipment），但短線被市場恐慌錯殺至超跌（RSI 28、自近期高點回落約 34%、近 3 日急跌 11%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.0%。務必嚴設停損於 269.72 - 281.58，若真跌破再停損出場。",
+        "today_action": "今天可小量買",
+        "buy_zone": "296.40 - 312.11",
+        "sell_zone": "334.65 - 350.58",
+        "stop_loss": "269.72 - 281.58",
+        "latest_close": 318.71,
+        "day_change_pct": -9.48,
+        "volume_ratio": 2.38,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 0,
+        "label": "法人偏空",
+        "foreign_net": null,
+        "trust_net": null,
+        "total_net": null,
+        "net_trend": "CMF=-0.350",
+        "net_summary": "Chaikin Money Flow(20)=-0.350",
+        "source": "CMF"
+      },
+      "events": {
+        "catalysts": [
+          {
+            "tag": "財報優於預期",
+            "headline": "Taiwan Semiconductor Manufacturing Company Ltd. $TSM Stock Acquired by Ilmarinen Mutual Pension Insurance Co - MarketBeat"
+          },
+          {
+            "tag": "購併/合作",
+            "headline": "Taiwan Semiconductor Manufacturing Company Ltd. $TSM Stock Acquired by Ilmarinen Mutual Pension Insurance Co - MarketBeat"
+          },
+          {
+            "tag": "調升財測/上修",
+            "headline": "Taiwan Semiconductor Manufacturing Company Ltd. $TSM Stock Position Raised by Cvfg LLC - MarketBeat"
+          }
+        ],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 74,
+        "label": "中性偏多共識",
+        "opinion_count": 1,
+        "top_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。",
+        "top_quote": "司 这个也是非常重要的 大家就可以看到 规律就是这些股票就是台积电 日月光美国的英特尔 还有一个叫艾克尔 AMKR AMKR可以多看看 寻找一些合适的机会 它和英特尔一样都是美国的封装厂"
+      },
+      "news": {
+        "score": 63,
+        "label": "中性"
+      },
+      "ai_chain_layer": "🏭 半導體製造 Foundry & Equipment",
+      "dip_reason": "距 60 日高點 -34%、RSI 28 超賣",
+      "detail": {
+        "latest_close": 318.71,
+        "bias": "偏空",
+        "today_action": "今天可小量買",
+        "buy_zone": "296.40 - 312.11",
+        "sell_zone": "334.65 - 350.58",
+        "stop_loss": "269.72 - 281.58",
+        "expected_return_pct": 8.86170466280085,
+        "risk_reward_ratio": 0.7137555982085718,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏空",
+            "confidence": 85,
+            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "股價距離 20 日高點不遠，量比 2.19 倍，布林頻寬呈 波動擴張 (32.3%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "偏空",
+            "confidence": 90,
+            "summary": "ATR 波動率 6.83%，風險評估為 偏高。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Bullish",
+            "confidence": 90,
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (🏭 半導體製造 Foundry & Equipment)，具備爆發性長線增長潛力。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Bullish",
+            "confidence": 85,
+            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "偏多",
+            "confidence": 48,
+            "summary": "尼可拉斯楊共識 74 分：本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "中性",
+            "entry_zone": "320.30 - 343.90",
+            "take_profit_zone": "363.85 - 378.55",
+            "stop_zone": "331.86 - 338.74",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "中性",
+            "entry_zone": "313.93 - 335.70",
+            "take_profit_zone": "379.13 - 398.28",
+            "stop_zone": "315.56 - 325.63",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "中性",
+            "entry_zone": "302.77 - 318.48",
+            "take_profit_zone": "421.26 - 459.56",
+            "stop_zone": "295.42 - 308.85",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": 5.0,
+          "annualized_volatility_pct": 40.3,
+          "verdict": "中長線中性·觀望",
+          "verdict_reason": "多空訊號互見，等趨勢或預測更明確再動作。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 322.72,
+              "low": 263.85,
+              "high": 394.73,
+              "expected_return_pct": 1.3,
+              "stance": "中性"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 326.13,
+              "low": 245.29,
+              "high": 433.6,
+              "expected_return_pct": 2.3,
+              "stance": "中性"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 329.03,
+              "low": 232.13,
+              "high": 466.39,
+              "expected_return_pct": 3.2,
+              "stance": "中性"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 331.72,
+              "low": 221.73,
+              "high": 496.27,
+              "expected_return_pct": 4.1,
+              "stance": "中性"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "VRT",
       "symbol": "VRT",
       "name": "VRT",
@@ -13946,7 +14445,7 @@
         "chip_flow": 23,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 54,
@@ -14195,7 +14694,7 @@
         "chip_flow": 79,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 35,
@@ -14229,7 +14728,7 @@
         "catalysts": [
           {
             "tag": "購併/合作",
-            "headline": "Taro announces merger with Sun Pharma in ₹2,892 crore deal - The Hindu"
+            "headline": "Sun Pharma to acquire remaining stake in Israeli firm Taro for Rs 2,892 cr - Business Standard"
           }
         ],
         "risks": []
@@ -14432,264 +14931,6 @@
       }
     },
     {
-      "ticker": "TSM",
-      "symbol": "TSM",
-      "name": "TSM",
-      "market": "us",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 44,
-      "recommendation": "偏空減碼",
-      "components": {
-        "technical": 62,
-        "relative_strength": 45,
-        "chip_flow": 0,
-        "gooaye": 74,
-        "ticker_news": 45,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 62,
-        "mom_20d": -23.846506889151144,
-        "cmf_score": 0,
-        "bias": "偏空",
-        "rsi14": 28.26,
-        "drawdown_from_high_pct": -34.39,
-        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（🏭 半導體製造 Foundry & Equipment），但短線被市場恐慌錯殺至超跌（RSI 28、自近期高點回落約 34%、近 3 日急跌 11%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.0%。務必嚴設停損於 269.72 - 281.58，若真跌破再停損出場。",
-        "today_action": "今天可小量買",
-        "buy_zone": "296.40 - 312.11",
-        "sell_zone": "334.65 - 350.58",
-        "stop_loss": "269.72 - 281.58",
-        "latest_close": 318.71,
-        "day_change_pct": -9.48,
-        "volume_ratio": 2.38,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 0,
-        "label": "法人偏空",
-        "foreign_net": null,
-        "trust_net": null,
-        "total_net": null,
-        "net_trend": "CMF=-0.350",
-        "net_summary": "Chaikin Money Flow(20)=-0.350",
-        "source": "CMF"
-      },
-      "events": {
-        "catalysts": [
-          {
-            "tag": "財報優於預期",
-            "headline": "Chip Leader TSMC Delivers Beat-And-Raise Third-Quarter Report - Investor's Business Daily"
-          },
-          {
-            "tag": "調升財測/上修",
-            "headline": "Chip Leader TSMC Delivers Beat-And-Raise Third-Quarter Report - Investor's Business Daily"
-          }
-        ],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 74,
-        "label": "中性偏多共識",
-        "opinion_count": 1,
-        "top_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。",
-        "top_quote": "司 这个也是非常重要的 大家就可以看到 规律就是这些股票就是台积电 日月光美国的英特尔 还有一个叫艾克尔 AMKR AMKR可以多看看 寻找一些合适的机会 它和英特尔一样都是美国的封装厂"
-      },
-      "news": {
-        "score": 45,
-        "label": "中性"
-      },
-      "ai_chain_layer": "🏭 半導體製造 Foundry & Equipment",
-      "dip_reason": "距 60 日高點 -34%、RSI 28 超賣",
-      "detail": {
-        "latest_close": 318.71,
-        "bias": "偏空",
-        "today_action": "今天可小量買",
-        "buy_zone": "296.40 - 312.11",
-        "sell_zone": "334.65 - 350.58",
-        "stop_loss": "269.72 - 281.58",
-        "expected_return_pct": 8.86170466280085,
-        "risk_reward_ratio": 0.7137555982085718,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "股價距離 20 日高點不遠，量比 2.19 倍，布林頻寬呈 波動擴張 (32.3%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "偏空",
-            "confidence": 90,
-            "summary": "ATR 波動率 6.83%，風險評估為 偏高。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Bullish",
-            "confidence": 90,
-            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (🏭 半導體製造 Foundry & Equipment)，具備爆發性長線增長潛力。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "偏多",
-            "confidence": 48,
-            "summary": "尼可拉斯楊共識 74 分：本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 5 次（自動字幕擷取）。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "中性",
-            "entry_zone": "320.30 - 343.90",
-            "take_profit_zone": "363.85 - 378.55",
-            "stop_zone": "331.86 - 338.74",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "中性",
-            "entry_zone": "313.93 - 335.70",
-            "take_profit_zone": "379.13 - 398.28",
-            "stop_zone": "315.56 - 325.63",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "中性",
-            "entry_zone": "302.77 - 318.48",
-            "take_profit_zone": "421.26 - 459.56",
-            "stop_zone": "295.42 - 308.85",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 5.0,
-          "annualized_volatility_pct": 40.3,
-          "verdict": "中長線中性·觀望",
-          "verdict_reason": "多空訊號互見，等趨勢或預測更明確再動作。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 322.72,
-              "low": 263.85,
-              "high": 394.73,
-              "expected_return_pct": 1.3,
-              "stance": "中性"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 326.13,
-              "low": 245.29,
-              "high": 433.6,
-              "expected_return_pct": 2.3,
-              "stance": "中性"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 329.03,
-              "low": 232.13,
-              "high": 466.39,
-              "expected_return_pct": 3.2,
-              "stance": "中性"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 331.72,
-              "low": 221.73,
-              "high": 496.27,
-              "expected_return_pct": 4.1,
-              "stance": "中性"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "5880",
       "symbol": "5880.TW",
       "name": "合庫金",
@@ -14697,15 +14938,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 44,
-      "recommendation": "偏空減碼",
+      "buy_score": 45,
+      "recommendation": "中性觀望",
       "components": {
         "technical": 32,
         "relative_strength": 34,
         "chip_flow": 79,
         "gooaye": 50,
-        "ticker_news": 28,
-        "macro": 19
+        "ticker_news": 50,
+        "macro": 18
       },
       "technical": {
         "composite_score": 32,
@@ -14746,12 +14987,7 @@
             "headline": "NVIDIA RTX 5880 ADA workstation GPU launched with 48GB VRAM - TweakTown"
           }
         ],
-        "risks": [
-          {
-            "tag": "法規/關稅風險",
-            "headline": "Nvidia launches another sanctions-compliant GPU for China — RTX 5880 Ada debuts with 14,080 CUDA cores, 48GB GDDR6 - Tom's Hardware"
-          }
-        ]
+        "risks": []
       },
       "gooaye": {
         "score": 50,
@@ -14761,8 +14997,8 @@
         "top_quote": ""
       },
       "news": {
-        "score": 28,
-        "label": "偏空"
+        "score": 50,
+        "label": "中性"
       },
       "detail": {
         "latest_close": 26.4,
@@ -14958,15 +15194,15 @@
       "held": false,
       "gooaye_named": false,
       "market_mover": false,
-      "buy_score": 44,
-      "recommendation": "偏空減碼",
+      "buy_score": 45,
+      "recommendation": "中性觀望",
       "components": {
         "technical": 32,
         "relative_strength": 31,
         "chip_flow": 71,
         "gooaye": 50,
-        "ticker_news": 70,
-        "macro": 19
+        "ticker_news": 95,
+        "macro": 18
       },
       "technical": {
         "composite_score": 32,
@@ -15001,28 +15237,12 @@
           {
             "tag": "財報優於預期",
             "headline": "Chewy (NYSE:CHWY) Stock Has Average Target Price of $30.45 According to Analysts - MarketBeat"
-          },
-          {
-            "tag": "調升財測/上修",
-            "headline": "After Chey Tae-won, Roh Tae-moon too: semiconductor chiefs raise the banner of 'responsible management' amid stock volatility - 매일경제"
-          },
-          {
-            "tag": "購併/合作",
-            "headline": "Taiwan Mobile Secures 14.13% Tender Commitments on First Day of Systex Acquisition, Premium Near NT$10 - finance.biggo.com"
           }
         ],
         "risks": [
           {
-            "tag": "財測下修",
-            "headline": "Court Dismisses Taiwan Mobile's Lawsuit Over NCC Spectrum Provision - marketscreener.com"
-          },
-          {
-            "tag": "調查/訴訟",
-            "headline": "Court Dismisses Taiwan Mobile's Lawsuit Over NCC Spectrum Provision - marketscreener.com"
-          },
-          {
             "tag": "法規/關稅風險",
-            "headline": "After Chey Tae-won, Roh Tae-moon too: semiconductor chiefs raise the banner of 'responsible management' amid stock volatility - 매일경제"
+            "headline": "REC to provide Rs 3,045 cr finance to Bangalore Metro Rail Corporation - Business Standard"
           }
         ]
       },
@@ -15034,7 +15254,7 @@
         "top_quote": ""
       },
       "news": {
-        "score": 70,
+        "score": 95,
         "label": "偏多"
       },
       "detail": {
@@ -15224,251 +15444,6 @@
       }
     },
     {
-      "ticker": "8299.TWO",
-      "symbol": "8299.TWO",
-      "name": "群聯",
-      "market": "tw",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 44,
-      "recommendation": "偏空減碼",
-      "components": {
-        "technical": 38,
-        "relative_strength": 45,
-        "chip_flow": 50,
-        "gooaye": 50,
-        "ticker_news": 65,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 38,
-        "mom_20d": -29.78723404255319,
-        "cmf_score": null,
-        "bias": "偏空",
-        "rsi14": 27.58,
-        "drawdown_from_high_pct": -40.41,
-        "today_note": "⚡ 好股票大跌承接機會：AI 主線核心（💾 儲存與記憶體 Memory & Storage），但短線被市場恐慌錯殺至超跌（RSI 28、自近期高點回落約 40%、近 3 日急跌 14%）。優質股在非理性下殺後常出現均值回歸反彈，策略上應「別人恐懼我貪婪」分批小量承接、留銀彈攤平，建議倉位 5.1%。務必嚴設停損於 1117.12 - 1166.22，若真跌破再停損出場。",
-        "today_action": "今天可小量買",
-        "buy_zone": "1227.60 - 1283.80",
-        "sell_zone": "1386.00 - 1452.00",
-        "stop_loss": "1117.12 - 1166.22",
-        "latest_close": 1320.0,
-        "day_change_pct": -9.28,
-        "volume_ratio": 2.41,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": null,
-      "events": {
-        "catalysts": [],
-        "risks": [
-          {
-            "tag": "法規/關稅風險",
-            "headline": "Phison Electronics falls 9.28% in Friday's session - Global Banking & Finance Review"
-          }
-        ]
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 65,
-        "label": "偏多"
-      },
-      "ai_chain_layer": "💾 儲存與記憶體 Memory & Storage",
-      "dip_reason": "距 60 日高點 -40%、RSI 28 超賣",
-      "detail": {
-        "latest_close": 1320.0,
-        "bias": "偏空",
-        "today_action": "今天可小量買",
-        "buy_zone": "1227.60 - 1283.80",
-        "sell_zone": "1386.00 - 1452.00",
-        "stop_loss": "1117.12 - 1166.22",
-        "expected_return_pct": 8.860759493670889,
-        "risk_reward_ratio": 0.7137119199159617,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "價格與均線排列顯示 偏空，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "偏空",
-            "confidence": 85,
-            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "股價距離 20 日高點不遠，量比 2.20 倍，布林頻寬呈 波動擴張 (47.5%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "偏多",
-            "confidence": 70,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "偏空",
-            "confidence": 90,
-            "summary": "ATR 波動率 10.50%，風險評估為 偏高。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Bullish",
-            "confidence": 90,
-            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (💾 儲存與記憶體 Memory & Storage)，具備爆發性長線增長潛力。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Bullish",
-            "confidence": 85,
-            "summary": "股價技術面嚴重超跌或被市場極度恐慌性低估，提供了非對稱的多頭切入契機。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "弱勢空頭排列且跌破生命線，市場缺乏流動性支持，建議順勢看空。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "中性",
-            "entry_zone": "1326.60 - 1415.00",
-            "take_profit_zone": "1489.95 - 1550.15",
-            "stop_zone": "1365.47 - 1393.78",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "中性",
-            "entry_zone": "1300.20 - 1375.00",
-            "take_profit_zone": "1539.45 - 1617.20",
-            "stop_zone": "1292.50 - 1333.75",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "中性",
-            "entry_zone": "1254.00 - 1310.00",
-            "take_profit_zone": "1710.50 - 1866.00",
-            "stop_zone": "1210.00 - 1265.00",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": -22.0,
-          "annualized_volatility_pct": 70.7,
-          "verdict": "中長線偏空·建議減碼",
-          "verdict_reason": "趨勢與中長期預測同向偏空，宜降低部位或避開。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 1249.36,
-              "low": 877.31,
-              "high": 1779.2,
-              "expected_return_pct": -5.4,
-              "stance": "偏空"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 1192.95,
-              "low": 723.58,
-              "high": 1966.79,
-              "expected_return_pct": -9.6,
-              "stance": "偏空"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 1147.27,
-              "low": 621.91,
-              "high": 2116.4,
-              "expected_return_pct": -13.1,
-              "stance": "偏空"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 1106.98,
-              "low": 545.84,
-              "high": 2244.98,
-              "expected_return_pct": -16.1,
-              "stance": "看空"
-            }
-          ]
-        }
-      }
-    },
-    {
       "ticker": "INTC",
       "symbol": "INTC",
       "name": "INTC",
@@ -15484,7 +15459,7 @@
         "chip_flow": 10,
         "gooaye": 78,
         "ticker_news": 50,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 48,
@@ -15728,6 +15703,253 @@
       }
     },
     {
+      "ticker": "AAPL",
+      "symbol": "AAPL",
+      "name": "AAPL",
+      "market": "us",
+      "held": false,
+      "gooaye_named": false,
+      "market_mover": true,
+      "buy_score": 43,
+      "recommendation": "偏空減碼",
+      "components": {
+        "technical": 43,
+        "relative_strength": 46,
+        "chip_flow": 13,
+        "gooaye": 68,
+        "ticker_news": 95,
+        "macro": 18
+      },
+      "technical": {
+        "composite_score": 43,
+        "mom_20d": -1.486789539122535,
+        "cmf_score": 13,
+        "bias": "中性",
+        "rsi14": 46.45,
+        "drawdown_from_high_pct": -3.85,
+        "today_note": "目前可用的報酬空間不足 20.0%，今天先不要急著買。",
+        "today_action": "今天不要買",
+        "buy_zone": "342.90 - 344.67",
+        "sell_zone": "397.37 - 424.77",
+        "stop_loss": "322.33 - 332.62",
+        "latest_close": 342.56,
+        "day_change_pct": -1.9,
+        "volume_ratio": 1.69,
+        "ignition_days_ago": null,
+        "ignition_note": ""
+      },
+      "chip": {
+        "score": 13,
+        "label": "法人偏空",
+        "foreign_net": null,
+        "trust_net": null,
+        "total_net": null,
+        "net_trend": "CMF=-0.145",
+        "net_summary": "Chaikin Money Flow(20)=-0.145",
+        "source": "CMF"
+      },
+      "events": {
+        "catalysts": [],
+        "risks": []
+      },
+      "gooaye": {
+        "score": 68,
+        "label": "中性偏多共識",
+        "opinion_count": 1,
+        "top_logic": "本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。",
+        "top_quote": "要记住 如果成不了第一 第二也是可以的 现在就有新闻出来了 苹果就要和英特尔一起研发芯片 而且 AMKR 要接台积电的外延订单 像台积电这种技术 有一个特点 就是你不断的有厂商去找你合"
+      },
+      "news": {
+        "score": 95,
+        "label": "偏多"
+      },
+      "detail": {
+        "latest_close": 342.56,
+        "bias": "中性",
+        "today_action": "今天不要買",
+        "buy_zone": "342.90 - 344.67",
+        "sell_zone": "397.37 - 424.77",
+        "stop_loss": "322.33 - 332.62",
+        "expected_return_pct": 19.69542555979387,
+        "risk_reward_ratio": 4.239423378251356,
+        "agents": [
+          {
+            "name": "趨勢代理",
+            "signal": "中性",
+            "confidence": 65,
+            "summary": "價格與均線排列顯示 中性，MACD呈 死亡交叉，趨勢延續中。"
+          },
+          {
+            "name": "動能代理",
+            "signal": "偏空",
+            "confidence": 75,
+            "summary": "RSI 與最近價格動能偏 偏空，MACD柱狀圖動能偏 減弱。"
+          },
+          {
+            "name": "突破代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "股價距離 20 日高點不遠，量比 1.62 倍，布林頻寬呈 波動收縮 (7.1%)。"
+          },
+          {
+            "name": "回檔承接代理",
+            "signal": "偏多",
+            "confidence": 70,
+            "summary": "觀察是否出現回檔後可承接的位置，目前偏 偏多。"
+          },
+          {
+            "name": "風險代理",
+            "signal": "中性",
+            "confidence": 60,
+            "summary": "ATR 波動率 2.73%，風險評估為 可控。"
+          },
+          {
+            "name": "Warren Buffett (巴菲特)",
+            "signal": "Bearish",
+            "confidence": 90,
+            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
+          },
+          {
+            "name": "Charlie Munger (蒙格)",
+            "signal": "Bearish",
+            "confidence": 92,
+            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
+          },
+          {
+            "name": "Ben Graham (葛拉漢)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
+          },
+          {
+            "name": "Aswath Damodaran (達莫達蘭)",
+            "signal": "Neutral",
+            "confidence": 75,
+            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
+          },
+          {
+            "name": "Cathie Wood (凱薩琳伍德)",
+            "signal": "Bullish",
+            "confidence": 90,
+            "summary": "屬於硬核 AI 科技或 AI 基礎設施關鍵鏈條 (創新主線)，具備爆發性長線增長潛力。"
+          },
+          {
+            "name": "Nassim Taleb (塔雷伯)",
+            "signal": "Bearish",
+            "confidence": 95,
+            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
+          },
+          {
+            "name": "Peter Lynch (彼得林區)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
+          },
+          {
+            "name": "Michael Burry (麥克貝瑞)",
+            "signal": "Neutral",
+            "confidence": 65,
+            "summary": "市場情緒與多空力量均衡，未見極端的非對稱套利機會。"
+          },
+          {
+            "name": "Stanley Druckenmiller (德魯肯米勒)",
+            "signal": "Neutral",
+            "confidence": 70,
+            "summary": "技術面均線與價格纏繞，未形成明確的單邊趨勢信號。"
+          },
+          {
+            "name": "Bill Ackman (艾克曼)",
+            "signal": "Bearish",
+            "confidence": 85,
+            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
+          },
+          {
+            "name": "股癌 (Gooaye)",
+            "signal": "中性",
+            "confidence": 40,
+            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
+          },
+          {
+            "name": "尼可拉斯楊Live",
+            "signal": "偏多",
+            "confidence": 36,
+            "summary": "尼可拉斯楊共識 68 分：本集「要繼續漲！我繼續持有這幾個記憶體股票，就靠他們發財！」提及 2 次（自動字幕擷取）。"
+          }
+        ],
+        "horizons": [
+          {
+            "horizon": "短線",
+            "bias": "中性",
+            "entry_zone": "344.27 - 345.36",
+            "take_profit_zone": "350.63 - 364.80",
+            "stop_zone": "333.27 - 340.18",
+            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
+          },
+          {
+            "horizon": "中線",
+            "bias": "中性",
+            "entry_zone": "337.42 - 341.51",
+            "take_profit_zone": "355.54 - 373.50",
+            "stop_zone": "321.02 - 331.26",
+            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
+          },
+          {
+            "horizon": "長線",
+            "bias": "偏多",
+            "entry_zone": "309.90 - 325.43",
+            "take_profit_zone": "395.04 - 430.96",
+            "stop_zone": "300.53 - 314.19",
+            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
+          }
+        ],
+        "price_forecast": {
+          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
+          "annualized_drift_pct": 32.1,
+          "annualized_volatility_pct": 24.1,
+          "verdict": "中長線偏多·可分批布局",
+          "verdict_reason": "趨勢、預測與評分多數同向偏多，中長線適合靠近買點分批建倉。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
+          "horizons": [
+            {
+              "label": "3個月",
+              "days": 63,
+              "base": 371.16,
+              "low": 328.95,
+              "high": 418.79,
+              "expected_return_pct": 8.3,
+              "stance": "偏多"
+            },
+            {
+              "label": "6個月",
+              "days": 126,
+              "base": 397.02,
+              "low": 334.7,
+              "high": 470.95,
+              "expected_return_pct": 15.9,
+              "stance": "看多"
+            },
+            {
+              "label": "9個月",
+              "days": 189,
+              "base": 420.28,
+              "low": 340.97,
+              "high": 518.04,
+              "expected_return_pct": 22.7,
+              "stance": "看多"
+            },
+            {
+              "label": "12個月",
+              "days": 252,
+              "base": 442.77,
+              "low": 347.78,
+              "high": 563.7,
+              "expected_return_pct": 29.3,
+              "stance": "看多"
+            }
+          ]
+        }
+      }
+    },
+    {
       "ticker": "MA",
       "symbol": "MA",
       "name": "MA",
@@ -15743,7 +15965,7 @@
         "chip_flow": 34,
         "gooaye": 50,
         "ticker_news": 95,
-        "macro": 19
+        "macro": 18
       },
       "technical": {
         "composite_score": 33,
@@ -15978,262 +16200,6 @@
               "low": 610.03,
               "high": 952.53,
               "expected_return_pct": 21.8,
-              "stance": "看多"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "ticker": "ABBV",
-      "symbol": "ABBV",
-      "name": "ABBV",
-      "market": "us",
-      "held": false,
-      "gooaye_named": false,
-      "market_mover": false,
-      "buy_score": 43,
-      "recommendation": "偏空減碼",
-      "components": {
-        "technical": 35,
-        "relative_strength": 50,
-        "chip_flow": 32,
-        "gooaye": 50,
-        "ticker_news": 95,
-        "macro": 19
-      },
-      "technical": {
-        "composite_score": 35,
-        "mom_20d": 0.19605010848462445,
-        "cmf_score": 32,
-        "bias": "中性",
-        "rsi14": 49.19,
-        "drawdown_from_high_pct": -2.99,
-        "today_note": "目前可用的報酬空間不足 20.0%，今天先不要急著買。",
-        "today_action": "今天不要買",
-        "buy_zone": "286.49 - 288.29",
-        "sell_zone": "331.99 - 354.89",
-        "stop_loss": "269.30 - 277.89",
-        "latest_close": 286.2,
-        "day_change_pct": 0.94,
-        "volume_ratio": 1.71,
-        "ignition_days_ago": null,
-        "ignition_note": ""
-      },
-      "chip": {
-        "score": 32,
-        "label": "法人偏空",
-        "foreign_net": null,
-        "trust_net": null,
-        "total_net": null,
-        "net_trend": "CMF=-0.069",
-        "net_summary": "Chaikin Money Flow(20)=-0.069",
-        "source": "CMF"
-      },
-      "events": {
-        "catalysts": [
-          {
-            "tag": "分割/股息",
-            "headline": "AbbVie (ABBV) Stock Just Got a 5.2% Dividend Increase. Here's How Many Shares You Need to Generate $1,000 a Year. - Yahoo Finance"
-          },
-          {
-            "tag": "購併/合作",
-            "headline": "Is Solid Tumor Partnership Altering The Investment Case For AbbVie (ABBV)? - Yahoo Finance"
-          }
-        ],
-        "risks": []
-      },
-      "gooaye": {
-        "score": 50,
-        "label": "中性觀察",
-        "opinion_count": 0,
-        "top_logic": "",
-        "top_quote": ""
-      },
-      "news": {
-        "score": 95,
-        "label": "偏多"
-      },
-      "detail": {
-        "latest_close": 286.2,
-        "bias": "中性",
-        "today_action": "今天不要買",
-        "buy_zone": "286.49 - 288.29",
-        "sell_zone": "331.99 - 354.89",
-        "stop_loss": "269.30 - 277.89",
-        "expected_return_pct": 19.713474040120605,
-        "risk_reward_ratio": 4.2554552294958725,
-        "agents": [
-          {
-            "name": "趨勢代理",
-            "signal": "中性",
-            "confidence": 55,
-            "summary": "價格與均線排列顯示 中性，MACD呈 死亡交叉，趨勢延續中。"
-          },
-          {
-            "name": "動能代理",
-            "signal": "中性",
-            "confidence": 65,
-            "summary": "RSI 與最近價格動能偏 中性，MACD柱狀圖動能偏 減弱。"
-          },
-          {
-            "name": "突破代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "股價距離 20 日高點不遠，量比 1.64 倍，布林頻寬呈 波動收縮 (5.5%)。"
-          },
-          {
-            "name": "回檔承接代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "觀察是否出現回檔後可承接的位置，目前偏 中性。"
-          },
-          {
-            "name": "風險代理",
-            "signal": "中性",
-            "confidence": 60,
-            "summary": "ATR 波動率 2.50%，風險評估為 可控。"
-          },
-          {
-            "name": "Warren Buffett (巴菲特)",
-            "signal": "Bearish",
-            "confidence": 90,
-            "summary": "財務實力虛弱 (F-Score: 0/9)，缺乏穩定盈餘與護城河，建議迴避。"
-          },
-          {
-            "name": "Charlie Munger (蒙格)",
-            "signal": "Bearish",
-            "confidence": 92,
-            "summary": "企業質量低劣，盈餘波動大且債務結構不佳，完全不符合合理估值買入偉大企業的原則。"
-          },
-          {
-            "name": "Ben Graham (葛拉漢)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "價格貼近合理價值，安全邊際不足，保持中性觀察。"
-          },
-          {
-            "name": "Aswath Damodaran (達莫達蘭)",
-            "signal": "Neutral",
-            "confidence": 75,
-            "summary": "最新定額折現模型顯示，當前市場定價已充分反映其內在價值。"
-          },
-          {
-            "name": "Cathie Wood (凱薩琳伍德)",
-            "signal": "Neutral",
-            "confidence": 60,
-            "summary": "未見顯著的顛覆性創新或硬核科技增長主線，暫不列為核心追蹤目標。"
-          },
-          {
-            "name": "Nassim Taleb (塔雷伯)",
-            "signal": "Bearish",
-            "confidence": 95,
-            "summary": "高估值 (PE: 0.0) 或財務極度脆弱，極易受尾部黑天鵝事件衝擊，屬於高風險Fragile標的。"
-          },
-          {
-            "name": "Peter Lynch (彼得林區)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "增長率與本益比匹配度適中，處於中性合理區間。"
-          },
-          {
-            "name": "Michael Burry (麥克貝瑞)",
-            "signal": "Neutral",
-            "confidence": 65,
-            "summary": "市場情緒與多空力量均衡，未見極端的非對稱套利機會。"
-          },
-          {
-            "name": "Stanley Druckenmiller (德魯肯米勒)",
-            "signal": "Neutral",
-            "confidence": 70,
-            "summary": "技術面均線與價格纏繞，未形成明確的單邊趨勢信號。"
-          },
-          {
-            "name": "Bill Ackman (艾克曼)",
-            "signal": "Bearish",
-            "confidence": 85,
-            "summary": "基本面不穩定 (F-Score: 0/9)，業務結構繁雜且可預測性低，缺乏長線配置價值。"
-          },
-          {
-            "name": "股癌 (Gooaye)",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "股癌/社群輿情近期未明確點名此股，暫以中性看待。"
-          },
-          {
-            "name": "尼可拉斯楊Live",
-            "signal": "中性",
-            "confidence": 40,
-            "summary": "尼可拉斯楊最近一集未明確點名此股，暫以中性看待。"
-          }
-        ],
-        "horizons": [
-          {
-            "horizon": "短線",
-            "bias": "中性",
-            "entry_zone": "281.91 - 283.16",
-            "take_profit_zone": "283.57 - 295.03",
-            "stop_zone": "270.45 - 276.06",
-            "summary": "短線以 1 到 3 週為主，進場區錨定前日 Pivots 支撐 s1 與 pp。"
-          },
-          {
-            "horizon": "中線",
-            "bias": "中性",
-            "entry_zone": "276.99 - 280.26",
-            "take_profit_zone": "286.43 - 300.90",
-            "stop_zone": "260.37 - 268.68",
-            "summary": "中線要求 20% 的預期報酬空間，進場區間位於阻力關卡 s2 至 s1。"
-          },
-          {
-            "horizon": "長線",
-            "bias": "偏多",
-            "entry_zone": "257.58 - 271.89",
-            "take_profit_zone": "318.26 - 347.19",
-            "stop_zone": "243.75 - 254.83",
-            "summary": "長線順應大趨勢，進場區置於 s2 以下以拉開足夠的安全邊際。"
-          }
-        ],
-        "price_forecast": {
-          "method": "歷史漂移 + 波動度錐（±1σ）統計推估，已對長天期衰減並收斂分析師目標價。",
-          "annualized_drift_pct": 40.0,
-          "annualized_volatility_pct": 24.3,
-          "verdict": "中長線偏多·逢回分批",
-          "verdict_reason": "中長期偏多但非全數確認，建議靠近買點區分批承接、不追高。（此為 3–12 個月中長線觀點；今天該不該進場，以上方『今日操作結論』的短線買賣點為準。）",
-          "horizons": [
-            {
-              "label": "3個月",
-              "days": 63,
-              "base": 316.32,
-              "low": 280.11,
-              "high": 357.22,
-              "expected_return_pct": 10.5,
-              "stance": "偏多"
-            },
-            {
-              "label": "6個月",
-              "days": 126,
-              "base": 344.06,
-              "low": 289.7,
-              "high": 408.61,
-              "expected_return_pct": 20.2,
-              "stance": "看多"
-            },
-            {
-              "label": "9個月",
-              "days": 189,
-              "base": 369.39,
-              "low": 299.25,
-              "high": 455.98,
-              "expected_return_pct": 29.1,
-              "stance": "看多"
-            },
-            {
-              "label": "12個月",
-              "days": 252,
-              "base": 394.22,
-              "low": 309.12,
-              "high": 502.74,
-              "expected_return_pct": 37.7,
               "stance": "看多"
             }
           ]
