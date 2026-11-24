@@ -1483,5 +1483,14 @@
     "top_score": 73,
     "strong_buy": 2,
     "pick_count": 50
+  },
+  {
+    "date": "2026-11-25",
+    "generated_at": "2026-11-25T03:54:56+08:00",
+    "macro_score": 29,
+    "top_ticker": "DLTR",
+    "top_score": 76,
+    "strong_buy": 5,
+    "pick_count": 50
   }
 ]
