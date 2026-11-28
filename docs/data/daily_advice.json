@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-11-28T12:08:13+08:00",
- "date": "2026-11-28",
+ "generated_at": "2026-11-29T01:21:52+08:00",
+ "date": "2026-11-29",
  "headline": "今天不用買賣，留意觀察名單｜恐懼貪婪 19（極度恐懼）、VIX 23.8",
  "panic_no_sell": true,
  "in_rebalance_window": false,
@@ -222,7 +222,7 @@
      "low_state": "LOW_PRICE_SPECULATIVE",
      "quality_tier": "D",
      "action": "反轉候選：等確認後小量",
-     "reason": "價格跌深（距高點 -57%）、排名第 100 名（Tier D）：排名偏低（Tier D），但有獨立證據（FUNDAMENTAL_RECOVERY、CATALYST）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
+     "reason": "價格跌深（距高點 -57%）、排名第 100 名（Tier D）：排名偏低（Tier D），但有獨立證據（FUNDAMENTAL_RECOVERY）：屬反轉候選，確認後小量分批，不是因為跌深而買。"
     },
     {
      "symbol": "DDOG",
